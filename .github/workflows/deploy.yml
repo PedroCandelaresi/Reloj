@@ -1,0 +1,48 @@
+name: STARNET — Build & Deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: starnet-deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build & run stack
+    runs-on: [self-hosted, linux, X64, reloj]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Preparar .env si no existe
+        working-directory: infra/docker
+        run: |
+          if [ ! -f .env ]; then
+            echo "Generando .env desde .env.example (usar secrets en producción)"
+            cp .env.example .env
+          fi
+
+      - name: Mostrar versión de Docker
+        run: |
+          docker --version
+          docker compose version
+
+      - name: Build de imágenes
+        working-directory: infra/docker
+        run: docker compose build --pull
+
+      - name: Levantar stack
+        working-directory: infra/docker
+        run: docker compose up -d --remove-orphans
+
+      - name: Estado de los contenedores
+        working-directory: infra/docker
+        run: docker compose ps
+
+      - name: Limpieza de imágenes viejas
+        run: docker image prune -f

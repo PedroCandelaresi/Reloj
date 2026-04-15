@@ -1,0 +1,33 @@
+# Dependencias
+**/node_modules
+**/.next
+**/dist
+**/build
+
+# Entornos locales
+**/.env
+**/.env.local
+**/.env.*.local
+
+# Git / CI
+.git
+.gitignore
+.github
+
+# Logs y caches
+**/npm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*
+**/.cache
+**/.turbo
+**/coverage
+
+# Editor
+**/.vscode
+**/.idea
+**/.DS_Store
+
+# Docker / docs
+infra/docker/.env
+infra/docker/*.md
+README.md
