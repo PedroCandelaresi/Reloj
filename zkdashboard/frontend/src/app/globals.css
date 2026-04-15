@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --surface-base: #ffffff;
+  --surface-muted: #f4f6f9;
+  --surface-soft: #eef3f8;
+  --ink-strong: #222833;
+  --ink-soft: #667085;
+  --brand: #0c6a38;
+  --brand-strong: #032c15;
+  --brand-soft: #e6f3ea;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans), sans-serif;
+}
+
+::selection {
+  background: rgba(255, 122, 40, 0.22);
+  color: var(--ink-strong);
+}
