@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import * as ExcelJS from 'exceljs';
 import PDFDocument = require('pdfkit');
 import { AttendanceRecord } from './attendance.entity';
+import { Employee } from '../employees/employee.entity';
 
 const STATUS_LABELS: Record<number, string> = {
   0: 'Entrada',
@@ -44,7 +45,9 @@ export class ExportService {
     dateFrom?: string;
     dateTo?: string;
   }): Promise<AttendanceRecord[]> {
-    const qb = this.repo.createQueryBuilder('r');
+    const qb = this.repo
+      .createQueryBuilder('r')
+      .leftJoinAndMapOne('r.employee', Employee, 'e', 'e.id = r.user_id');
     if (opts.userId) qb.andWhere('r.user_id = :userId', { userId: opts.userId });
     if (opts.dateFrom) qb.andWhere('r.timestamp >= :df', { df: new Date(opts.dateFrom) });
     if (opts.dateTo) {
@@ -74,6 +77,8 @@ export class ExportService {
 
     ws.columns = [
       { header: 'ID Empleado', key: 'userId',     width: 14 },
+      { header: 'Apellido',    key: 'apellido',   width: 20 },
+      { header: 'Nombre',      key: 'nombre',     width: 20 },
       { header: 'Fecha y Hora', key: 'timestamp', width: 24 },
       { header: 'Estado',       key: 'status',    width: 16 },
       { header: 'Verificación', key: 'verify',    width: 14 },
@@ -93,6 +98,8 @@ export class ExportService {
     records.forEach((r, idx) => {
       const row = ws.addRow({
         userId:    r.userId,
+        apellido:  r.employee?.apellido ?? '—',
+        nombre:    r.employee?.nombre   ?? '—',
         timestamp: fmtDate(r.timestamp),
         status:    STATUS_LABELS[r.status]     ?? String(r.status),
         verify:    VERIFY_LABELS[r.verifyType] ?? String(r.verifyType),
@@ -115,7 +122,7 @@ export class ExportService {
     });
 
     ws.views          = [{ state: 'frozen', ySplit: 1 }];
-    ws.autoFilter     = { from: { row: 1, column: 1 }, to: { row: 1, column: 6 } };
+    ws.autoFilter     = { from: { row: 1, column: 1 }, to: { row: 1, column: 8 } };
 
     const buf = await wb.xlsx.writeBuffer();
     return Buffer.from(buf);
@@ -162,8 +169,8 @@ export class ExportService {
       doc.moveDown(1.2);
 
       // Tabla
-      const headers = ['ID Empleado', 'Fecha y Hora',      'Estado',    'Verificación', 'Dispositivo'];
-      const widths  = [80,             155,                 100,          100,             110];
+      const headers = ['ID Empleado', 'Apellido', 'Nombre', 'Fecha y Hora', 'Estado', 'Verificación', 'Dispositivo'];
+      const widths  = [70,             115,        105,       135,            85,       90,             115];
 
       this.drawPdfTable(doc, records, headers, widths, 40);
 
@@ -210,6 +217,8 @@ export class ExportService {
       drawRow(
         [
           r.userId,
+          r.employee?.apellido ?? '—',
+          r.employee?.nombre   ?? '—',
           fmtDate(r.timestamp),
           STATUS_LABELS[r.status]     ?? String(r.status),
           VERIFY_LABELS[r.verifyType] ?? String(r.verifyType),

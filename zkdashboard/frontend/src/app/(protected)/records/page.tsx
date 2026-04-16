@@ -77,7 +77,7 @@ export default async function RecordsPage({ searchParams }: PageProps) {
             </a>
             <a
               href={`/api/export?format=pdf${exportFilter}`}
-              className="inline-flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+              className="inline-flex items-center gap-2 bg-teal-700 hover:bg-teal-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
             >
               <PdfIcon />
               Exportar PDF
