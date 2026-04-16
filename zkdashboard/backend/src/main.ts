@@ -19,10 +19,11 @@ async function bootstrap() {
   // Validación global de DTOs
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
 
-  const port = process.env.PORT || 4201;
+  const port = process.env.PORT || 4370;
   await app.listen(port);
   console.log(`Backend corriendo en http://localhost:${port}`);
-  console.log(`ADMS endpoint listo en http://0.0.0.0:${port}/iclock/cdata`);
+  console.log(`ADMS endpoint listo en http://0.0.0.0:${port}/iclock`);
+  console.log(`Compatibilidad ADMS activa en http://0.0.0.0:${port}/iclock/cdata`);
 }
 
 bootstrap();

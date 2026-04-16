@@ -8,7 +8,7 @@ export class AdmsController {
   constructor(private readonly adms: AdmsService) {}
 
   // El reloj llama a este endpoint al conectarse y para heartbeat periódico
-  @Get('cdata')
+  @Get(['', 'cdata'])
   async init(
     @Query('SN') sn: string,
     @Req() req: Request,
@@ -20,7 +20,7 @@ export class AdmsController {
   }
 
   // El reloj envía los registros de asistencia aquí
-  @Post('cdata')
+  @Post(['', 'cdata'])
   async push(
     @Query('SN') sn: string,
     @Query('table') table: string,
