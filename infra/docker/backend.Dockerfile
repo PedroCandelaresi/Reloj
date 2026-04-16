@@ -20,6 +20,7 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
+ENV PORT=4370
 
 # Solo prod deps
 COPY zkdashboard/backend/package.json ./
@@ -31,6 +32,6 @@ COPY --from=builder /app/dist ./dist
 RUN addgroup -S app && adduser -S -G app app
 USER app
 
-EXPOSE 4201
+EXPOSE 4370
 
 CMD ["node", "dist/main.js"]
