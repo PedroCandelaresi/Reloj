@@ -4,11 +4,12 @@ import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import type { Employee } from '@/lib/api';
+import type { ActionResult } from '@/app/(protected)/employees/actions';
 import {
   createEmployeeAction,
   deleteEmployeeAction,
   updateEmployeeAction,
-} from '@/app/employees/actions';
+} from '@/app/(protected)/employees/actions';
 
 type FormMode = 'create' | 'edit';
 
@@ -106,7 +107,7 @@ export function EmployeesManager({ employees }: { employees: Employee[] }) {
             });
 
       void request
-        .then((result) => {
+        .then((result: ActionResult) => {
           if (result.error) {
             setFormError(result.error);
             return;
@@ -139,7 +140,7 @@ export function EmployeesManager({ employees }: { employees: Employee[] }) {
 
     startTransition(() => {
       void deleteEmployeeAction(employee.id)
-        .then((result) => {
+        .then((result: ActionResult) => {
           if (result.error) {
             setBanner({ type: 'error', text: result.error });
             return;
@@ -162,8 +163,8 @@ export function EmployeesManager({ employees }: { employees: Employee[] }) {
 
   return (
     <>
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between gap-4">
+      <div className="bg-white rounded-xl shadow-lg border border-gray-200">
+        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between gap-4">
           <div>
             <h2 className="font-semibold text-gray-900">Maestra de empleados</h2>
             <p className="text-sm text-gray-500 mt-1">{employees.length} empleados registrados</p>
@@ -192,24 +193,30 @@ export function EmployeesManager({ employees }: { employees: Employee[] }) {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-gray-50 text-gray-500 text-xs uppercase">
-                <th className="px-6 py-3 text-left">DNI</th>
-                <th className="px-6 py-3 text-left">Apellido</th>
-                <th className="px-6 py-3 text-left">Nombre</th>
-                <th className="px-6 py-3 text-left">Teléfono</th>
-                <th className="px-6 py-3 text-right">Acciones</th>
+              <tr
+                className="text-xs uppercase"
+                style={{
+                  background: 'linear-gradient(180deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%)',
+                  color: '#475569',
+                }}
+              >
+                <th className="px-6 py-4 text-left font-semibold">DNI</th>
+                <th className="px-6 py-4 text-left font-semibold">Apellido</th>
+                <th className="px-6 py-4 text-left font-semibold">Nombre</th>
+                <th className="px-6 py-4 text-left font-semibold">Teléfono</th>
+                <th className="px-6 py-4 text-right font-semibold">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-gray-200">
               {employees.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-10 text-center text-gray-400">
+                  <td colSpan={5} className="px-6 py-10 text-center text-gray-500">
                     No hay empleados registrados todavía.
                   </td>
                 </tr>
               ) : (
                 employees.map((employee) => (
-                  <tr key={employee.id} className="hover:bg-gray-50">
+                  <tr key={employee.id} className="hover:bg-emerald-50/50 transition-colors">
                     <td className="px-6 py-4 font-medium text-gray-900">{employee.id}</td>
                     <td className="px-6 py-4 text-gray-700">{employee.apellido}</td>
                     <td className="px-6 py-4 text-gray-700">{employee.nombre}</td>
@@ -219,7 +226,7 @@ export function EmployeesManager({ employees }: { employees: Employee[] }) {
                         <button
                           type="button"
                           onClick={() => openEdit(employee)}
-                          className="text-blue-600 hover:text-blue-700 font-medium transition-colors"
+                          className="text-emerald-600 hover:text-emerald-700 font-medium transition-colors"
                         >
                           Editar
                         </button>
@@ -227,7 +234,7 @@ export function EmployeesManager({ employees }: { employees: Employee[] }) {
                           type="button"
                           onClick={() => handleDelete(employee)}
                           disabled={isPending}
-                          className="text-red-600 hover:text-red-700 font-medium transition-colors disabled:opacity-60"
+                          className="text-red-500 hover:text-red-600 font-medium transition-colors disabled:opacity-60"
                         >
                           Eliminar
                         </button>

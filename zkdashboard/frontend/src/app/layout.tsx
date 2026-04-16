@@ -15,26 +15,16 @@ const displayFont = Space_Grotesk({
 export const metadata: Metadata = {
   title: 'STARNET | Control de Asistencia',
   description: 'Plataforma de control de asistencia y fichadas de STARNET',
-  icons: {
-    icon: [
-      { url: '/brand/icon-512.png', type: 'image/png', sizes: '512x512' },
-    ],
-    shortcut: '/brand/icon-512.png',
-    apple: '/brand/icon-512.png',
-  },
-  openGraph: {
-    title: 'STARNET | Control de Asistencia',
-    description: 'Plataforma de control de asistencia y fichadas de STARNET',
-    images: ['/brand/logo-primary.jpeg'],
-  },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="es">
-      <body
-        className={`${bodyFont.variable} ${displayFont.variable} min-h-screen bg-[var(--surface-muted)] text-[var(--ink-strong)] antialiased`}
-      >
+      <body className={`${bodyFont.variable} ${displayFont.variable}`}>
         {children}
       </body>
     </html>

@@ -8,10 +8,10 @@ export default async function EmployeesPage() {
   return (
     <>
       <Navbar />
-      <main className="max-w-7xl mx-auto px-4 py-8">
+      <main className="max-w-7xl mx-auto px-4 py-8 pt-32">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Empleados</h1>
-          <p className="text-gray-500 text-sm mt-1">
+          <h1 className="text-2xl font-bold text-white drop-shadow-md">Empleados</h1>
+          <p className="text-emerald-200/70 text-sm mt-1">
             Administrá la maestra usada para enriquecer los registros de asistencia.
           </p>
         </div>

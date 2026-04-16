@@ -8,7 +8,7 @@ import {
 } from '@/lib/api';
 import type { EmployeeInput, EmployeeUpdateInput } from '@/lib/api';
 
-interface ActionResult {
+export interface ActionResult {
   ok?: true;
   error?: string;
 }

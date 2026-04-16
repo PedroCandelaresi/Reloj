@@ -1,9 +1,9 @@
 'use client';
 
-import Image from 'next/image';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useFormState, useFormStatus } from 'react-dom';
 import { login } from '@/lib/actions';
+import Starnet3DFromSVG from '@/components/Starnet3DFromSVG';
 
 function EyeIcon({ open }: { open: boolean }) {
   if (open) {
@@ -50,11 +50,12 @@ function EyeIcon({ open }: { open: boolean }) {
 
 function SubmitButton() {
   const { pending } = useFormStatus();
+
   return (
     <button
       type="submit"
       disabled={pending}
-      className="w-full rounded-2xl bg-[var(--brand)] px-4 py-3.5 text-sm font-semibold text-white shadow-[0_16px_38px_rgba(12,106,56,0.24)] transition hover:bg-[var(--brand-strong)] disabled:cursor-not-allowed disabled:opacity-60"
+      className="w-full rounded-2xl bg-gradient-to-r from-emerald-700 via-emerald-600 to-green-700 px-4 py-3.5 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(0,0,0,0.35)] transition hover:scale-[1.01] hover:from-emerald-600 hover:via-emerald-500 hover:to-green-600 disabled:cursor-not-allowed disabled:opacity-60"
     >
       {pending ? 'Accediendo...' : 'Acceder'}
     </button>
@@ -65,100 +66,408 @@ export default function LoginPage() {
   const [state, action] = useFormState(login, undefined);
   const [showPassword, setShowPassword] = useState(false);
 
+  const particles = useMemo(() => {
+    return Array.from({ length: 26 }, (_, i) => ({
+      id: i,
+      left: `${Math.random() * 100}%`,
+      top: `${Math.random() * 100}%`,
+      size: `${2 + Math.random() * 5}px`,
+      duration: `${4 + Math.random() * 8}s`,
+      delay: `${Math.random() * 6}s`,
+      opacity: 0.25 + Math.random() * 0.5,
+    }));
+  }, []);
+
   return (
-    <main className="min-h-screen bg-[var(--surface-muted)]">
-      <div className="grid min-h-screen lg:grid-cols-[minmax(0,1fr)_minmax(380px,0.9fr)]">
-        <section className="relative flex items-center justify-center px-6 py-12 sm:px-10 lg:px-16">
-          <div className="absolute inset-y-0 right-0 hidden w-px bg-slate-200/90 lg:block" />
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#02120b] px-6 py-10 text-white">
+      {/* Fondo animado oscuro / sumergido */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_#0a6b3d_0%,_#064525_20%,_#032415_55%,_#010d07_100%)]" />
 
-          <div className="w-full max-w-sm">
-            <div className="mb-10 flex items-center gap-3">
-              <Image
-                src="/brand/icon-512.png"
-                alt="STARNET"
-                width={40}
-                height={40}
-                className="h-10 w-10 rounded-lg object-contain"
-                priority
-              />
-              <span className="font-display text-lg font-semibold tracking-tight text-slate-900">
-                STARNET
-              </span>
-            </div>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(22,163,74,0.10),transparent_18%),radial-gradient(circle_at_80%_20%,rgba(110,231,183,0.06),transparent_18%),radial-gradient(circle_at_30%_75%,rgba(34,197,94,0.08),transparent_24%),radial-gradient(circle_at_75%_85%,rgba(16,185,129,0.06),transparent_20%)] animate-drift-slow" />
 
-            <h1 className="font-display text-3xl font-semibold tracking-tight text-slate-900">
-              Acceder
-            </h1>
-            <p className="mt-2 text-sm text-slate-500">
-              Ingresá con tus credenciales.
-            </p>
+        <div className="absolute -left-32 top-12 h-80 w-80 rounded-full bg-emerald-400/10 blur-3xl animate-blob1" />
+        <div className="absolute right-[-6rem] top-24 h-96 w-96 rounded-full bg-green-300/8 blur-3xl animate-blob2" />
+        <div className="absolute bottom-[-5rem] left-[12%] h-96 w-96 rounded-full bg-emerald-500/10 blur-3xl animate-blob3" />
+        <div className="absolute bottom-[8%] right-[15%] h-80 w-80 rounded-full bg-lime-200/5 blur-3xl animate-blob4" />
 
-            {state?.error && (
-              <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                {state.error}
-              </div>
-            )}
+        <div className="absolute inset-0 opacity-[0.12] mix-blend-screen animate-water">
+          <div className="h-full w-full bg-[repeating-linear-gradient(115deg,rgba(255,255,255,0.06)_0px,rgba(255,255,255,0.02)_2px,transparent_6px,transparent_18px)] blur-[2px]" />
+        </div>
 
-            <form action={action} className="mt-8 space-y-4">
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-600">Usuario</label>
-                <input
-                  name="username"
-                  type="text"
-                  required
-                  autoComplete="username"
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[var(--brand)] focus:ring-4 focus:ring-[rgba(12,106,56,0.12)]"
+        <div className="absolute inset-0 opacity-[0.08] mix-blend-screen animate-water-reverse">
+          <div className="h-full w-full bg-[repeating-linear-gradient(65deg,rgba(255,255,255,0.06)_0px,rgba(255,255,255,0.02)_2px,transparent_6px,transparent_16px)] blur-[3px]" />
+        </div>
+
+        <div className="absolute inset-[-25%] opacity-[0.08] mix-blend-screen blur-[1px] animate-caustics">
+          <div
+            className="h-full w-full"
+            style={{
+              background:
+                'radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15), transparent 10%), radial-gradient(circle at 70% 20%, rgba(255,255,255,0.10), transparent 8%), radial-gradient(circle at 40% 70%, rgba(255,255,255,0.12), transparent 12%), radial-gradient(circle at 80% 75%, rgba(255,255,255,0.10), transparent 10%)',
+            }}
+          />
+        </div>
+
+        <div className="absolute -left-16 top-[18%] h-80 w-80 rounded-full border border-white/15 animate-ring1" />
+        <div className="absolute right-[8%] top-[10%] h-32 w-32 rounded-full border border-white/15 animate-ring2" />
+        <div className="absolute left-[20%] bottom-[12%] h-56 w-56 rounded-full border border-white/15 animate-ring3" />
+        <div className="absolute right-[-6%] bottom-[8%] h-96 w-96 rounded-full border border-white/15 animate-ring4" />
+
+        {particles.map((p) => (
+          <span
+            key={p.id}
+            className="absolute rounded-full bg-white shadow-[0_0_12px_rgba(255,255,255,0.45)] animate-float-particle"
+            style={{
+              left: p.left,
+              top: p.top,
+              width: p.size,
+              height: p.size,
+              opacity: p.opacity,
+              animationDuration: p.duration,
+              animationDelay: p.delay,
+            }}
+          />
+        ))}
+
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_35%,rgba(0,0,0,0.28)_100%)]" />
+      </div>
+
+      {/* Marco metálico más grueso */}
+      <div
+        className="relative z-10 w-full max-w-md rounded-[42px] p-[6px] shadow-[0_30px_100px_rgba(0,0,0,0.55)]"
+        style={{
+          background:
+            'linear-gradient(145deg, #f5f5f5 0%, #bfc4cc 10%, #7f8791 20%, #e6ebef 32%, #7f8791 44%, #c5ccd3 58%, #6b737c 72%, #e8edf2 86%, #9aa2ab 100%)',
+        }}
+      >
+        <div
+          className="rounded-[36px] px-7 py-8 sm:px-8 sm:py-10"
+          style={{
+            background:
+              'linear-gradient(180deg, rgba(3,42,23,0.85) 0%, rgba(2,28,16,0.88) 100%)',
+            boxShadow:
+              'inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -1px 0 rgba(0,0,0,0.35), inset 0 0 0 1px rgba(255,255,255,0.05)',
+          }}
+        >
+          <div className="flex flex-col items-center">
+            <div className="relative grid h-72 w-72 place-items-center sm:h-80 sm:w-80">
+              <div className="h-full w-full">
+                <Starnet3DFromSVG
+                  className="h-full w-full"
+                  autoRotate
+                  speed={1}
+                  ribs={32}
+                  ribRadius={0.028}
                 />
               </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-600">
-                  Contraseña
-                </label>
-                <div className="group flex items-center rounded-2xl border border-slate-200 bg-white px-4 transition focus-within:border-[var(--brand)] focus-within:ring-4 focus-within:ring-[rgba(12,106,56,0.12)]">
-                  <input
-                    name="password"
-                    type={showPassword ? 'text' : 'password'}
-                    required
-                    autoComplete="current-password"
-                    className="w-full bg-transparent py-3 text-sm text-slate-900 outline-none placeholder:text-slate-400"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((current) => !current)}
-                    aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                    className="ml-3 text-slate-400 transition hover:text-slate-700"
-                  >
-                    <EyeIcon open={showPassword} />
-                  </button>
-                </div>
-              </div>
-
-              <div className="pt-2">
-                <SubmitButton />
-              </div>
-            </form>
-          </div>
-        </section>
-
-        <aside className="relative hidden overflow-hidden bg-[radial-gradient(circle_at_top,_#1b7a48_0%,_#0d6136_28%,_#05371c_66%,_#021f0d_100%)] lg:flex lg:items-center lg:justify-center">
-          <div className="relative flex flex-col items-center gap-5 px-8 text-center">
-            <div className="relative h-40 w-40 overflow-hidden rounded-3xl ring-1 ring-white/15">
-              <Image
-                src="/brand/logo-mark.jpeg"
-                alt="STARNET"
-                fill
-                sizes="10rem"
-                className="object-cover"
-                priority
-              />
             </div>
-            <p className="font-display text-2xl font-semibold tracking-tight text-white">
+
+            <p
+              className="mt-1 text-center text-4xl font-bold tracking-[0.24em] sm:text-5xl"
+              style={{
+                background:
+                  'linear-gradient(180deg, #ffffff 0%, #f5f5f5 15%, #d4d4d8 35%, #ffffff 50%, #9ca3af 70%, #f8fafc 85%, #a1a1aa 100%)',
+                WebkitBackgroundClip: 'text',
+                backgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                textShadow:
+                  '0 1px 0 rgba(255,255,255,0.15), 0 8px 18px rgba(255,255,255,0.04)',
+                filter: 'drop-shadow(0 1px 2px rgba(255,255,255,0.12))',
+              }}
+            >
               STARNET
             </p>
+
+            <p className="mt-3 text-center text-sm text-emerald-100/75">
+              Ingresá con tus credenciales
+            </p>
           </div>
-        </aside>
+
+          {state?.error && (
+            <div className="mt-6 rounded-2xl border border-red-300/30 bg-red-400/10 px-4 py-3 text-sm text-red-100">
+              {state.error}
+            </div>
+          )}
+
+          <form action={action} className="mt-8 space-y-4">
+            <div>
+              <label className="mb-2 block text-sm font-medium text-emerald-50/90">
+                Usuario
+              </label>
+              <input
+                name="username"
+                type="text"
+                required
+                autoComplete="username"
+                placeholder="Ingresá tu usuario"
+                className="w-full rounded-2xl border border-emerald-200/20 bg-white px-4 py-3 text-sm text-slate-900 shadow-[0_10px_25px_rgba(0,0,0,0.22)] outline-none transition placeholder:text-slate-500 focus:border-emerald-300/50 focus:ring-4 focus:ring-emerald-300/10"
+              />
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-medium text-emerald-50/90">
+                Contraseña
+              </label>
+              <div className="group flex items-center rounded-2xl border border-emerald-200/20 bg-white px-4 shadow-[0_10px_25px_rgba(0,0,0,0.22)] transition focus-within:border-emerald-300/50 focus-within:ring-4 focus-within:ring-emerald-300/10">
+                <input
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  autoComplete="current-password"
+                  placeholder="Ingresá tu contraseña"
+                  className="w-full bg-transparent py-3 text-sm text-slate-900 outline-none placeholder:text-slate-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((current) => !current)}
+                  aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  className="ml-3 shrink-0 bg-transparent p-0 text-slate-500 transition hover:text-slate-700"
+                >
+                  <EyeIcon open={showPassword} />
+                </button>
+              </div>
+            </div>
+
+            <div className="pt-2">
+              <SubmitButton />
+            </div>
+          </form>
+        </div>
       </div>
+
+      <style jsx>{`
+        @keyframes driftSlow {
+          0% {
+            transform: translate3d(0, 0, 0) scale(1);
+          }
+          50% {
+            transform: translate3d(-2%, 2%, 0) scale(1.05);
+          }
+          100% {
+            transform: translate3d(0, 0, 0) scale(1);
+          }
+        }
+
+        @keyframes blob1 {
+          0% {
+            transform: translate(0, 0) scale(1);
+          }
+          33% {
+            transform: translate(50px, -20px) scale(1.08);
+          }
+          66% {
+            transform: translate(-20px, 35px) scale(0.95);
+          }
+          100% {
+            transform: translate(0, 0) scale(1);
+          }
+        }
+
+        @keyframes blob2 {
+          0% {
+            transform: translate(0, 0) scale(1);
+          }
+          50% {
+            transform: translate(-40px, 25px) scale(1.1);
+          }
+          100% {
+            transform: translate(0, 0) scale(1);
+          }
+        }
+
+        @keyframes blob3 {
+          0% {
+            transform: translate(0, 0) scale(1);
+          }
+          33% {
+            transform: translate(25px, -20px) scale(1.04);
+          }
+          66% {
+            transform: translate(-35px, 10px) scale(1.1);
+          }
+          100% {
+            transform: translate(0, 0) scale(1);
+          }
+        }
+
+        @keyframes blob4 {
+          0% {
+            transform: translate(0, 0) scale(1);
+          }
+          50% {
+            transform: translate(30px, -25px) scale(0.96);
+          }
+          100% {
+            transform: translate(0, 0) scale(1);
+          }
+        }
+
+        @keyframes water {
+          0% {
+            transform: translate3d(0, 0, 0) scale(1.1) rotate(0deg);
+          }
+          50% {
+            transform: translate3d(-2%, 2%, 0) scale(1.15) rotate(1.5deg);
+          }
+          100% {
+            transform: translate3d(0, 0, 0) scale(1.1) rotate(0deg);
+          }
+        }
+
+        @keyframes waterReverse {
+          0% {
+            transform: translate3d(0, 0, 0) scale(1.1) rotate(0deg);
+          }
+          50% {
+            transform: translate3d(2%, -2%, 0) scale(1.16) rotate(-1.5deg);
+          }
+          100% {
+            transform: translate3d(0, 0, 0) scale(1.1) rotate(0deg);
+          }
+        }
+
+        @keyframes caustics {
+          0% {
+            transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
+          }
+          50% {
+            transform: translate3d(-2%, 1%, 0) scale(1.08) rotate(2deg);
+          }
+          100% {
+            transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
+          }
+        }
+
+        @keyframes floatParticle {
+          0% {
+            transform: translateY(0px) scale(1);
+            opacity: 0.2;
+          }
+          50% {
+            transform: translateY(-14px) scale(1.2);
+            opacity: 0.85;
+          }
+          100% {
+            transform: translateY(0px) scale(1);
+            opacity: 0.2;
+          }
+        }
+
+        @keyframes ring1 {
+          0% {
+            transform: translate(0, 0) scale(1);
+            opacity: 0.2;
+          }
+          50% {
+            transform: translate(20px, -12px) scale(1.05);
+            opacity: 0.3;
+          }
+          100% {
+            transform: translate(0, 0) scale(1);
+            opacity: 0.2;
+          }
+        }
+
+        @keyframes ring2 {
+          0% {
+            transform: translate(0, 0) scale(1);
+            opacity: 0.25;
+          }
+          50% {
+            transform: translate(-12px, 10px) scale(0.96);
+            opacity: 0.35;
+          }
+          100% {
+            transform: translate(0, 0) scale(1);
+            opacity: 0.25;
+          }
+        }
+
+        @keyframes ring3 {
+          0% {
+            transform: translate(0, 0) scale(1);
+            opacity: 0.18;
+          }
+          50% {
+            transform: translate(16px, -10px) scale(1.04);
+            opacity: 0.28;
+          }
+          100% {
+            transform: translate(0, 0) scale(1);
+            opacity: 0.18;
+          }
+        }
+
+        @keyframes ring4 {
+          0% {
+            transform: translate(0, 0) scale(1);
+            opacity: 0.18;
+          }
+          50% {
+            transform: translate(-18px, 16px) scale(1.03);
+            opacity: 0.28;
+          }
+          100% {
+            transform: translate(0, 0) scale(1);
+            opacity: 0.18;
+          }
+        }
+
+        .animate-drift-slow {
+          animation: driftSlow 18s ease-in-out infinite;
+        }
+
+        .animate-blob1 {
+          animation: blob1 20s ease-in-out infinite;
+        }
+
+        .animate-blob2 {
+          animation: blob2 18s ease-in-out infinite;
+        }
+
+        .animate-blob3 {
+          animation: blob3 22s ease-in-out infinite;
+        }
+
+        .animate-blob4 {
+          animation: blob4 19s ease-in-out infinite;
+        }
+
+        .animate-water {
+          animation: water 14s ease-in-out infinite;
+        }
+
+        .animate-water-reverse {
+          animation: waterReverse 17s ease-in-out infinite;
+        }
+
+        .animate-caustics {
+          animation: caustics 12s ease-in-out infinite;
+        }
+
+        .animate-float-particle {
+          animation-name: floatParticle;
+          animation-timing-function: ease-in-out;
+          animation-iteration-count: infinite;
+        }
+
+        .animate-ring1 {
+          animation: ring1 13s ease-in-out infinite;
+        }
+
+        .animate-ring2 {
+          animation: ring2 15s ease-in-out infinite;
+        }
+
+        .animate-ring3 {
+          animation: ring3 17s ease-in-out infinite;
+        }
+
+        .animate-ring4 {
+          animation: ring4 19s ease-in-out infinite;
+        }
+      `}</style>
     </main>
   );
 }

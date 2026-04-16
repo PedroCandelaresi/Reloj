@@ -14,7 +14,7 @@ export class AdmsController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
-    const ip = req.ip || req.socket.remoteAddress;
+    const ip = req.ip || req.socket.remoteAddress || '0.0.0.0';
     const body = await this.adms.handleInit(sn, ip);
     res.type('text/plain').send(body);
   }
