@@ -3,9 +3,19 @@
   "version": "1.0.0",
   "scripts": {
     "build": "nest build",
-    "start": "node dist/main",
+    "start": "node dist/main.js",
+    "start:prod": "node dist/main.js",
     "start:dev": "nest start --watch",
-    "seed": "ts-node -r tsconfig-paths/register src/seed.ts"
+    "seed": "node -r ts-node/register -r tsconfig-paths/register src/seed.ts",
+    "typeorm": "node -r ts-node/register -r tsconfig-paths/register ./node_modules/typeorm/cli.js -d src/database/data-source.ts",
+    "typeorm:prod": "node ./node_modules/typeorm/cli.js -d dist/database/data-source.js",
+    "migration:create": "sh -c 'test -n \"$npm_config_name\" || { echo \"Uso: npm run migration:create --name=NombreMigracion\" >&2; exit 1; }; npm run typeorm -- migration:create src/database/migrations/$npm_config_name'",
+    "migration:generate": "sh -c 'test -n \"$npm_config_name\" || { echo \"Uso: npm run migration:generate --name=NombreMigracion\" >&2; exit 1; }; npm run typeorm -- migration:generate src/database/migrations/$npm_config_name'",
+    "migration:run": "npm run typeorm -- migration:run",
+    "migration:revert": "npm run typeorm -- migration:revert",
+    "migration:show": "npm run typeorm -- migration:show",
+    "migration:run:prod": "npm run typeorm:prod -- migration:run",
+    "migration:revert:prod": "npm run typeorm:prod -- migration:revert"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",

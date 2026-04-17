@@ -11,6 +11,11 @@ services:
       - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U zkuser -d zkdashboard']
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   backend:
     build:
@@ -19,7 +24,8 @@ services:
     container_name: zkdashboard_backend
     restart: unless-stopped
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     env_file:
       - ./backend/.env
     environment:
@@ -30,6 +36,18 @@ services:
       - '4370:4370'
     volumes:
       - backend_logs:/home/reloj/log
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "const socket = require('net').connect({ host: '127.0.0.1', port: 4370 }); socket.on('connect', () => { socket.end(); process.exit(0); }); socket.on('error', () => process.exit(1));",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
 
 volumes:
   postgres_data:

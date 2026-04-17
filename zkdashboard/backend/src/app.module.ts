@@ -6,28 +6,25 @@ import { AdmsModule } from './adms/adms.module';
 import { AttendanceModule } from './attendance/attendance.module';
 import { DevicesModule } from './devices/devices.module';
 import { UsersModule } from './users/users.module';
-import { AttendanceRecord } from './attendance/attendance.entity';
-import { Device } from './devices/device.entity';
-import { DeviceCommand } from './devices/device-command.entity';
-import { AdminUser } from './users/admin-user.entity';
-import { Employee } from './employees/employee.entity';
 import { EmployeesModule } from './employees/employees.module';
+import { buildDatabaseOptions } from './database/data-source';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (config: ConfigService) => ({
-        type: 'postgres',
-        host: config.get('DB_HOST', 'localhost'),
-        port: config.get<number>('DB_PORT', 5432),
-        username: config.get('DB_USERNAME', 'zkuser'),
-        password: config.get('DB_PASSWORD', 'zkpassword'),
-        database: config.get('DB_NAME', 'zkdashboard'),
-        entities: [AttendanceRecord, Device, DeviceCommand, AdminUser, Employee],
-        synchronize: true, // solo para desarrollo; en producción usar migraciones
-      }),
+      useFactory: (config: ConfigService) =>
+        buildDatabaseOptions({
+          NODE_ENV: config.get<string>('NODE_ENV'),
+          DB_HOST: config.get<string>('DB_HOST'),
+          DB_PORT: config.get<string>('DB_PORT'),
+          DB_USERNAME: config.get<string>('DB_USERNAME'),
+          DB_PASSWORD: config.get<string>('DB_PASSWORD'),
+          DB_NAME: config.get<string>('DB_NAME'),
+          DB_SYNCHRONIZE: config.get<string>('DB_SYNCHRONIZE'),
+          DB_LOGGING: config.get<string>('DB_LOGGING'),
+        }),
       inject: [ConfigService],
     }),
     UsersModule,

@@ -4,6 +4,7 @@
 #   cd infra/docker
 #   cp .env.example .env      # ajustar valores
 #   docker compose up -d --build
+#   docker compose run --rm backend npm run migration:run:prod
 #
 # Para rebuildear un solo servicio:
 #   docker compose up -d --build backend
@@ -49,6 +50,8 @@ services:
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${DB_NAME}
+      DB_SYNCHRONIZE: ${DB_SYNCHRONIZE:-false}
+      DB_LOGGING: ${DB_LOGGING:-false}
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
       PORT: 4370
@@ -60,6 +63,18 @@ services:
       - '${BACKEND_PORT:-4370}:4370'
     volumes:
       - /home/reloj/log:/home/reloj/log
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "const socket = require('net').connect({ host: '127.0.0.1', port: 4370 }); socket.on('connect', () => { socket.end(); process.exit(0); }); socket.on('error', () => process.exit(1));",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
     networks:
       - starnet
 
@@ -71,12 +86,25 @@ services:
     container_name: starnet-frontend
     restart: unless-stopped
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     environment:
       NODE_ENV: production
       API_URL: ${INTERNAL_API_URL:-http://backend:4370}
     ports:
       - '${FRONTEND_PORT:-4200}:4200'
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "const socket = require('net').connect({ host: '127.0.0.1', port: 4200 }); socket.on('connect', () => { socket.end(); process.exit(0); }); socket.on('error', () => process.exit(1));",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
     networks:
       - starnet
 
