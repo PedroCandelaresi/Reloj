@@ -118,6 +118,8 @@ async function seed() {
     await userRepo.save({
       username: process.env.ADMIN_USERNAME || 'admin',
       passwordHash: hash,
+      isSuperAdmin: true,
+      employeeId: null,
     });
     console.log('✓ Admin creado: usuario=admin, contraseña=admin123');
   }

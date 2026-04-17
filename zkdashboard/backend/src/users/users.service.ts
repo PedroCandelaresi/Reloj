@@ -28,6 +28,8 @@ export class UsersService implements OnApplicationBootstrap {
         dni: null,
         telefono: null,
         email: null,
+        isSuperAdmin: true,
+        employeeId: null,
       });
       console.log(`✓ Admin creado: usuario="${username}" — cambiá la contraseña en producción`);
     }
@@ -50,6 +52,8 @@ export class UsersService implements OnApplicationBootstrap {
       dni: user.dni,
       telefono: user.telefono,
       email: user.email,
+      isSuperAdmin: user.isSuperAdmin,
+      employeeId: user.employeeId,
       createdAt: user.createdAt,
     };
   }

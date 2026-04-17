@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { AdmsModule } from './adms/adms.module';
 import { AttendanceModule } from './attendance/attendance.module';
+import { CompaniesModule } from './companies/companies.module';
 import { DevicesModule } from './devices/devices.module';
 import { UsersModule } from './users/users.module';
 import { EmployeesModule } from './employees/employees.module';
@@ -29,6 +30,7 @@ import { buildDatabaseOptions } from './database/data-source';
     }),
     UsersModule,
     AuthModule,
+    CompaniesModule,
     DevicesModule,
     EmployeesModule,
     AttendanceModule,

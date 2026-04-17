@@ -59,7 +59,23 @@ export class EmployeesService {
   }
 
   async remove(id: string): Promise<{ success: true }> {
-    const employee = await this.findOne(id);
+    const employee = await this.repo.findOne({
+      where: { id },
+      relations: {
+        userAccount: true,
+      },
+    });
+
+    if (!employee) {
+      throw new NotFoundException(`Empleado ${id} no encontrado`);
+    }
+
+    if (employee.userAccount) {
+      throw new ConflictException(
+        'No se puede eliminar el empleado porque tiene una cuenta de acceso vinculada',
+      );
+    }
+
     await this.repo.remove(employee);
     return { success: true as const };
   }
