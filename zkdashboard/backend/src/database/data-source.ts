@@ -3,6 +3,7 @@ import * as dotenv from 'dotenv';
 import { join } from 'path';
 import { DataSource, DataSourceOptions } from 'typeorm';
 import { AttendanceRecord } from '../attendance/attendance.entity';
+import { InboundRequest } from '../adms/inbound-request.entity';
 import { CompanyMembership } from '../companies/company-membership.entity';
 import { Company } from '../companies/company.entity';
 import { Device } from '../devices/device.entity';
@@ -13,6 +14,7 @@ import { AdminUser } from '../users/admin-user.entity';
 dotenv.config();
 
 export const DATABASE_ENTITIES = [
+  InboundRequest,
   AttendanceRecord,
   Company,
   CompanyMembership,

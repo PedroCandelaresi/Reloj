@@ -7,6 +7,7 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { Company } from '../companies/company.entity';
 import { Device } from './device.entity';
 
 export const DEVICE_COMMAND_TYPES = {
@@ -45,6 +46,14 @@ export class DeviceCommand {
 
   @Column({ type: 'text' })
   command: string;
+
+  @Index('IDX_device_commands_company_id')
+  @Column({ name: 'company_id', type: 'uuid', nullable: true })
+  companyId: string | null;
+
+  @ManyToOne(() => Company, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'company_id' })
+  company?: Company | null;
 
   @Column({ length: 30, default: DEVICE_COMMAND_STATUSES.PENDING })
   status: DeviceCommandStatus;

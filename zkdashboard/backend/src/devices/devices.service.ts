@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   Logger,
@@ -6,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { Company } from '../companies/company.entity';
 import { Device } from './device.entity';
 import {
   DEVICE_COMMAND_STATUSES,
@@ -18,6 +20,25 @@ const FORCE_SYNC_DUPLICATE_WINDOW_MS = 5 * 60 * 1000;
 const ACTIVE_SENT_REPLACEMENT_REASON =
   'Sin confirmación del dispositivo. Reemplazado por una nueva solicitud manual.';
 
+export interface AdminDeviceView {
+  id: number;
+  serialNumber: string;
+  ipAddress: string | null;
+  isActive: boolean;
+  alias: string | null;
+  companyId: string | null;
+  assignedAt: Date | null;
+  firstSeen: Date;
+  lastSeen: Date;
+  company: {
+    id: string;
+    cuit: string;
+    razonSocial: string;
+    nombreFantasia: string | null;
+    isActive: boolean;
+  } | null;
+}
+
 @Injectable()
 export class DevicesService {
   private readonly logger = new Logger(DevicesService.name);
@@ -27,24 +48,88 @@ export class DevicesService {
     private readonly repo: Repository<Device>,
     @InjectRepository(DeviceCommand)
     private readonly commandsRepo: Repository<DeviceCommand>,
+    @InjectRepository(Company)
+    private readonly companiesRepo: Repository<Company>,
   ) {}
 
   async upsert(serialNumber: string, ipAddress: string): Promise<Device> {
-    const existing = await this.repo.findOneBy({ serialNumber });
+    const normalizedSerialNumber = this.normalizeSerialNumber(serialNumber);
+    if (!normalizedSerialNumber) {
+      throw new BadRequestException('El request ADMS no incluye un serial number válido.');
+    }
+
+    const normalizedIpAddress = this.normalizeNullable(ipAddress);
+    const existing = await this.repo.findOne({
+      where: { serialNumber: normalizedSerialNumber },
+      relations: {
+        company: true,
+      },
+    });
+
     if (existing) {
-      await this.repo.update(existing.id, { ipAddress });
-      return this.repo.findOneByOrFail({ id: existing.id });
+      existing.ipAddress = normalizedIpAddress ?? existing.ipAddress;
+      existing.lastSeen = new Date();
+      return this.repo.save(existing);
     } else {
       return this.repo.save({
-        serialNumber,
-        ipAddress,
+        serialNumber: normalizedSerialNumber,
+        ipAddress: normalizedIpAddress ?? null,
         isActive: true,
+        companyId: null,
+        alias: null,
+        assignedAt: null,
       });
     }
   }
 
   findAll(): Promise<Device[]> {
     return this.repo.find({ order: { lastSeen: 'DESC' } });
+  }
+
+  async findAllForAdmin(): Promise<AdminDeviceView[]> {
+    const devices = await this.repo.find({
+      relations: {
+        company: true,
+      },
+      order: {
+        lastSeen: 'DESC',
+        serialNumber: 'ASC',
+      },
+    });
+
+    return devices.map((device) => this.serializeDevice(device));
+  }
+
+  async findUnassignedForAdmin(): Promise<AdminDeviceView[]> {
+    const devices = await this.repo.find({
+      where: {
+        companyId: null,
+      },
+      relations: {
+        company: true,
+      },
+      order: {
+        lastSeen: 'DESC',
+        serialNumber: 'ASC',
+      },
+    });
+
+    return devices.map((device) => this.serializeDevice(device));
+  }
+
+  async findOneForAdmin(id: number): Promise<AdminDeviceView> {
+    const device = await this.repo.findOne({
+      where: { id },
+      relations: {
+        company: true,
+      },
+    });
+
+    if (!device) {
+      throw new NotFoundException('Dispositivo no encontrado.');
+    }
+
+    return this.serializeDevice(device);
   }
 
   async enqueueAttendanceSync(deviceId: number, requestedBy?: string) {
@@ -68,6 +153,7 @@ export class DevicesService {
         deviceId: device.id,
         commandType: DEVICE_COMMAND_TYPES.ATTENDANCE_SYNC,
         command: FORCE_SYNC_COMMAND,
+        companyId: device.companyId ?? null,
         status: DEVICE_COMMAND_STATUSES.PENDING,
         requestedBy: requestedBy?.trim() || null,
       }),
@@ -80,14 +166,65 @@ export class DevicesService {
     return { device, command, duplicate: false as const };
   }
 
+  async assignCompany(deviceId: number, companyId: string, alias?: string | null) {
+    const device = await this.repo.findOne({
+      where: { id: deviceId },
+      relations: {
+        company: true,
+      },
+    });
+    if (!device) {
+      throw new NotFoundException('Dispositivo no encontrado.');
+    }
+
+    const company = await this.companiesRepo.findOneBy({ id: companyId });
+    if (!company) {
+      throw new NotFoundException('Empresa no encontrada.');
+    }
+    if (!company.isActive) {
+      throw new ConflictException('La empresa seleccionada está inactiva.');
+    }
+
+    const normalizedAlias = this.normalizeNullable(alias);
+
+    device.companyId = company.id;
+    device.company = company;
+    device.assignedAt = new Date();
+    if (normalizedAlias !== undefined) {
+      device.alias = normalizedAlias;
+    }
+
+    const saved = await this.repo.save(device);
+    return this.serializeDevice({ ...saved, company });
+  }
+
+  async unassignCompany(deviceId: number) {
+    const device = await this.repo.findOne({
+      where: { id: deviceId },
+      relations: {
+        company: true,
+      },
+    });
+    if (!device) {
+      throw new NotFoundException('Dispositivo no encontrado.');
+    }
+
+    device.companyId = null;
+    device.company = null;
+    device.assignedAt = null;
+
+    const saved = await this.repo.save(device);
+    return this.serializeDevice(saved);
+  }
+
   async getNextCommandForHeartbeat(
     serialNumber: string,
     ipAddress: string,
-  ): Promise<string> {
+  ): Promise<{ command: string; device: Device }> {
     const device = await this.upsert(serialNumber, ipAddress);
 
     if (!device.isActive) {
-      return 'OK';
+      return { command: 'OK', device };
     }
 
     const pendingCommand = await this.commandsRepo.findOne({
@@ -101,7 +238,7 @@ export class DevicesService {
     });
 
     if (!pendingCommand) {
-      return 'OK';
+      return { command: 'OK', device };
     }
 
     pendingCommand.status = DEVICE_COMMAND_STATUSES.SENT;
@@ -113,7 +250,7 @@ export class DevicesService {
       `Comando ${pendingCommand.id} enviado al dispositivo ${serialNumber}: ${pendingCommand.command}`,
     );
 
-    return `C:${pendingCommand.id}:${pendingCommand.command}`;
+    return { command: `C:${pendingCommand.id}:${pendingCommand.command}`, device };
   }
 
   async markAttendanceSyncFromPush(
@@ -194,6 +331,65 @@ export class DevicesService {
     this.logger.log(
       `Resultado devicecmd para comando ${command.id}: ${command.status}`,
     );
+  }
+
+  async findBySerialNumber(serialNumber: string | undefined): Promise<Device | null> {
+    const normalizedSerialNumber = this.normalizeSerialNumber(serialNumber);
+    if (!normalizedSerialNumber) {
+      return null;
+    }
+
+    return this.repo.findOne({
+      where: { serialNumber: normalizedSerialNumber },
+      relations: {
+        company: true,
+      },
+    });
+  }
+
+  private serializeDevice(device: Device): AdminDeviceView {
+    return {
+      id: device.id,
+      serialNumber: device.serialNumber,
+      ipAddress: device.ipAddress,
+      isActive: device.isActive,
+      alias: device.alias,
+      companyId: device.companyId,
+      assignedAt: device.assignedAt,
+      firstSeen: device.firstSeen,
+      lastSeen: device.lastSeen,
+      company: device.company
+        ? {
+            id: device.company.id,
+            cuit: device.company.cuit,
+            razonSocial: device.company.razonSocial,
+            nombreFantasia: device.company.nombreFantasia,
+            isActive: device.company.isActive,
+          }
+        : null,
+    };
+  }
+
+  private normalizeSerialNumber(value: string | undefined | null): string | null {
+    if (typeof value !== 'string') {
+      return null;
+    }
+
+    const normalized = value.trim();
+    return normalized || null;
+  }
+
+  private normalizeNullable(value: string | undefined | null): string | null | undefined {
+    if (value === undefined) {
+      return undefined;
+    }
+
+    if (value === null) {
+      return null;
+    }
+
+    const normalized = value.trim();
+    return normalized || null;
   }
 
   private async findActiveAttendanceSync(
