@@ -8,6 +8,21 @@ export class AdminUser {
   @Column({ unique: true })
   username: string;
 
+  @Column({ nullable: true })
+  nombre: string | null;
+
+  @Column({ nullable: true })
+  apellido: string | null;
+
+  @Column({ nullable: true })
+  dni: string | null;
+
+  @Column({ nullable: true })
+  telefono: string | null;
+
+  @Column({ nullable: true })
+  email: string | null;
+
   @Column({ name: 'password_hash' })
   passwordHash: string;
 

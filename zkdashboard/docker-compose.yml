@@ -25,8 +25,12 @@ services:
     environment:
       DB_HOST: postgres
       PORT: 4370
+      LOG_DIR: /home/reloj/log
     ports:
       - '4370:4370'
+    volumes:
+      - backend_logs:/home/reloj/log
 
 volumes:
   postgres_data:
+  backend_logs:

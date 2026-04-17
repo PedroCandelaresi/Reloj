@@ -21,6 +21,7 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=4370
+ENV LOG_DIR=/home/reloj/log
 
 # Solo prod deps
 COPY zkdashboard/backend/package.json ./
@@ -30,6 +31,7 @@ COPY --from=builder /app/dist ./dist
 
 # Usuario no-root
 RUN addgroup -S app && adduser -S -G app app
+RUN mkdir -p /home/reloj/log && chown -R app:app /home/reloj
 USER app
 
 EXPOSE 4370

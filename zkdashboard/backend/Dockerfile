@@ -16,6 +16,9 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=4370
+ENV LOG_DIR=/home/reloj/log
+
+RUN mkdir -p /home/reloj/log
 
 COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/node_modules ./node_modules

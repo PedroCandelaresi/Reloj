@@ -18,6 +18,7 @@ type FormValues = {
   nombre: string;
   apellido: string;
   telefono: string;
+  email: string;
 };
 
 type BannerState =
@@ -30,6 +31,7 @@ const EMPTY_FORM: FormValues = {
   nombre: '',
   apellido: '',
   telefono: '',
+  email: '',
 };
 
 function toFormValues(employee: Employee): FormValues {
@@ -38,6 +40,7 @@ function toFormValues(employee: Employee): FormValues {
     nombre: employee.nombre,
     apellido: employee.apellido,
     telefono: employee.telefono ?? '',
+    email: employee.email ?? '',
   };
 }
 
@@ -85,6 +88,7 @@ export function EmployeesManager({ employees }: { employees: Employee[] }) {
     const nombre = form.nombre.trim();
     const apellido = form.apellido.trim();
     const telefono = form.telefono.trim();
+    const email = form.email.trim();
 
     if (!id || !nombre || !apellido) {
       setFormError('Completá DNI, nombre y apellido.');
@@ -94,16 +98,18 @@ export function EmployeesManager({ employees }: { employees: Employee[] }) {
     startTransition(() => {
       const request =
         mode === 'create'
-          ? createEmployeeAction({
+            ? createEmployeeAction({
               id,
               nombre,
               apellido,
               telefono: telefono || null,
+              email: email || null,
             })
           : updateEmployeeAction(id, {
               nombre,
               apellido,
               telefono: telefono || null,
+              email: email || null,
             });
 
       void request
@@ -204,13 +210,14 @@ export function EmployeesManager({ employees }: { employees: Employee[] }) {
                 <th className="px-6 py-4 text-left font-semibold">Apellido</th>
                 <th className="px-6 py-4 text-left font-semibold">Nombre</th>
                 <th className="px-6 py-4 text-left font-semibold">Teléfono</th>
+                <th className="px-6 py-4 text-left font-semibold">Email</th>
                 <th className="px-6 py-4 text-right font-semibold">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {employees.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-10 text-center text-gray-500">
+                  <td colSpan={6} className="px-6 py-10 text-center text-gray-500">
                     No hay empleados registrados todavía.
                   </td>
                 </tr>
@@ -221,6 +228,7 @@ export function EmployeesManager({ employees }: { employees: Employee[] }) {
                     <td className="px-6 py-4 text-gray-700">{employee.apellido}</td>
                     <td className="px-6 py-4 text-gray-700">{employee.nombre}</td>
                     <td className="px-6 py-4 text-gray-500">{employee.telefono || '—'}</td>
+                    <td className="px-6 py-4 text-gray-500">{employee.email || '—'}</td>
                     <td className="px-6 py-4">
                       <div className="flex justify-end gap-2">
                         <button
@@ -309,6 +317,17 @@ export function EmployeesManager({ employees }: { employees: Employee[] }) {
                 <input
                   name="telefono"
                   value={form.telefono}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input
+                  name="email"
+                  type="email"
+                  value={form.email}
                   onChange={handleChange}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />

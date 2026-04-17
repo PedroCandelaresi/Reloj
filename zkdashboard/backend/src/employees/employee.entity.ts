@@ -14,6 +14,9 @@ export class Employee {
   @Column({ nullable: true })
   telefono: string | null;
 
+  @Column({ nullable: true })
+  email: string | null;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 }

@@ -41,6 +41,7 @@ export class EmployeesService {
       nombre: dto.nombre,
       apellido: dto.apellido,
       telefono: dto.telefono ?? null,
+      email: dto.email ?? null,
     });
 
     return this.repo.save(employee);
@@ -52,6 +53,7 @@ export class EmployeesService {
     if (dto.nombre !== undefined) employee.nombre = dto.nombre;
     if (dto.apellido !== undefined) employee.apellido = dto.apellido;
     if (dto.telefono !== undefined) employee.telefono = dto.telefono;
+    if (dto.email !== undefined) employee.email = dto.email;
 
     return this.repo.save(employee);
   }

@@ -1,5 +1,5 @@
 import { Transform } from 'class-transformer';
-import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 
 function trimValue({ value }: { value: unknown }) {
   return typeof value === 'string' ? value.trim() : value;
@@ -35,4 +35,10 @@ export class CreateEmployeeDto {
   @IsString()
   @MaxLength(50)
   telefono?: string | null;
+
+  @Transform(trimNullableValue)
+  @IsOptional()
+  @IsEmail()
+  @MaxLength(150)
+  email?: string | null;
 }

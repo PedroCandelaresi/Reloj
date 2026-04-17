@@ -33,6 +33,14 @@ function fmtDate(date: Date | string): string {
   });
 }
 
+function fmtDateOnly(date: string): string {
+  return new Date(date).toLocaleDateString('es-AR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+}
+
 @Injectable()
 export class ExportService {
   constructor(
@@ -58,6 +66,25 @@ export class ExportService {
     return qb.orderBy('r.timestamp', 'ASC').getMany();
   }
 
+  private buildExportSummary(
+    opts: {
+      userId?: string;
+      dateFrom?: string;
+      dateTo?: string;
+    },
+    generatedAt: Date,
+    totalRecords: number,
+  ): string {
+    const filters: string[] = [];
+
+    if (opts.userId) filters.push(`DNI: ${opts.userId}`);
+    if (opts.dateFrom) filters.push(`Desde: ${fmtDateOnly(opts.dateFrom)}`);
+    if (opts.dateTo) filters.push(`Hasta: ${fmtDateOnly(opts.dateTo)}`);
+
+    const filtersLabel = filters.length > 0 ? `  ·  Filtros: ${filters.join(' | ')}` : '';
+    return `Generado el ${fmtDate(generatedAt)}  ·  ${totalRecords} registros${filtersLabel}`;
+  }
+
   // ─── Excel ────────────────────────────────────────────────────────────────
 
   async exportExcel(opts: {
@@ -66,29 +93,55 @@ export class ExportService {
     dateTo?: string;
   }): Promise<Buffer> {
     const records = await this.getFiltered(opts);
+    const generatedAt = new Date();
 
     const wb = new ExcelJS.Workbook();
     wb.creator = 'ZK Dashboard';
-    wb.created = new Date();
+    wb.created = generatedAt;
 
     const ws = wb.addWorksheet('Asistencia', {
       pageSetup: { paperSize: 9, orientation: 'landscape', fitToPage: true },
     });
 
     ws.columns = [
-      { header: 'ID Empleado', key: 'userId',     width: 14 },
-      { header: 'Apellido',    key: 'apellido',   width: 20 },
-      { header: 'Nombre',      key: 'nombre',     width: 20 },
-      { header: 'Fecha y Hora', key: 'timestamp', width: 24 },
-      { header: 'Estado',       key: 'status',    width: 16 },
-      { header: 'Verificación', key: 'verify',    width: 14 },
-      { header: 'Cód. Trabajo', key: 'workCode',  width: 14 },
-      { header: 'Dispositivo',  key: 'device',    width: 14 },
+      { key: 'userId',    width: 14 },
+      { key: 'apellido',  width: 20 },
+      { key: 'nombre',    width: 20 },
+      { key: 'timestamp', width: 24 },
+      { key: 'status',    width: 16 },
+      { key: 'verify',    width: 14 },
+      { key: 'workCode',  width: 14 },
+      { key: 'device',    width: 14 },
     ];
 
+    ws.mergeCells('A1:H1');
+    ws.getCell('A1').value = 'Registros de Asistencia';
+    ws.getCell('A1').font = { bold: true, size: 16, color: { argb: 'FF111827' } };
+    ws.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' };
+
+    ws.mergeCells('A2:H2');
+    ws.getCell('A2').value = this.buildExportSummary(opts, generatedAt, records.length);
+    ws.getCell('A2').font = { size: 10, color: { argb: 'FF4B5563' } };
+    ws.getCell('A2').alignment = { horizontal: 'center', vertical: 'middle' };
+
+    ws.addRow([]);
+
+    const headerRow = ws.addRow({
+      userId: 'ID Empleado',
+      apellido: 'Apellido',
+      nombre: 'Nombre',
+      timestamp: 'Fecha y Hora',
+      status: 'Estado',
+      verify: 'Verificación',
+      workCode: 'Cód. Trabajo',
+      device: 'Dispositivo',
+    });
+
     // Header styling
-    ws.getRow(1).height = 26;
-    ws.getRow(1).eachCell((cell) => {
+    ws.getRow(1).height = 24;
+    ws.getRow(2).height = 20;
+    headerRow.height = 26;
+    headerRow.eachCell((cell) => {
       cell.fill   = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F2937' } };
       cell.font   = { color: { argb: 'FFFFFFFF' }, bold: true, size: 11 };
       cell.alignment = { vertical: 'middle', horizontal: 'center' };
@@ -121,8 +174,11 @@ export class ExportService {
       else if (r.status === 1) statusCell.font = { color: { argb: 'FFB91C1C' }, bold: true, size: 10 };
     });
 
-    ws.views          = [{ state: 'frozen', ySplit: 1 }];
-    ws.autoFilter     = { from: { row: 1, column: 1 }, to: { row: 1, column: 8 } };
+    ws.views = [{ state: 'frozen', ySplit: headerRow.number }];
+    ws.autoFilter = {
+      from: { row: headerRow.number, column: 1 },
+      to: { row: headerRow.number, column: 8 },
+    };
 
     const buf = await wb.xlsx.writeBuffer();
     return Buffer.from(buf);
@@ -136,13 +192,14 @@ export class ExportService {
     dateTo?: string;
   }): Promise<Buffer> {
     const records = await this.getFiltered(opts);
+    const generatedAt = new Date();
 
     return new Promise<Buffer>((resolve, reject) => {
       const doc = new PDFDocument({
         size:   'A4',
         layout: 'landscape',
         margin: 40,
-        info:   { Title: 'Registros de Asistencia', Author: 'ZK Dashboard' },
+        info:   { Title: 'Registros de Asistencia', Author: 'ZK Dashboard', CreationDate: generatedAt },
       });
 
       const chunks: Buffer[] = [];
@@ -161,10 +218,7 @@ export class ExportService {
         .font('Helvetica')
         .fontSize(9)
         .fillColor('#6B7280')
-        .text(
-          `Generado el ${fmtDate(new Date())}  ·  ${records.length} registros`,
-          { align: 'center' },
-        );
+        .text(this.buildExportSummary(opts, generatedAt, records.length), { align: 'center' });
 
       doc.moveDown(1.2);
 

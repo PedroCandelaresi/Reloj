@@ -139,6 +139,7 @@ async function seed() {
           nombre,
           apellido,
           telefono: null,
+          email: null,
         };
       }),
     );

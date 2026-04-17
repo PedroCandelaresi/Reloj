@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 
-const API = process.env.API_URL || 'http://localhost:4201';
+const API = process.env.API_URL || 'http://localhost:4370';
 
 async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const cookieStore = await cookies();
@@ -55,6 +55,7 @@ export interface EmployeeSummary {
 
 export interface Employee extends EmployeeSummary {
   telefono: string | null;
+  email: string | null;
   createdAt: string;
 }
 
@@ -63,12 +64,38 @@ export interface EmployeeInput {
   nombre: string;
   apellido: string;
   telefono?: string | null;
+  email?: string | null;
 }
 
 export interface EmployeeUpdateInput {
   nombre?: string;
   apellido?: string;
   telefono?: string | null;
+  email?: string | null;
+}
+
+export interface CurrentUserProfile {
+  id: number;
+  username: string;
+  nombre: string | null;
+  apellido: string | null;
+  dni: string | null;
+  telefono: string | null;
+  email: string | null;
+  createdAt: string;
+}
+
+export interface CurrentUserProfileInput {
+  nombre?: string | null;
+  apellido?: string | null;
+  dni?: string | null;
+  telefono?: string | null;
+  email?: string | null;
+}
+
+export interface ChangePasswordInput {
+  currentPassword: string;
+  newPassword: string;
 }
 
 export interface AttendanceRecord {
@@ -172,6 +199,24 @@ export function getEmployees() {
 
 export function getEmployee(id: string) {
   return apiFetch<Employee>(`/employees/${id}`);
+}
+
+export function getCurrentUserProfile() {
+  return apiFetch<CurrentUserProfile>('/auth/me');
+}
+
+export function updateCurrentUserProfile(input: CurrentUserProfileInput) {
+  return apiFetch<CurrentUserProfile>('/auth/me', {
+    method: 'PUT',
+    body: JSON.stringify(input),
+  });
+}
+
+export function changeCurrentUserPassword(input: ChangePasswordInput) {
+  return apiFetch<{ success: true }>('/auth/change-password', {
+    method: 'PUT',
+    body: JSON.stringify(input),
+  });
 }
 
 export function createEmployee(input: EmployeeInput) {

@@ -52,11 +52,14 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
       PORT: 4370
+      LOG_DIR: ${LOG_DIR:-/home/reloj/log}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:4200}
       ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
     ports:
       - '${BACKEND_PORT:-4370}:4370'
+    volumes:
+      - backend_logs:/home/reloj/log
     networks:
       - starnet
 
@@ -79,6 +82,7 @@ services:
 
 volumes:
   postgres_data:
+  backend_logs:
 
 networks:
   starnet:

@@ -32,6 +32,7 @@ export async function createEmployeeAction(input: EmployeeInput): Promise<Action
   const nombre = cleanText(input.nombre);
   const apellido = cleanText(input.apellido);
   const telefono = cleanText(input.telefono);
+  const email = cleanText(input.email);
 
   if (!id || !nombre || !apellido) {
     return { error: 'Completá DNI, nombre y apellido.' };
@@ -43,6 +44,7 @@ export async function createEmployeeAction(input: EmployeeInput): Promise<Action
       nombre,
       apellido,
       telefono: telefono || null,
+      email: email || null,
     });
     revalidateEmployeeViews();
     return { ok: true };
@@ -59,6 +61,7 @@ export async function updateEmployeeAction(
   const nombre = cleanText(input.nombre);
   const apellido = cleanText(input.apellido);
   const telefono = cleanText(input.telefono);
+  const email = cleanText(input.email);
 
   if (!cleanId || !nombre || !apellido) {
     return { error: 'Completá DNI, nombre y apellido.' };
@@ -69,6 +72,7 @@ export async function updateEmployeeAction(
       nombre,
       apellido,
       telefono: telefono || null,
+      email: email || null,
     });
     revalidateEmployeeViews();
     return { ok: true };

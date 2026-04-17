@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Between, Repository } from 'typeorm';
+import { Between, In, Repository } from 'typeorm';
 import { AttendanceRecord } from './attendance.entity';
 import { Employee } from '../employees/employee.entity';
 
@@ -14,9 +14,37 @@ export class AttendanceService {
   constructor(
     @InjectRepository(AttendanceRecord)
     private readonly repo: Repository<AttendanceRecord>,
+    @InjectRepository(Employee)
+    private readonly employeesRepo: Repository<Employee>,
   ) {}
 
   async saveRecords(records: Partial<AttendanceRecord>[]): Promise<void> {
+    const userIds = [...new Set(records.map((record) => record.userId).filter(Boolean))];
+
+    if (userIds.length > 0) {
+      const existingEmployees = await this.employeesRepo.findBy({ id: In(userIds) });
+      const existingIds = new Set(existingEmployees.map((employee) => employee.id));
+      const missingIds = userIds.filter((userId) => !existingIds.has(userId));
+
+      if (missingIds.length > 0) {
+        await this.employeesRepo
+          .createQueryBuilder()
+          .insert()
+          .into(Employee)
+          .values(
+            missingIds.map((id) => ({
+              id,
+              nombre: '',
+              apellido: '',
+              telefono: null,
+              email: null,
+            })),
+          )
+          .orIgnore()
+          .execute();
+      }
+    }
+
     for (const record of records) {
       const exists = await this.repo.findOne({
         where: {

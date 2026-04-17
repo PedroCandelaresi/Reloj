@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { AttendanceService } from '../attendance/attendance.service';
 import { DevicesService } from '../devices/devices.service';
+import { logAttendance } from '../logging/file-log.util';
 
 @Injectable()
 export class AdmsService {
@@ -33,7 +34,23 @@ export class AdmsService {
     ].join('\n');
   }
 
-  async handlePush(serialNumber: string, table: string, body: string): Promise<string> {
+  async handlePush(
+    serialNumber: string,
+    table: string,
+    body: string,
+    ipAddress: string,
+    method: string,
+    path: string,
+  ): Promise<string> {
+    logAttendance({
+      ipAddress,
+      serialNumber,
+      table,
+      method,
+      path,
+      body,
+    });
+
     if (table !== 'ATTLOG') return 'OK';
 
     const lines = body.trim().split('\n').filter(Boolean);
