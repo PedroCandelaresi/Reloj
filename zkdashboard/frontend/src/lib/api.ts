@@ -117,8 +117,31 @@ export interface AttendanceUserOption {
 export interface Device {
   id: number;
   serialNumber: string;
-  ipAddress: string;
+  ipAddress: string | null;
   lastSeen: string;
+  isActive: boolean;
+}
+
+export interface DeviceCommand {
+  id: number;
+  deviceId: number;
+  commandType: string;
+  command: string;
+  status: string;
+  requestedBy: string | null;
+  requestedAt: string;
+  sentAt: string | null;
+  acknowledgedAt: string | null;
+  responsePayload: string | null;
+  error: string | null;
+}
+
+export interface DeviceForceSyncResult {
+  ok: true;
+  duplicate: boolean;
+  message: string;
+  device: Device;
+  command: DeviceCommand;
 }
 
 export interface Stats {
@@ -186,7 +209,13 @@ export function getRecent() {
 }
 
 export function getDevices() {
-  return apiFetch<Device[]>('/attendance/devices');
+  return apiFetch<Device[]>('/devices');
+}
+
+export function requestDeviceForceSync(deviceId: number) {
+  return apiFetch<DeviceForceSyncResult>(`/devices/${deviceId}/force-sync`, {
+    method: 'POST',
+  });
 }
 
 export function getDistinctUsers() {

@@ -1,8 +1,10 @@
 import { Navbar } from '@/components/Navbar';
+import { RecordsSyncControls } from '@/components/RecordsSyncControls';
 import { StatusBadge } from '@/components/StatusBadge';
 import {
   formatAttendanceUser,
   formatAttendanceUserOption,
+  getDevices,
   getDistinctUsers,
   getRecords,
   VERIFY_LABELS,
@@ -40,9 +42,10 @@ export default async function RecordsPage({ searchParams }: PageProps) {
   const dateFrom = sp.dateFrom ?? '';
   const dateTo   = sp.dateTo   ?? '';
 
-  const [result, userOptions] = await Promise.all([
+  const [result, userOptions, devices] = await Promise.all([
     getRecords({ page, userId, dateFrom, dateTo }),
     getDistinctUsers(),
+    getDevices(),
   ]);
 
   const filterBase = { userId, dateFrom, dateTo };
@@ -84,6 +87,8 @@ export default async function RecordsPage({ searchParams }: PageProps) {
             </a>
           </div>
         </div>
+
+        <RecordsSyncControls devices={devices} />
 
         {/* Filtros */}
         <form

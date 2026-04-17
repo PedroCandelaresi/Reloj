@@ -15,7 +15,7 @@ export class AdmsController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
-    const ip = req.ip || req.socket.remoteAddress || '0.0.0.0';
+    const ip = getClientIp(req);
     const body = await this.adms.handleInit(sn, ip);
     res.type('text/plain').send(body);
   }
@@ -41,14 +41,21 @@ export class AdmsController {
     @Req() req: Request,
     @Res() res: Response,
   ) {
-    const ip = req.ip || req.socket.remoteAddress;
+    const ip = getClientIp(req);
     const result = await this.adms.handleHeartbeat(sn, ip);
     res.type('text/plain').send(result);
   }
 
   // El reloj confirma la ejecución de un comando
   @Post('devicecmd')
-  async cmdResult(@Res() res: Response) {
+  async cmdResult(
+    @Query('SN') sn: string,
+    @Query() query: Record<string, unknown>,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const raw = typeof req.body === 'string' ? req.body : '';
+    await this.adms.handleCommandResult(sn, raw, query);
     res.type('text/plain').send('OK');
   }
 }

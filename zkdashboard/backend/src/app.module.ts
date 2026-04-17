@@ -8,6 +8,7 @@ import { DevicesModule } from './devices/devices.module';
 import { UsersModule } from './users/users.module';
 import { AttendanceRecord } from './attendance/attendance.entity';
 import { Device } from './devices/device.entity';
+import { DeviceCommand } from './devices/device-command.entity';
 import { AdminUser } from './users/admin-user.entity';
 import { Employee } from './employees/employee.entity';
 import { EmployeesModule } from './employees/employees.module';
@@ -24,7 +25,7 @@ import { EmployeesModule } from './employees/employees.module';
         username: config.get('DB_USERNAME', 'zkuser'),
         password: config.get('DB_PASSWORD', 'zkpassword'),
         database: config.get('DB_NAME', 'zkdashboard'),
-        entities: [AttendanceRecord, Device, AdminUser, Employee],
+        entities: [AttendanceRecord, Device, DeviceCommand, AdminUser, Employee],
         synchronize: true, // solo para desarrollo; en producción usar migraciones
       }),
       inject: [ConfigService],

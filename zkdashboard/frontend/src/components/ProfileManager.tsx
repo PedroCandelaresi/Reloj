@@ -1,14 +1,12 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import type { ChangeEvent, FormEvent, InputHTMLAttributes } from 'react';
 import type { CurrentUserProfile } from '@/lib/api';
 import type { ActionResult } from '@/app/(protected)/profile/actions';
-import {
-  changePasswordAction,
-  updateProfileAction,
-} from '@/app/(protected)/profile/actions';
+import { updateProfileAction } from '@/app/(protected)/profile/actions';
 
 type ProfileFormValues = {
   nombre: string;
@@ -16,12 +14,6 @@ type ProfileFormValues = {
   dni: string;
   telefono: string;
   email: string;
-};
-
-type PasswordFormValues = {
-  currentPassword: string;
-  newPassword: string;
-  confirmPassword: string;
 };
 
 type BannerState =
@@ -37,9 +29,7 @@ function formatDisplayName(profile: CurrentUserProfile) {
 export function ProfileManager({ profile }: { profile: CurrentUserProfile }) {
   const router = useRouter();
   const [isProfilePending, startProfileTransition] = useTransition();
-  const [isPasswordPending, startPasswordTransition] = useTransition();
   const [profileBanner, setProfileBanner] = useState<BannerState>(null);
-  const [passwordBanner, setPasswordBanner] = useState<BannerState>(null);
   const [profileForm, setProfileForm] = useState<ProfileFormValues>({
     nombre: profile.nombre ?? '',
     apellido: profile.apellido ?? '',
@@ -47,20 +37,10 @@ export function ProfileManager({ profile }: { profile: CurrentUserProfile }) {
     telefono: profile.telefono ?? '',
     email: profile.email ?? '',
   });
-  const [passwordForm, setPasswordForm] = useState<PasswordFormValues>({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-  });
 
   const handleProfileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
     setProfileForm((current) => ({ ...current, [name]: value }));
-  };
-
-  const handlePasswordChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = event.target;
-    setPasswordForm((current) => ({ ...current, [name]: value }));
   };
 
   const handleProfileSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -86,39 +66,6 @@ export function ProfileManager({ profile }: { profile: CurrentUserProfile }) {
         })
         .catch(() => {
           setProfileBanner({ type: 'error', text: 'No se pudo actualizar el perfil.' });
-        });
-    });
-  };
-
-  const handlePasswordSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setPasswordBanner(null);
-
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      setPasswordBanner({ type: 'error', text: 'La confirmación no coincide con la nueva contraseña.' });
-      return;
-    }
-
-    startPasswordTransition(() => {
-      void changePasswordAction({
-        currentPassword: passwordForm.currentPassword,
-        newPassword: passwordForm.newPassword,
-      })
-        .then((result: ActionResult) => {
-          if (result.error) {
-            setPasswordBanner({ type: 'error', text: result.error });
-            return;
-          }
-
-          setPasswordForm({
-            currentPassword: '',
-            newPassword: '',
-            confirmPassword: '',
-          });
-          setPasswordBanner({ type: 'success', text: 'Contraseña actualizada correctamente.' });
-        })
-        .catch(() => {
-          setPasswordBanner({ type: 'error', text: 'No se pudo cambiar la contraseña.' });
         });
     });
   };
@@ -201,54 +148,27 @@ export function ProfileManager({ profile }: { profile: CurrentUserProfile }) {
         </form>
       </section>
 
-      <section id="password" className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+      <section className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
         <div className="px-6 py-5 border-b border-gray-100">
-          <h2 className="text-xl font-semibold text-gray-900">Cambiar contraseña</h2>
+          <h2 className="text-xl font-semibold text-gray-900">Seguridad</h2>
           <p className="text-sm text-gray-500 mt-1">
-            Usá tu contraseña actual para definir una nueva credencial de acceso.
+            El cambio de contraseña está disponible en una pantalla separada para mantener el perfil más ordenado.
           </p>
         </div>
-
-        <form onSubmit={handlePasswordSubmit} className="px-6 py-6 space-y-5">
-          {passwordBanner && <Banner {...passwordBanner} />}
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Field
-              label="Contraseña actual"
-              name="currentPassword"
-              type="password"
-              value={passwordForm.currentPassword}
-              onChange={handlePasswordChange}
-              autoComplete="current-password"
-            />
-            <Field
-              label="Nueva contraseña"
-              name="newPassword"
-              type="password"
-              value={passwordForm.newPassword}
-              onChange={handlePasswordChange}
-              autoComplete="new-password"
-            />
-            <Field
-              label="Confirmar nueva contraseña"
-              name="confirmPassword"
-              type="password"
-              value={passwordForm.confirmPassword}
-              onChange={handlePasswordChange}
-              autoComplete="new-password"
-            />
+        <div className="px-6 py-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-sm font-medium text-gray-800">Cambiar contraseña</p>
+            <p className="text-sm text-gray-500 mt-1">
+              Actualizá tus credenciales de acceso desde la sección exclusiva de seguridad.
+            </p>
           </div>
-
-          <div className="flex justify-end">
-            <button
-              type="submit"
-              disabled={isPasswordPending}
-              className="px-5 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-60 transition-colors"
-            >
-              {isPasswordPending ? 'Actualizando...' : 'Cambiar contraseña'}
-            </button>
-          </div>
-        </form>
+          <Link
+            href="/profile/password"
+            className="inline-flex items-center justify-center px-5 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors"
+          >
+            Ir a cambiar contraseña
+          </Link>
+        </div>
       </section>
     </div>
   );

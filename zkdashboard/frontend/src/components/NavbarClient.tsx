@@ -121,7 +121,7 @@ export function NavbarClient({ user }: { user?: CurrentUserProfile | null }) {
                 Mi Perfil
               </Link>
               <Link
-                href="/profile#password"
+                href="/profile/password"
                 onClick={() => setIsProfileMenuOpen(false)}
                 className="block px-4 py-2.5 text-sm hover:bg-emerald-50 transition-colors"
               >
@@ -165,7 +165,7 @@ export function NavbarClient({ user }: { user?: CurrentUserProfile | null }) {
               <Link href="/profile" className="text-emerald-100 hover:text-white text-sm block py-2" onClick={() => setIsOpen(false)}>
                 Mi Perfil
               </Link>
-              <Link href="/profile#password" className="text-emerald-100 hover:text-white text-sm block py-2" onClick={() => setIsOpen(false)}>
+              <Link href="/profile/password" className="text-emerald-100 hover:text-white text-sm block py-2" onClick={() => setIsOpen(false)}>
                 Cambiar contraseña
               </Link>
               <form action={logout}>

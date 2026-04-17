@@ -83,11 +83,20 @@ export class AdmsService {
       this.logger.log(`${records.length} registros guardados del dispositivo ${serialNumber}`);
     }
 
+    await this.devices.markAttendanceSyncFromPush(serialNumber, records.length, body);
+
     return 'OK';
   }
 
   async handleHeartbeat(serialNumber: string, ipAddress: string): Promise<string> {
-    await this.devices.upsert(serialNumber, ipAddress);
-    return 'OK';
+    return this.devices.getNextCommandForHeartbeat(serialNumber, ipAddress);
+  }
+
+  async handleCommandResult(
+    serialNumber: string | undefined,
+    rawPayload: string,
+    query: Record<string, unknown>,
+  ): Promise<void> {
+    await this.devices.markCommandResult(serialNumber, rawPayload, query);
   }
 }

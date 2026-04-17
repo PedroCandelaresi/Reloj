@@ -11,6 +11,9 @@ export class Device {
   @Column({ name: 'ip_address', nullable: true })
   ipAddress: string;
 
+  @Column({ name: 'is_active', default: true })
+  isActive: boolean;
+
   @UpdateDateColumn({ name: 'last_seen' })
   lastSeen: Date;
 }
