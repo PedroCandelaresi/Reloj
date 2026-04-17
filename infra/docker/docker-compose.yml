@@ -59,7 +59,7 @@ services:
     ports:
       - '${BACKEND_PORT:-4370}:4370'
     volumes:
-      - backend_logs:/home/reloj/log
+      - /home/reloj/log:/home/reloj/log
     networks:
       - starnet
 
