@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import type { ChangeEvent, FormEvent, InputHTMLAttributes } from 'react';
@@ -71,106 +70,81 @@ export function ProfileManager({ profile }: { profile: CurrentUserProfile }) {
   };
 
   return (
-    <div className="space-y-6">
-      <section className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
-        <div className="px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-emerald-50 via-white to-emerald-50">
-          <div className="flex items-center gap-4">
-            <div className="h-14 w-14 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-md">
-              <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7">
-                <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z" stroke="currentColor" strokeWidth="1.8" />
-                <path d="M5 20a7 7 0 0 1 14 0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-              </svg>
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Mi Perfil</h1>
-              <p className="text-sm text-gray-500 mt-1">
-                {formatDisplayName(profile)} · usuario {profile.username}
-              </p>
-            </div>
+    <section className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+      <div className="px-6 py-5 border-b border-gray-100 bg-gradient-to-r from-emerald-50 via-white to-emerald-50">
+        <div className="flex items-center gap-4">
+          <div className="h-14 w-14 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-md">
+            <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7">
+              <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z" stroke="currentColor" strokeWidth="1.8" />
+              <path d="M5 20a7 7 0 0 1 14 0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
           </div>
-        </div>
-
-        <div className="px-6 py-6 grid grid-cols-1 md:grid-cols-3 gap-4 border-b border-gray-100 bg-gray-50/60">
-          <InfoItem label="Usuario" value={profile.username} />
-          <InfoItem label="Alta" value={new Date(profile.createdAt).toLocaleString('es-AR')} />
-          <InfoItem label="DNI actual" value={profile.dni || '—'} />
-        </div>
-
-        <form onSubmit={handleProfileSubmit} className="px-6 py-6 space-y-5">
-          {profileBanner && <Banner {...profileBanner} />}
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Field
-              label="Apellido"
-              name="apellido"
-              value={profileForm.apellido}
-              onChange={handleProfileChange}
-            />
-            <Field
-              label="Nombre"
-              name="nombre"
-              value={profileForm.nombre}
-              onChange={handleProfileChange}
-            />
-            <Field
-              label="DNI"
-              name="dni"
-              value={profileForm.dni}
-              onChange={handleProfileChange}
-              inputMode="numeric"
-            />
-            <Field
-              label="Teléfono"
-              name="telefono"
-              value={profileForm.telefono}
-              onChange={handleProfileChange}
-            />
-            <div className="md:col-span-2">
-              <Field
-                label="Email"
-                name="email"
-                type="email"
-                value={profileForm.email}
-                onChange={handleProfileChange}
-              />
-            </div>
-          </div>
-
-          <div className="flex justify-end">
-            <button
-              type="submit"
-              disabled={isProfilePending}
-              className="px-5 py-2.5 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-60 transition-colors"
-            >
-              {isProfilePending ? 'Guardando...' : 'Guardar perfil'}
-            </button>
-          </div>
-        </form>
-      </section>
-
-      <section className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
-        <div className="px-6 py-5 border-b border-gray-100">
-          <h2 className="text-xl font-semibold text-gray-900">Seguridad</h2>
-          <p className="text-sm text-gray-500 mt-1">
-            El cambio de contraseña está disponible en una pantalla separada para mantener el perfil más ordenado.
-          </p>
-        </div>
-        <div className="px-6 py-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <p className="text-sm font-medium text-gray-800">Cambiar contraseña</p>
+            <h1 className="text-2xl font-bold text-gray-900">Mi Perfil</h1>
             <p className="text-sm text-gray-500 mt-1">
-              Actualizá tus credenciales de acceso desde la sección exclusiva de seguridad.
+              {formatDisplayName(profile)} · usuario {profile.username}
             </p>
           </div>
-          <Link
-            href="/profile/password"
-            className="inline-flex items-center justify-center px-5 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors"
-          >
-            Ir a cambiar contraseña
-          </Link>
         </div>
-      </section>
-    </div>
+      </div>
+
+      <div className="px-6 py-6 grid grid-cols-1 md:grid-cols-3 gap-4 border-b border-gray-100 bg-gray-50/60">
+        <InfoItem label="Usuario" value={profile.username} />
+        <InfoItem label="Alta" value={new Date(profile.createdAt).toLocaleString('es-AR')} />
+        <InfoItem label="DNI actual" value={profile.dni || '—'} />
+      </div>
+
+      <form onSubmit={handleProfileSubmit} className="px-6 py-6 space-y-5">
+        {profileBanner && <Banner {...profileBanner} />}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Field
+            label="Apellido"
+            name="apellido"
+            value={profileForm.apellido}
+            onChange={handleProfileChange}
+          />
+          <Field
+            label="Nombre"
+            name="nombre"
+            value={profileForm.nombre}
+            onChange={handleProfileChange}
+          />
+          <Field
+            label="DNI"
+            name="dni"
+            value={profileForm.dni}
+            onChange={handleProfileChange}
+            inputMode="numeric"
+          />
+          <Field
+            label="Teléfono"
+            name="telefono"
+            value={profileForm.telefono}
+            onChange={handleProfileChange}
+          />
+          <div className="md:col-span-2">
+            <Field
+              label="Email"
+              name="email"
+              type="email"
+              value={profileForm.email}
+              onChange={handleProfileChange}
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-end">
+          <button
+            type="submit"
+            disabled={isProfilePending}
+            className="px-5 py-2.5 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-60 transition-colors"
+          >
+            {isProfilePending ? 'Guardando...' : 'Guardar perfil'}
+          </button>
+        </div>
+      </form>
+    </section>
   );
 }
 
