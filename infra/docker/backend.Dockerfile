@@ -36,4 +36,4 @@ USER app
 
 EXPOSE 4370
 
-CMD ["node", "dist/main.js"]
+CMD ["npm", "run", "start:prod"]

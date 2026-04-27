@@ -1,4 +1,5 @@
 import { cookies } from 'next/headers';
+import type { CompanyRole } from './auth-token';
 
 const API = process.env.API_URL || 'http://localhost:4370';
 
@@ -56,6 +57,7 @@ export interface EmployeeSummary {
 export interface Employee extends EmployeeSummary {
   telefono: string | null;
   email: string | null;
+  companyId: string | null;
   createdAt: string;
 }
 
@@ -65,6 +67,7 @@ export interface EmployeeInput {
   apellido: string;
   telefono?: string | null;
   email?: string | null;
+  companyId?: string | null;
 }
 
 export interface EmployeeUpdateInput {
@@ -72,6 +75,23 @@ export interface EmployeeUpdateInput {
   apellido?: string;
   telefono?: string | null;
   email?: string | null;
+  companyId?: string | null;
+}
+
+export interface CompanySummary {
+  id: string;
+  cuit: string;
+  razonSocial: string;
+  nombreFantasia: string | null;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CurrentUserMembership {
+  companyId: string;
+  role: CompanyRole;
+  company: CompanySummary | null;
 }
 
 export interface CurrentUserProfile {
@@ -82,6 +102,11 @@ export interface CurrentUserProfile {
   dni: string | null;
   telefono: string | null;
   email: string | null;
+  isSuperAdmin: boolean;
+  employeeId: string | null;
+  companyId: string | null;
+  companyRole: CompanyRole | null;
+  memberships: CurrentUserMembership[];
   createdAt: string;
 }
 
@@ -101,7 +126,9 @@ export interface ChangePasswordInput {
 export interface AttendanceRecord {
   id: number;
   deviceSn: string;
+  deviceId: number | null;
   userId: string;
+  companyId: string | null;
   timestamp: string;
   status: number;
   verifyType: number;
@@ -116,10 +143,24 @@ export interface AttendanceUserOption {
 
 export interface Device {
   id: number;
+  name: string;
   serialNumber: string;
   ipAddress: string | null;
+  alias: string | null;
+  company: CompanySummary | null;
+  companyId: string | null;
+  assignedAt: string | null;
+  firstSeen: string;
   lastSeen: string;
+  online: boolean;
+  status: 'online' | 'offline';
+  lastSyncAt: string | null;
+  pendingCommandsCount: number;
   isActive: boolean;
+}
+
+export interface AdminDevice extends Device {
+  company: CompanySummary | null;
 }
 
 export interface DeviceCommand {
@@ -148,6 +189,66 @@ export interface Stats {
   totalToday: number;
   totalWeek: number;
   totalAll: number;
+}
+
+export interface DashboardSummary {
+  presentToday: number;
+  recordsToday: number;
+  devicesOnline: number;
+  devicesOffline: number;
+  lastSyncAt: string | null;
+  technicalNews: string[];
+}
+
+export interface CompanyInput {
+  cuit: string;
+  razonSocial: string;
+  nombreFantasia?: string | null;
+  isActive?: boolean;
+}
+
+export interface CompanyUpdateInput {
+  cuit?: string;
+  razonSocial?: string;
+  nombreFantasia?: string | null;
+  isActive?: boolean;
+}
+
+export interface AssignAdminDeviceCompanyInput {
+  companyId: string;
+  alias?: string | null;
+}
+
+export interface CompanyUser {
+  id: string;
+  companyId: string;
+  role: CompanyRole;
+  createdAt: string;
+  updatedAt: string;
+  user: {
+    id: number;
+    username: string;
+    isSuperAdmin: boolean;
+    employeeId: string | null;
+  } | null;
+  employee: (EmployeeSummary & {
+    telefono: string | null;
+    email: string | null;
+    companyId: string | null;
+  }) | null;
+}
+
+export interface CompanyUserInput {
+  employeeId: string;
+  username?: string;
+  password?: string;
+  role: CompanyRole;
+}
+
+export interface CompanyUserUpdateInput {
+  username?: string;
+  password?: string;
+  role?: CompanyRole;
 }
 
 export interface PaginatedResult {
@@ -204,6 +305,10 @@ export function getStats() {
   return apiFetch<Stats>('/attendance/stats');
 }
 
+export function getDashboardSummary() {
+  return apiFetch<DashboardSummary>('/attendance/dashboard');
+}
+
 export function getRecent() {
   return apiFetch<AttendanceRecord[]>('/attendance/recent');
 }
@@ -212,9 +317,85 @@ export function getDevices() {
   return apiFetch<Device[]>('/devices');
 }
 
+export function getAdminCompanies() {
+  return apiFetch<CompanySummary[]>('/admin/companies');
+}
+
+export function createAdminCompany(input: CompanyInput) {
+  return apiFetch<CompanySummary>('/admin/companies', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export function updateAdminCompany(id: string, input: CompanyUpdateInput) {
+  return apiFetch<CompanySummary>(`/admin/companies/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(input),
+  });
+}
+
+export function deleteAdminCompany(id: string) {
+  return apiFetch<{ success: true }>(`/admin/companies/${id}`, {
+    method: 'DELETE',
+  });
+}
+
+export function getAdminDevices() {
+  return apiFetch<AdminDevice[]>('/admin/devices');
+}
+
+export function getAdminUnassignedDevices() {
+  return apiFetch<AdminDevice[]>('/admin/devices/unassigned');
+}
+
+export function assignAdminDeviceCompany(
+  deviceId: number,
+  input: AssignAdminDeviceCompanyInput,
+) {
+  return apiFetch<AdminDevice>(`/admin/devices/${deviceId}/company`, {
+    method: 'PUT',
+    body: JSON.stringify(input),
+  });
+}
+
+export function unassignAdminDeviceCompany(deviceId: number) {
+  return apiFetch<AdminDevice>(`/admin/devices/${deviceId}/company`, {
+    method: 'DELETE',
+  });
+}
+
 export function requestDeviceForceSync(deviceId: number) {
   return apiFetch<DeviceForceSyncResult>(`/devices/${deviceId}/force-sync`, {
     method: 'POST',
+  });
+}
+
+export function getCompanyUsers() {
+  return apiFetch<CompanyUser[]>('/company/users');
+}
+
+export function getCompanyEligibleEmployees() {
+  return apiFetch<Employee[]>('/company/eligible-employees');
+}
+
+export function createCompanyUser(input: CompanyUserInput) {
+  return apiFetch<CompanyUser>('/company/users', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export function updateCompanyUser(userId: number, input: CompanyUserUpdateInput) {
+  return apiFetch<CompanyUser>(`/company/users/${userId}`, {
+    method: 'PUT',
+    body: JSON.stringify(input),
+  });
+}
+
+export function deleteCompanyUser(userId: number) {
+  return apiFetch<{ success: true }>(`/company/users/${userId}`, {
+    method: 'DELETE',
   });
 }
 

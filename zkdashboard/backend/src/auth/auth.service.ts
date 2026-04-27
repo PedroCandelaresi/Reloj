@@ -17,7 +17,26 @@ export class AuthService {
     const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) throw new UnauthorizedException('Credenciales inválidas');
 
-    const payload = { sub: user.id, username: user.username };
+    const authUser = this.users.buildAuthenticatedUser(user);
+    if (!authUser.isSuperAdmin && !authUser.companyId) {
+      throw new UnauthorizedException(
+        'El usuario no tiene una empresa activa asignada.',
+      );
+    }
+
+    const payload = {
+      sub: authUser.id,
+      username: authUser.username,
+      isSuperAdmin: authUser.isSuperAdmin,
+      employeeId: authUser.employeeId,
+      companyId: authUser.companyId,
+      companyRole: authUser.companyRole,
+      memberships: authUser.memberships.map((membership) => ({
+        companyId: membership.companyId,
+        role: membership.role,
+      })),
+    };
+
     return { access_token: this.jwt.sign(payload) };
   }
 }

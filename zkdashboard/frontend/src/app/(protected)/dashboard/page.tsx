@@ -1,6 +1,15 @@
 import { Navbar } from '@/components/Navbar';
+import { DeviceStatusPanel } from '@/components/DeviceStatusPanel';
 import { StatusBadge } from '@/components/StatusBadge';
-import { formatAttendanceUser, getDevices, getRecent, getStats, VERIFY_LABELS } from '@/lib/api';
+import {
+  formatAttendanceUser,
+  getDashboardSummary,
+  getDevices,
+  getRecent,
+  getStats,
+  VERIFY_LABELS,
+} from '@/lib/api';
+import { requireCurrentSession } from '@/lib/session';
 import Link from 'next/link';
 
 function formatDate(iso: string) {
@@ -16,20 +25,74 @@ function formatLastSeen(iso: string) {
   });
 }
 
+function formatOptionalDate(iso?: string | null) {
+  if (!iso) return '—';
+  return formatLastSeen(iso);
+}
+
 export default async function DashboardPage() {
-  const [stats, recent, devices] = await Promise.all([
+  const user = await requireCurrentSession();
+  const [stats, summary, recent, devices] = await Promise.all([
     getStats(),
+    getDashboardSummary(),
     getRecent(),
     getDevices(),
   ]);
+  const activeCompany =
+    user.memberships.find((membership) => membership.companyId === user.companyId)?.company;
+  const activeCompanyName =
+    activeCompany?.nombreFantasia || activeCompany?.razonSocial || 'Tu empresa';
 
   return (
       <>
-        <Navbar />
+        <Navbar user={user} />
       <main className="max-w-7xl mx-auto px-4 py-8 pt-32">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-white drop-shadow-md">Panel de Control</h1>
-          <p className="text-emerald-200/70 text-sm mt-1">Resumen de asistencia del reloj MB360</p>
+          <p className="text-emerald-200/70 text-sm mt-1">
+            {user.isSuperAdmin
+              ? 'Vista global del sistema y accesos administrativos básicos.'
+              : `Resumen de asistencia de ${activeCompanyName}.`}
+          </p>
+        </div>
+
+        {user.isSuperAdmin && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+            <Link
+              href="/admin/companies"
+              className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg p-5 border border-gray-200 hover:border-emerald-300 transition-colors"
+            >
+              <p className="text-sm font-semibold text-gray-900">Gestión de empresas</p>
+              <p className="text-sm text-gray-500 mt-2">
+                Alta, edición y estado general de las empresas registradas.
+              </p>
+            </Link>
+            <Link
+              href="/admin/devices"
+              className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg p-5 border border-gray-200 hover:border-emerald-300 transition-colors"
+            >
+              <p className="text-sm font-semibold text-gray-900">Dispositivos globales</p>
+              <p className="text-sm text-gray-500 mt-2">
+                Revisá relojes detectados, no asignados y su vínculo con cada empresa.
+              </p>
+            </Link>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-5 mb-8">
+          <StatCard label="Presentes hoy" value={summary.presentToday} color="text-emerald-600" />
+          <StatCard label="Fichadas hoy" value={summary.recordsToday} color="text-blue-600" />
+          <StatCard label="Online" value={summary.devicesOnline} color="text-green-600" />
+          <StatCard label="Offline" value={summary.devicesOffline} color="text-slate-600" />
+          <InfoCard label="Última sync" value={formatOptionalDate(summary.lastSyncAt)} />
+          <div className="bg-white rounded-xl shadow-lg p-5 border border-gray-200">
+            <p className="text-sm text-gray-500 mb-2">Novedades técnicas</p>
+            {summary.technicalNews.map((item) => (
+              <p key={item} className="text-xs text-gray-600 leading-relaxed">
+                {item}
+              </p>
+            ))}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8">
@@ -44,6 +107,17 @@ export default async function DashboardPage() {
               </p>
             ))}
           </div>
+        </div>
+
+        <div className="mb-8">
+          <DeviceStatusPanel
+            devices={devices}
+            canSync={
+              user.isSuperAdmin ||
+              user.companyRole === 'company_admin' ||
+              user.companyRole === 'operator'
+            }
+          />
         </div>
 
         <div className="bg-white rounded-xl shadow-lg border border-gray-200">
@@ -107,6 +181,15 @@ function StatCard({ label, value, color }: { label: string; value: number; color
     <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
       <p className="text-sm text-gray-500 mb-1">{label}</p>
       <p className={`text-3xl font-bold ${color}`}>{value}</p>
+    </div>
+  );
+}
+
+function InfoCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="bg-white rounded-xl shadow-lg p-5 border border-gray-200">
+      <p className="text-sm text-gray-500 mb-2">{label}</p>
+      <p className="text-sm font-semibold text-gray-900">{value}</p>
     </div>
   );
 }

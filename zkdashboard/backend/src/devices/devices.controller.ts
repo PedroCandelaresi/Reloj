@@ -4,11 +4,12 @@ import {
   Param,
   ParseIntPipe,
   Post,
-  Req,
   UseGuards,
 } from '@nestjs/common';
-import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/auth.guard';
+import { CurrentUser } from '../auth/current-user.decorator';
+import { AuthenticatedUser } from '../auth/authenticated-user.interface';
+import { CompanyOperatorGuard } from '../auth/guards/company-operator.guard';
 import { DevicesService } from './devices.service';
 
 @Controller('devices')
@@ -17,16 +18,17 @@ export class DevicesController {
   constructor(private readonly devices: DevicesService) {}
 
   @Get()
-  findAll() {
-    return this.devices.findAll();
+  findAll(@CurrentUser() user: AuthenticatedUser) {
+    return this.devices.findAllForUser(user);
   }
 
   @Post(':id/force-sync')
+  @UseGuards(CompanyOperatorGuard)
   async forceSync(
     @Param('id', ParseIntPipe) id: number,
-    @Req() req: Request & { user: { username?: string } },
+    @CurrentUser() user: AuthenticatedUser,
   ) {
-    const result = await this.devices.enqueueAttendanceSync(id, req.user?.username);
+    const result = await this.devices.enqueueAttendanceSync(id, user.username, user);
 
     return {
       ok: true,

@@ -19,7 +19,13 @@ function formatLastSeen(iso: string) {
   });
 }
 
-export function RecordsSyncControls({ devices }: { devices: Device[] }) {
+export function RecordsSyncControls({
+  devices,
+  canSync,
+}: {
+  devices: Device[];
+  canSync: boolean;
+}) {
   const activeDevices = devices.filter((device) => device.isActive !== false);
   const [selectedDeviceId, setSelectedDeviceId] = useState<string>(
     devices[0] ? String(devices[0].id) : '',
@@ -106,15 +112,18 @@ export function RecordsSyncControls({ devices }: { devices: Device[] }) {
                   value={device.id}
                   disabled={device.isActive === false}
                 >
-                  {device.serialNumber}
+                  {device.name || device.serialNumber}
+                  {' · '}
+                  {device.online ? 'online' : 'offline'}
                   {device.isActive === false ? ' · inactivo' : ''}
                 </option>
               ))}
             </select>
             {selectedDevice && (
               <p className="text-xs text-gray-500 mt-1">
-                {selectedDevice.ipAddress || 'sin IP'} · Último contacto{' '}
-                {formatLastSeen(selectedDevice.lastSeen)}
+                {selectedDevice.serialNumber} · {selectedDevice.ipAddress || 'sin IP'} · Último contacto{' '}
+                {formatLastSeen(selectedDevice.lastSeen)} · Pendientes{' '}
+                {selectedDevice.pendingCommandsCount}
               </p>
             )}
           </div>
@@ -122,14 +131,24 @@ export function RecordsSyncControls({ devices }: { devices: Device[] }) {
           <button
             type="button"
             onClick={handleSync}
-            disabled={isPending || !selectedDevice || selectedDevice.isActive === false}
+            disabled={isPending || !canSync || !selectedDevice || selectedDevice.isActive === false}
             className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <SyncIcon />
-            {isPending ? 'Solicitando...' : 'Actualizar desde reloj'}
+            {!canSync
+              ? 'Sin permisos para sincronizar'
+              : isPending
+                ? 'Solicitando...'
+                : 'Actualizar desde reloj'}
           </button>
         </div>
       </div>
+
+      {!canSync && (
+        <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+          Tu rol actual permite consultar registros, pero no solicitar sincronizaciones manuales.
+        </div>
+      )}
 
       {banner && (
         <div

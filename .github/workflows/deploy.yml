@@ -14,17 +14,55 @@ jobs:
   deploy:
     name: Build & run stack
     runs-on: [self-hosted, linux, X64, reloj]
+    if: github.ref == 'refs/heads/main'
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Preparar .env si no existe
+      - name: Preparar .env
         working-directory: infra/docker
+        env:
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_SYNCHRONIZE: ${{ secrets.DB_SYNCHRONIZE }}
+          DB_LOGGING: ${{ secrets.DB_LOGGING }}
+          BACKEND_PORT: ${{ secrets.BACKEND_PORT }}
+          LOG_DIR: ${{ secrets.LOG_DIR }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          JWT_EXPIRES_IN: ${{ secrets.JWT_EXPIRES_IN }}
+          FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
+          ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          FRONTEND_PORT: ${{ secrets.FRONTEND_PORT }}
+          INTERNAL_API_URL: ${{ secrets.INTERNAL_API_URL }}
         run: |
-          if [ ! -f .env ]; then
-            echo "Generando .env desde .env.example (usar secrets en producción)"
+          if [ -n "${DB_USERNAME}${DB_PASSWORD}${DB_NAME}${JWT_SECRET}" ]; then
+            {
+              echo "DB_USERNAME=${DB_USERNAME:-zkuser}"
+              echo "DB_PASSWORD=${DB_PASSWORD:-zkpassword}"
+              echo "DB_NAME=${DB_NAME:-zkdashboard}"
+              echo "DB_PORT=${DB_PORT:-5432}"
+              echo "DB_SYNCHRONIZE=${DB_SYNCHRONIZE:-false}"
+              echo "DB_LOGGING=${DB_LOGGING:-false}"
+              echo "BACKEND_PORT=${BACKEND_PORT:-4370}"
+              echo "LOG_DIR=${LOG_DIR:-/home/reloj/log}"
+              echo "JWT_SECRET=${JWT_SECRET}"
+              echo "JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}"
+              echo "FRONTEND_URL=${FRONTEND_URL:-http://localhost:4200}"
+              echo "ADMIN_USERNAME=${ADMIN_USERNAME:-admin}"
+              echo "ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}"
+              echo "FRONTEND_PORT=${FRONTEND_PORT:-4200}"
+              echo "INTERNAL_API_URL=${INTERNAL_API_URL:-http://backend:4370}"
+            } > .env
+            echo ".env generado desde GitHub Secrets"
+          elif [ ! -f .env ]; then
+            echo "No hay secrets configurados; generando .env desde .env.example"
             cp .env.example .env
+          else
+            echo "Usando .env existente en el runner"
           fi
 
       - name: Mostrar versión de Docker
@@ -35,6 +73,21 @@ jobs:
       - name: Build de imágenes
         working-directory: infra/docker
         run: docker compose build --pull
+
+      - name: Levantar Postgres
+        working-directory: infra/docker
+        run: docker compose up -d postgres
+
+      - name: Esperar Postgres healthy
+        run: |
+          until [ "$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{end}}' starnet-postgres 2>/dev/null)" = "healthy" ]; do
+            echo "Esperando a Postgres..."
+            sleep 2
+          done
+
+      - name: Ejecutar migraciones
+        working-directory: infra/docker
+        run: docker compose run --rm backend npm run migration:run:prod
 
       - name: Levantar stack
         working-directory: infra/docker

@@ -9,6 +9,7 @@ import {
   getRecords,
   VERIFY_LABELS,
 } from '@/lib/api';
+import { requireCurrentSession } from '@/lib/session';
 import Link from 'next/link';
 
 interface PageProps {
@@ -36,6 +37,7 @@ function buildQs(params: Record<string, string | undefined>) {
 }
 
 export default async function RecordsPage({ searchParams }: PageProps) {
+  const user = await requireCurrentSession();
   const sp      = await searchParams;
   const page     = Number(sp.page ?? 1);
   const userId   = sp.userId   ?? '';
@@ -59,7 +61,7 @@ export default async function RecordsPage({ searchParams }: PageProps) {
 
   return (
     <>
-      <Navbar />
+      <Navbar user={user} />
       <main className="max-w-7xl mx-auto px-4 py-8 pt-32">
 
         {/* Header */}
@@ -88,7 +90,14 @@ export default async function RecordsPage({ searchParams }: PageProps) {
           </div>
         </div>
 
-        <RecordsSyncControls devices={devices} />
+        <RecordsSyncControls
+          devices={devices}
+          canSync={
+            user.isSuperAdmin ||
+            user.companyRole === 'company_admin' ||
+            user.companyRole === 'operator'
+          }
+        />
 
         {/* Filtros */}
         <form

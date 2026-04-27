@@ -12,6 +12,8 @@ import { AttendanceService } from './attendance.service';
 import { ExportService } from './export.service';
 import { JwtAuthGuard } from '../auth/auth.guard';
 import { DevicesService } from '../devices/devices.service';
+import { CurrentUser } from '../auth/current-user.decorator';
+import { AuthenticatedUser } from '../auth/authenticated-user.interface';
 
 @Controller('attendance')
 @UseGuards(JwtAuthGuard)
@@ -23,37 +25,43 @@ export class AttendanceController {
   ) {}
 
   @Get('stats')
-  getStats() {
-    return this.attendance.getStats();
+  getStats(@CurrentUser() user: AuthenticatedUser) {
+    return this.attendance.getStats(user);
+  }
+
+  @Get('dashboard')
+  getDashboardSummary(@CurrentUser() user: AuthenticatedUser) {
+    return this.attendance.getDashboardSummary(user);
   }
 
   @Get('recent')
-  getRecent() {
-    return this.attendance.getRecent(20);
+  getRecent(@CurrentUser() user: AuthenticatedUser) {
+    return this.attendance.getRecent(user, 20);
   }
 
   @Get('users')
-  getUsers() {
-    return this.attendance.getDistinctUsers();
+  getUsers(@CurrentUser() user: AuthenticatedUser) {
+    return this.attendance.getDistinctUsers(user);
   }
 
   @Get('devices')
-  getDevices() {
-    return this.devices.findAll();
+  getDevices(@CurrentUser() user: AuthenticatedUser) {
+    return this.devices.findAllForUser(user);
   }
 
   @Get('export')
   async export(
     @Query('format') format: 'excel' | 'pdf' = 'excel',
-    @Query('userId') userId: string,
-    @Query('dateFrom') dateFrom: string,
-    @Query('dateTo') dateTo: string,
+    @Query('userId') userId: string | undefined,
+    @Query('dateFrom') dateFrom: string | undefined,
+    @Query('dateTo') dateTo: string | undefined,
+    @CurrentUser() user: AuthenticatedUser,
     @Res() res: Response,
   ) {
     const opts = { userId, dateFrom, dateTo };
 
     if (format === 'pdf') {
-      const buffer = await this.exports.exportPdf(opts);
+      const buffer = await this.exports.exportPdf(opts, user);
       res.set({
         'Content-Type': 'application/pdf',
         'Content-Disposition': 'attachment; filename="asistencia.pdf"',
@@ -61,7 +69,7 @@ export class AttendanceController {
       });
       res.send(buffer);
     } else {
-      const buffer = await this.exports.exportExcel(opts);
+      const buffer = await this.exports.exportExcel(opts, user);
       res.set({
         'Content-Type':
           'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -76,10 +84,11 @@ export class AttendanceController {
   findAll(
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
     @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit: number,
-    @Query('userId') userId?: string,
-    @Query('dateFrom') dateFrom?: string,
-    @Query('dateTo') dateTo?: string,
+    @Query('userId') userId: string | undefined,
+    @Query('dateFrom') dateFrom: string | undefined,
+    @Query('dateTo') dateTo: string | undefined,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.attendance.findAll({ page, limit, userId, dateFrom, dateTo });
+    return this.attendance.findAll({ user, page, limit, userId, dateFrom, dateTo });
   }
 }

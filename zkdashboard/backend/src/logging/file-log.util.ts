@@ -66,6 +66,23 @@ export function logAttendance(details: {
   writeLog('asistencias_reloj.log', `${header}\n${payload}\n---\n`);
 }
 
+export function logSecurity(details: {
+  event: string;
+  message: string;
+  ipAddress?: string;
+  method?: string;
+  path?: string;
+  serialNumber?: string | null;
+}) {
+  const line =
+    `[${new Date().toISOString()}] ` +
+    `event=${details.event} ip=${details.ipAddress || '-'} ` +
+    `method=${details.method || '-'} path="${details.path || '-'}" ` +
+    `sn=${details.serialNumber || '-'} message="${details.message}"\n`;
+
+  writeLog('security.log', line);
+}
+
 export function logError(details: {
   message: string;
   stack?: string;

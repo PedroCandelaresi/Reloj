@@ -18,6 +18,7 @@ import { AttendanceRecord } from './attendance/attendance.entity';
 import { Device } from './devices/device.entity';
 import { AdminUser } from './users/admin-user.entity';
 import { Employee } from './employees/employee.entity';
+import { buildDatabaseOptions } from './database/data-source';
 
 // ─── Empleados ficticios ───────────────────────────────────────────────────
 
@@ -88,21 +89,13 @@ function exitTime(base: Date): Date {
 
 // ─── DataSource ───────────────────────────────────────────────────────────
 
-const ds = new DataSource({
-  type: 'postgres',
-  host:     process.env.DB_HOST     || 'localhost',
-  port:     Number(process.env.DB_PORT) || 5432,
-  username: process.env.DB_USERNAME || 'zkuser',
-  password: process.env.DB_PASSWORD || 'zkpassword',
-  database: process.env.DB_NAME     || 'zkdashboard',
-  entities: [AttendanceRecord, Device, AdminUser, Employee],
-  synchronize: true,
-});
+const ds = new DataSource(buildDatabaseOptions(process.env));
 
 // ─── Seed ─────────────────────────────────────────────────────────────────
 
 async function seed() {
   await ds.initialize();
+  await ds.runMigrations();
   console.log('✓ Conectado a la base de datos');
 
   const deviceRepo = ds.getRepository(Device);
@@ -121,12 +114,14 @@ async function seed() {
 
   // 2. Admin inicial
   if ((await userRepo.count()) === 0) {
-    const hash = await bcrypt.hash(process.env.ADMIN_PASSWORD || 'admin123', 10);
+    const hash = await bcrypt.hash(process.env.ADMIN_PASSWORD || 'admin1234', 10);
     await userRepo.save({
       username: process.env.ADMIN_USERNAME || 'admin',
       passwordHash: hash,
+      isSuperAdmin: true,
+      employeeId: null,
     });
-    console.log('✓ Admin creado: usuario=admin, contraseña=admin123');
+    console.log('✓ Admin creado: usuario=admin, contraseña=admin1234');
   }
 
   // 3. Maestra de empleados

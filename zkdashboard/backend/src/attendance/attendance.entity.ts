@@ -2,6 +2,11 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, Index } from 
 import { Employee } from '../employees/employee.entity';
 
 @Entity('attendance_records')
+@Index('UQ_attendance_records_device_user_timestamp', ['deviceSn', 'userId', 'timestamp'], {
+  unique: true,
+})
+@Index('IDX_attendance_records_company_timestamp', ['companyId', 'timestamp'])
+@Index('IDX_attendance_records_company_user_timestamp', ['companyId', 'userId', 'timestamp'])
 export class AttendanceRecord {
   @PrimaryGeneratedColumn()
   id: number;
@@ -13,6 +18,14 @@ export class AttendanceRecord {
   @Column({ name: 'user_id' })
   @Index()
   userId: string;
+
+  @Index('IDX_attendance_records_device_id')
+  @Column({ name: 'device_id', nullable: true })
+  deviceId: number | null;
+
+  @Index('IDX_attendance_records_company_id')
+  @Column({ name: 'company_id', type: 'uuid', nullable: true })
+  companyId: string | null;
 
   @Column({ type: 'timestamp' })
   @Index()

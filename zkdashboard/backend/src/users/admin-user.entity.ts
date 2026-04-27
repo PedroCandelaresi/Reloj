@@ -1,4 +1,15 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  Index,
+  OneToMany,
+  OneToOne,
+  JoinColumn,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
+import { Employee } from '../employees/employee.entity';
+import { CompanyMembership } from '../companies/company-membership.entity';
 
 @Entity('admin_users')
 export class AdminUser {
@@ -22,6 +33,20 @@ export class AdminUser {
 
   @Column({ nullable: true })
   email: string | null;
+
+  @Column({ name: 'is_super_admin', default: false })
+  isSuperAdmin: boolean;
+
+  @Index('UQ_admin_users_employee_id', { unique: true })
+  @Column({ name: 'employee_id', nullable: true })
+  employeeId: string | null;
+
+  @OneToOne(() => Employee, (employee) => employee.userAccount, { nullable: true })
+  @JoinColumn({ name: 'employee_id' })
+  employee?: Employee | null;
+
+  @OneToMany(() => CompanyMembership, (membership) => membership.user)
+  memberships?: CompanyMembership[];
 
   @Column({ name: 'password_hash' })
   passwordHash: string;
