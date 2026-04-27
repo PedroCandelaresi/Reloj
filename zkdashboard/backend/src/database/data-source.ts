@@ -4,6 +4,7 @@ import { join } from 'path';
 import { DataSource, DataSourceOptions } from 'typeorm';
 import { AttendanceRecord } from '../attendance/attendance.entity';
 import { AttendanceDaySummary } from '../attendance/entities/attendance-day-summary.entity';
+import { Holiday } from '../attendance/entities/holiday.entity';
 import { InboundRequest } from '../adms/inbound-request.entity';
 import { CompanyMembership } from '../companies/company-membership.entity';
 import { Company } from '../companies/company.entity';
@@ -19,6 +20,7 @@ export const DATABASE_ENTITIES = [
   InboundRequest,
   AttendanceRecord,
   AttendanceDaySummary,
+  Holiday,
   Company,
   CompanyMembership,
   ScheduleProfile,

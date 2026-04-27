@@ -13,6 +13,9 @@ export type AttendanceDaySummaryStatus =
   | 'present'
   | 'incomplete'
   | 'calculated'
+  | 'absent'
+  | 'holiday'
+  | 'weekend'
   | 'needs_review';
 
 @Entity('attendance_day_summaries')

@@ -1,5 +1,5 @@
 import { Transform } from 'class-transformer';
-import { IsNotEmpty, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
+import { IsArray, IsInt, IsNotEmpty, IsOptional, IsString, Matches, Max, MaxLength, Min } from 'class-validator';
 
 const TIME_24H_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
 const MONTH_DAY_PATTERN = /^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
@@ -101,4 +101,38 @@ export class UpdateScheduleProfileDto {
     message: 'El fin de invierno debe tener formato MM-DD.',
   })
   winterEnd?: string | null;
+
+  @IsInt()
+  @Min(0)
+  @Max(240)
+  @IsOptional()
+  lateToleranceMinutes?: number;
+
+  @IsInt()
+  @Min(0)
+  @Max(240)
+  @IsOptional()
+  earlyDepartureToleranceMinutes?: number;
+
+  @IsInt()
+  @Min(0)
+  @Max(1440)
+  @IsOptional()
+  expectedMinutesPerDay?: number | null;
+
+  @IsArray()
+  @IsOptional()
+  workDays?: string[] | null;
+
+  @IsInt()
+  @Min(0)
+  @Max(480)
+  @IsOptional()
+  breakMinutes?: number;
+
+  @IsInt()
+  @Min(0)
+  @Max(480)
+  @IsOptional()
+  overtimeAfterMinutes?: number;
 }

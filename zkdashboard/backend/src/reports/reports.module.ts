@@ -9,9 +9,12 @@ import { IncompleteRecordsService } from './services/incomplete-records.service'
 import { MonthlySummaryService } from './services/monthly-summary.service';
 import { PairingService } from './services/pairing.service';
 import { ReportQueryService } from './services/report-query.service';
+import { AttendanceDaySummary } from '../attendance/entities/attendance-day-summary.entity';
+import { ScheduleProfile } from '../companies/schedule-profile.entity';
+import { Phase2ReportsService } from './services/phase2-reports.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([AttendanceRecord, Employee])],
+  imports: [TypeOrmModule.forFeature([AttendanceRecord, AttendanceDaySummary, Employee, ScheduleProfile])],
   controllers: [ReportsController],
   providers: [
     ReportsExcelExporter,
@@ -20,6 +23,7 @@ import { ReportQueryService } from './services/report-query.service';
     MonthlySummaryService,
     PairingService,
     ReportQueryService,
+    Phase2ReportsService,
   ],
   exports: [PairingService],
 })

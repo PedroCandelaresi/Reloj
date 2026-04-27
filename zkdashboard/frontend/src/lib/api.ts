@@ -325,6 +325,12 @@ export interface ScheduleProfile {
   winterExitTime: string | null;
   winterStart: string | null;
   winterEnd: string | null;
+  lateToleranceMinutes: number;
+  earlyDepartureToleranceMinutes: number;
+  expectedMinutesPerDay: number | null;
+  workDays: string[] | null;
+  breakMinutes: number;
+  overtimeAfterMinutes: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -341,6 +347,12 @@ export interface ScheduleProfileInput {
   winterExitTime?: string | null;
   winterStart?: string | null;
   winterEnd?: string | null;
+  lateToleranceMinutes?: number;
+  earlyDepartureToleranceMinutes?: number;
+  expectedMinutesPerDay?: number | null;
+  workDays?: string[] | null;
+  breakMinutes?: number;
+  overtimeAfterMinutes?: number;
 }
 
 export interface AssignAdminDeviceCompanyInput {
@@ -493,8 +505,27 @@ export interface AttendanceDaySummary {
   isAbsent: boolean;
   isHoliday: boolean;
   isWeekend: boolean;
-  status: 'no_records' | 'present' | 'incomplete' | 'calculated' | 'needs_review';
+  status: 'no_records' | 'present' | 'incomplete' | 'calculated' | 'absent' | 'holiday' | 'weekend' | 'needs_review';
   calculatedAt: string | null;
+}
+
+export interface Holiday {
+  id: string;
+  companyId: string | null;
+  date: string;
+  name: string;
+  type: 'national' | 'company' | 'regional';
+  isWorkable: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface HolidayInput {
+  date: string;
+  name: string;
+  type?: 'national' | 'company' | 'regional';
+  isWorkable?: boolean;
+  companyId?: string | null;
 }
 
 export interface AttendanceSummaryParams {
@@ -511,6 +542,31 @@ export interface RecalculateAttendanceResult {
   summariesUpdated: number;
   dateFrom: string;
   dateTo: string;
+  absentDays: number;
+  incompleteDays: number;
+  lateDays: number;
+  earlyDepartureDays: number;
+  holidayDays: number;
+  weekendDays: number;
+}
+
+export interface Phase2ReportRow {
+  employee: EmployeeSummary | null;
+  employeeId: string;
+  date: string;
+  firstPunchAt: string | null;
+  lastPunchAt: string | null;
+  expectedEntryTime: string | null;
+  expectedExitTime: string | null;
+  lateToleranceMinutes: number;
+  earlyDepartureToleranceMinutes: number;
+  lateMinutes: number;
+  earlyDepartureMinutes: number;
+  workedMinutes: number;
+  expectedMinutes: number;
+  overtimeMinutes: number;
+  status: string;
+  reason?: string;
 }
 
 export const STATUS_LABELS: Record<number, string> = {
@@ -870,5 +926,57 @@ export function recalculateAttendanceSummaries(params: AttendanceSummaryParams) 
   return apiFetch<RecalculateAttendanceResult>('/attendance/recalculate', {
     method: 'POST',
     body: JSON.stringify(params),
+  });
+}
+
+export function getLateArrivalsReport(params: ReportFilterParams & { minLateMinutes?: string } = {}) {
+  return apiFetch<Phase2ReportRow[]>(`/reports/late-arrivals${buildReportQuery(params)}`);
+}
+
+export function exportLateArrivalsReport(params: ReportFilterParams & { minLateMinutes?: string } = {}) {
+  return `/api/reports/export${buildReportQuery({ ...params, report: 'late-arrivals' })}`;
+}
+
+export function getEarlyDeparturesReport(params: ReportFilterParams = {}) {
+  return apiFetch<Phase2ReportRow[]>(`/reports/early-departures${buildReportQuery(params)}`);
+}
+
+export function getAbsencesReport(params: ReportFilterParams = {}) {
+  return apiFetch<Phase2ReportRow[]>(`/reports/absences${buildReportQuery(params)}`);
+}
+
+export function exportAbsencesReport(params: ReportFilterParams = {}) {
+  return `/api/reports/export${buildReportQuery({ ...params, report: 'absences' })}`;
+}
+
+export function getWorkedHoursReport(params: ReportFilterParams = {}) {
+  return apiFetch<Phase2ReportRow[]>(`/reports/worked-hours${buildReportQuery(params)}`);
+}
+
+export function exportWorkedHoursReport(params: ReportFilterParams = {}) {
+  return `/api/reports/export${buildReportQuery({ ...params, report: 'worked-hours' })}`;
+}
+
+export function getHolidays(params: { year?: string | number; month?: string | number; companyId?: string } = {}) {
+  return apiFetch<Holiday[]>(`/holidays${buildReportQuery(params)}`);
+}
+
+export function createHoliday(input: HolidayInput) {
+  return apiFetch<Holiday>('/holidays', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export function updateHoliday(id: string, input: Partial<HolidayInput>) {
+  return apiFetch<Holiday>(`/holidays/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(input),
+  });
+}
+
+export function deleteHoliday(id: string) {
+  return apiFetch<{ success: true }>(`/holidays/${id}`, {
+    method: 'DELETE',
   });
 }

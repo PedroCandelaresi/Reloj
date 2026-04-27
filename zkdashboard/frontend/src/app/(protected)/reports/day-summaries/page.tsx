@@ -124,14 +124,19 @@ function DaySummariesTable({ rows }: { rows: AttendanceDaySummary[] }) {
               <th className="px-6 py-4 text-left font-semibold">Última</th>
               <th className="px-6 py-4 text-left font-semibold">Fichadas</th>
               <th className="px-6 py-4 text-left font-semibold">Minutos</th>
+              <th className="px-6 py-4 text-left font-semibold">Esperados</th>
+              <th className="px-6 py-4 text-left font-semibold">Tardanza</th>
+              <th className="px-6 py-4 text-left font-semibold">Salida temprana</th>
+              <th className="px-6 py-4 text-left font-semibold">Extra</th>
               <th className="px-6 py-4 text-left font-semibold">Estado</th>
               <th className="px-6 py-4 text-left font-semibold">Incompleto</th>
+              <th className="px-6 py-4 text-left font-semibold">Flags</th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-6 py-10 text-center" style={{ color: 'var(--text-muted)' }}>
+                <td colSpan={13} className="px-6 py-10 text-center" style={{ color: 'var(--text-muted)' }}>
                   No hay summaries calculados para los filtros seleccionados
                 </td>
               </tr>
@@ -149,6 +154,10 @@ function DaySummariesTable({ rows }: { rows: AttendanceDaySummary[] }) {
                   <td className="px-6 py-4" style={{ color: 'var(--text-secondary)' }}>{formatArgentinaDateTime(row.lastPunchAt)}</td>
                   <td className="px-6 py-4" style={{ color: 'var(--text-secondary)' }}>{row.totalPunchCount}</td>
                   <td className="px-6 py-4" style={{ color: 'var(--text-secondary)' }}>{row.workedMinutes}</td>
+                  <td className="px-6 py-4" style={{ color: 'var(--text-secondary)' }}>{row.expectedMinutes}</td>
+                  <td className="px-6 py-4" style={{ color: 'var(--text-secondary)' }}>{row.lateMinutes}</td>
+                  <td className="px-6 py-4" style={{ color: 'var(--text-secondary)' }}>{row.earlyDepartureMinutes}</td>
+                  <td className="px-6 py-4" style={{ color: 'var(--text-secondary)' }}>{row.overtimeMinutes}</td>
                   <td className="px-6 py-4">
                     <span className="inline-flex rounded-full bg-slate-500/10 px-2.5 py-1 text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
                       {row.status}
@@ -156,6 +165,13 @@ function DaySummariesTable({ rows }: { rows: AttendanceDaySummary[] }) {
                   </td>
                   <td className="px-6 py-4" style={{ color: 'var(--text-secondary)' }}>
                     {row.hasIncompleteRecord ? 'Sí' : 'No'}
+                  </td>
+                  <td className="px-6 py-4 text-xs" style={{ color: 'var(--text-muted)' }}>
+                    {[
+                      row.isAbsent ? 'ausente' : '',
+                      row.isHoliday ? 'feriado' : '',
+                      row.isWeekend ? 'fin de semana' : '',
+                    ].filter(Boolean).join(', ') || '-'}
                   </td>
                 </tr>
               ))

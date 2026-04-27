@@ -36,4 +36,8 @@ export class ReportFiltersDto {
   @IsNumberString()
   @IsOptional()
   limit?: string;
+
+  @IsNumberString()
+  @IsOptional()
+  minLateMinutes?: string;
 }

@@ -51,7 +51,21 @@ export async function saveScheduleProfileAction(input: {
   winterExitTime?: string | null;
   winterStart?: string | null;
   winterEnd?: string | null;
+  lateToleranceMinutes?: number | string | null;
+  earlyDepartureToleranceMinutes?: number | string | null;
+  expectedMinutesPerDay?: number | string | null;
+  breakMinutes?: number | string | null;
+  overtimeAfterMinutes?: number | string | null;
+  workDays?: string[] | null;
 }): Promise<CompanySettingsActionResult> {
+  const numberOrDefault = (value: number | string | null | undefined, fallback: number) => {
+    const parsed = Number.parseInt(String(value ?? ''), 10);
+    return Number.isFinite(parsed) ? parsed : fallback;
+  };
+  const nullableNumber = (value: number | string | null | undefined) => {
+    const parsed = Number.parseInt(String(value ?? ''), 10);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
   const payload = {
     name: cleanText(input.name),
     entryTime: cleanText(input.entryTime),
@@ -64,6 +78,12 @@ export async function saveScheduleProfileAction(input: {
     winterExitTime: cleanText(input.winterExitTime) || null,
     winterStart: cleanText(input.winterStart) || null,
     winterEnd: cleanText(input.winterEnd) || null,
+    lateToleranceMinutes: numberOrDefault(input.lateToleranceMinutes, 0),
+    earlyDepartureToleranceMinutes: numberOrDefault(input.earlyDepartureToleranceMinutes, 0),
+    expectedMinutesPerDay: nullableNumber(input.expectedMinutesPerDay),
+    breakMinutes: numberOrDefault(input.breakMinutes, 0),
+    overtimeAfterMinutes: numberOrDefault(input.overtimeAfterMinutes, 0),
+    workDays: input.workDays?.length ? input.workDays : null,
   };
 
   try {

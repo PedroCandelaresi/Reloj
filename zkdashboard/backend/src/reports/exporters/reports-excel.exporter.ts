@@ -6,6 +6,7 @@ import {
   MonthlySummaryRow,
 } from '../types/report.types';
 import { formatArgentinaDateTime, formatArgentinaTime } from '../utils/argentina-date.util';
+import { Phase2ReportRow } from '../services/phase2-reports.service';
 
 @Injectable()
 export class ReportsExcelExporter {
@@ -127,6 +128,49 @@ export class ReportsExcelExporter {
     });
     this.styleSheet(detail);
 
+    return this.writeBuffer(wb);
+  }
+
+  async phase2Rows(sheetName: string, rows: Phase2ReportRow[]): Promise<Buffer> {
+    const wb = new ExcelJS.Workbook();
+    const sheet = wb.addWorksheet(sheetName);
+    sheet.columns = [
+      { header: 'Empleado', key: 'employee', width: 28 },
+      { header: 'PIN', key: 'employeeId', width: 18 },
+      { header: 'Fecha', key: 'date', width: 14 },
+      { header: 'Entrada esperada', key: 'expectedEntryTime', width: 18 },
+      { header: 'Salida esperada', key: 'expectedExitTime', width: 18 },
+      { header: 'Primera fichada', key: 'firstPunchAt', width: 22 },
+      { header: 'Ultima fichada', key: 'lastPunchAt', width: 22 },
+      { header: 'Tardanza', key: 'lateMinutes', width: 12 },
+      { header: 'Salida temprana', key: 'earlyDepartureMinutes', width: 18 },
+      { header: 'Trabajados', key: 'workedMinutes', width: 14 },
+      { header: 'Esperados', key: 'expectedMinutes', width: 14 },
+      { header: 'Extra simple', key: 'overtimeMinutes', width: 14 },
+      { header: 'Estado', key: 'status', width: 16 },
+      { header: 'Motivo', key: 'reason', width: 22 },
+    ];
+
+    rows.forEach((row) => {
+      sheet.addRow({
+        employee: row.employee ? this.employeeName(row.employee) : row.employeeId,
+        employeeId: row.employeeId,
+        date: row.date,
+        expectedEntryTime: row.expectedEntryTime ?? '',
+        expectedExitTime: row.expectedExitTime ?? '',
+        firstPunchAt: formatArgentinaDateTime(row.firstPunchAt),
+        lastPunchAt: formatArgentinaDateTime(row.lastPunchAt),
+        lateMinutes: row.lateMinutes,
+        earlyDepartureMinutes: row.earlyDepartureMinutes,
+        workedMinutes: row.workedMinutes,
+        expectedMinutes: row.expectedMinutes,
+        overtimeMinutes: row.overtimeMinutes,
+        status: row.status,
+        reason: row.reason ?? '',
+      });
+    });
+
+    this.styleSheet(sheet);
     return this.writeBuffer(wb);
   }
 

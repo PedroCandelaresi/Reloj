@@ -59,6 +59,24 @@ export class ScheduleProfile {
   @Column({ name: 'winter_end', type: 'varchar', length: 5, nullable: true })
   winterEnd: string | null;
 
+  @Column({ name: 'late_tolerance_minutes', default: 0 })
+  lateToleranceMinutes: number;
+
+  @Column({ name: 'early_departure_tolerance_minutes', default: 0 })
+  earlyDepartureToleranceMinutes: number;
+
+  @Column({ name: 'expected_minutes_per_day', nullable: true })
+  expectedMinutesPerDay: number | null;
+
+  @Column({ name: 'work_days', type: 'jsonb', nullable: true })
+  workDays: string[] | null;
+
+  @Column({ name: 'break_minutes', default: 0 })
+  breakMinutes: number;
+
+  @Column({ name: 'overtime_after_minutes', default: 0 })
+  overtimeAfterMinutes: number;
+
   @OneToMany(() => Employee, (employee) => employee.scheduleProfile)
   employees?: Employee[];
 

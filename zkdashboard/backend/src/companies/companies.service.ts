@@ -131,6 +131,12 @@ export class CompaniesService {
       winterExitTime: profile.winterExitTime,
       winterStart: profile.winterStart,
       winterEnd: profile.winterEnd,
+      lateToleranceMinutes: profile.lateToleranceMinutes ?? 0,
+      earlyDepartureToleranceMinutes: profile.earlyDepartureToleranceMinutes ?? 0,
+      expectedMinutesPerDay: profile.expectedMinutesPerDay ?? null,
+      workDays: profile.workDays ?? null,
+      breakMinutes: profile.breakMinutes ?? 0,
+      overtimeAfterMinutes: profile.overtimeAfterMinutes ?? 0,
       createdAt: profile.createdAt,
       updatedAt: profile.updatedAt,
     };
@@ -318,6 +324,12 @@ export class CompaniesService {
       winterExitTime: dto.winterExitTime ?? null,
       winterStart: dto.winterStart ?? null,
       winterEnd: dto.winterEnd ?? null,
+      lateToleranceMinutes: dto.lateToleranceMinutes ?? 0,
+      earlyDepartureToleranceMinutes: dto.earlyDepartureToleranceMinutes ?? 0,
+      expectedMinutesPerDay: dto.expectedMinutesPerDay ?? null,
+      workDays: dto.workDays ?? null,
+      breakMinutes: dto.breakMinutes ?? 0,
+      overtimeAfterMinutes: dto.overtimeAfterMinutes ?? 0,
     });
 
     try {
@@ -352,6 +364,14 @@ export class CompaniesService {
     if (dto.winterExitTime !== undefined) profile.winterExitTime = dto.winterExitTime;
     if (dto.winterStart !== undefined) profile.winterStart = dto.winterStart;
     if (dto.winterEnd !== undefined) profile.winterEnd = dto.winterEnd;
+    if (dto.lateToleranceMinutes !== undefined) profile.lateToleranceMinutes = dto.lateToleranceMinutes;
+    if (dto.earlyDepartureToleranceMinutes !== undefined) {
+      profile.earlyDepartureToleranceMinutes = dto.earlyDepartureToleranceMinutes;
+    }
+    if (dto.expectedMinutesPerDay !== undefined) profile.expectedMinutesPerDay = dto.expectedMinutesPerDay;
+    if (dto.workDays !== undefined) profile.workDays = dto.workDays;
+    if (dto.breakMinutes !== undefined) profile.breakMinutes = dto.breakMinutes;
+    if (dto.overtimeAfterMinutes !== undefined) profile.overtimeAfterMinutes = dto.overtimeAfterMinutes;
 
     try {
       return this.toScheduleProfile(await this.scheduleProfilesRepo.save(profile));

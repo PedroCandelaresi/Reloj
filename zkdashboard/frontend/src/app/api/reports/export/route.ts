@@ -16,6 +16,18 @@ const REPORTS: Record<string, { path: string; filename: string }> = {
     path: '/reports/monthly-summary',
     filename: 'resumen-mensual.xlsx',
   },
+  'late-arrivals': {
+    path: '/reports/late-arrivals',
+    filename: 'tardanzas.xlsx',
+  },
+  absences: {
+    path: '/reports/absences',
+    filename: 'ausencias.xlsx',
+  },
+  'worked-hours': {
+    path: '/reports/worked-hours',
+    filename: 'horas-trabajadas-resumen.xlsx',
+  },
 };
 
 export async function GET(req: NextRequest) {

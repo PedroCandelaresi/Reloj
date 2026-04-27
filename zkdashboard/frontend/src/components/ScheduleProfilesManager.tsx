@@ -22,6 +22,12 @@ type FormValues = {
   winterExitTime: string;
   winterStart: string;
   winterEnd: string;
+  lateToleranceMinutes: string;
+  earlyDepartureToleranceMinutes: string;
+  expectedMinutesPerDay: string;
+  breakMinutes: string;
+  overtimeAfterMinutes: string;
+  workDays: string[];
 };
 
 const EMPTY_FORM: FormValues = {
@@ -37,6 +43,12 @@ const EMPTY_FORM: FormValues = {
   winterExitTime: '',
   winterStart: '',
   winterEnd: '',
+  lateToleranceMinutes: '0',
+  earlyDepartureToleranceMinutes: '0',
+  expectedMinutesPerDay: '',
+  breakMinutes: '0',
+  overtimeAfterMinutes: '0',
+  workDays: ['mon', 'tue', 'wed', 'thu', 'fri'],
 };
 
 function toFormValues(profile: ScheduleProfile): FormValues {
@@ -53,6 +65,12 @@ function toFormValues(profile: ScheduleProfile): FormValues {
     winterExitTime: profile.winterExitTime ?? '',
     winterStart: profile.winterStart ?? '',
     winterEnd: profile.winterEnd ?? '',
+    lateToleranceMinutes: String(profile.lateToleranceMinutes ?? 0),
+    earlyDepartureToleranceMinutes: String(profile.earlyDepartureToleranceMinutes ?? 0),
+    expectedMinutesPerDay: profile.expectedMinutesPerDay ? String(profile.expectedMinutesPerDay) : '',
+    breakMinutes: String(profile.breakMinutes ?? 0),
+    overtimeAfterMinutes: String(profile.overtimeAfterMinutes ?? 0),
+    workDays: profile.workDays?.length ? profile.workDays : ['mon', 'tue', 'wed', 'thu', 'fri'],
   };
 }
 
@@ -67,6 +85,16 @@ export function ScheduleProfilesManager({ profiles }: { profiles: ScheduleProfil
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
     setForm((current) => ({ ...current, [name]: value }));
+  };
+
+  const handleWorkDayChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const { value, checked } = event.target;
+    setForm((current) => ({
+      ...current,
+      workDays: checked
+        ? [...new Set([...current.workDays, value])]
+        : current.workDays.filter((day) => day !== value),
+    }));
   };
 
   const resetForm = () => {
@@ -140,13 +168,14 @@ export function ScheduleProfilesManager({ profiles }: { profiles: ScheduleProfil
                 <th className="px-4 py-3 text-left">Base</th>
                 <th className="px-4 py-3 text-left">Verano</th>
                 <th className="px-4 py-3 text-left">Invierno</th>
+                <th className="px-4 py-3 text-left">Reglas</th>
                 <th className="px-4 py-3 text-right">Acciones</th>
               </tr>
             </thead>
             <tbody>
               {profiles.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center" style={{ color: 'var(--text-muted)' }}>
+                  <td colSpan={6} className="px-4 py-8 text-center" style={{ color: 'var(--text-muted)' }}>
                     Todavía no hay perfiles horarios.
                   </td>
                 </tr>
@@ -165,6 +194,11 @@ export function ScheduleProfilesManager({ profiles }: { profiles: ScheduleProfil
                     <td className="px-4 py-3" style={{ color: 'var(--text-secondary)' }}>
                       {profile.winterEntryTime && profile.winterExitTime ? `${profile.winterEntryTime} - ${profile.winterExitTime}` : '—'}
                       {profile.winterStart && profile.winterEnd ? ` · ${profile.winterStart} a ${profile.winterEnd}` : ''}
+                    </td>
+                    <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                      Tol. entrada {profile.lateToleranceMinutes ?? 0}m · Tol. salida {profile.earlyDepartureToleranceMinutes ?? 0}m
+                      <br />
+                      Esperado {profile.expectedMinutesPerDay ?? 'calc.'}m · Descanso {profile.breakMinutes ?? 0}m
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex justify-end gap-2">
@@ -238,6 +272,36 @@ export function ScheduleProfilesManager({ profiles }: { profiles: ScheduleProfil
             </div>
           </div>
 
+          <div className="rounded-lg p-3 space-y-3" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+            <p className="text-xs font-semibold uppercase" style={{ color: 'var(--text-secondary)' }}>Reglas RRHH</p>
+            <div className="grid grid-cols-2 gap-3">
+              <NumberInput label="Tol. llegada tarde (min)" name="lateToleranceMinutes" value={form.lateToleranceMinutes} onChange={handleChange} />
+              <NumberInput label="Tol. salida temprana (min)" name="earlyDepartureToleranceMinutes" value={form.earlyDepartureToleranceMinutes} onChange={handleChange} />
+              <NumberInput label="Minutos esperados" name="expectedMinutesPerDay" value={form.expectedMinutesPerDay} onChange={handleChange} />
+              <NumberInput label="Descanso (min)" name="breakMinutes" value={form.breakMinutes} onChange={handleChange} />
+              <NumberInput label="Extra después de (min)" name="overtimeAfterMinutes" value={form.overtimeAfterMinutes} onChange={handleChange} />
+            </div>
+            <div>
+              <p className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>Días laborales</p>
+              <div className="grid grid-cols-4 gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                {[
+                  ['mon', 'Lun'],
+                  ['tue', 'Mar'],
+                  ['wed', 'Mié'],
+                  ['thu', 'Jue'],
+                  ['fri', 'Vie'],
+                  ['sat', 'Sáb'],
+                  ['sun', 'Dom'],
+                ].map(([value, label]) => (
+                  <label key={value} className="inline-flex items-center gap-2">
+                    <input type="checkbox" value={value} checked={form.workDays.includes(value)} onChange={handleWorkDayChange} />
+                    {label}
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+
           <div className="flex justify-end gap-2">
             {isEditing && (
               <button type="button" onClick={resetForm} disabled={isPending}
@@ -298,6 +362,33 @@ function MonthDayInput({
     <label className="block text-sm">
       <span className="font-medium" style={{ color: 'var(--text-secondary)' }}>{label}</span>
       <input name={name} value={value} onChange={onChange} placeholder="MM-DD" pattern="^(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$"
+        className="mt-1 w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+        style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
+      />
+    </label>
+  );
+}
+
+function NumberInput({
+  label,
+  name,
+  value,
+  onChange,
+}: {
+  label: string;
+  name: keyof FormValues;
+  value: string;
+  onChange: (event: ChangeEvent<HTMLInputElement>) => void;
+}) {
+  return (
+    <label className="block text-sm">
+      <span className="font-medium" style={{ color: 'var(--text-secondary)' }}>{label}</span>
+      <input
+        type="number"
+        min="0"
+        name={name}
+        value={value}
+        onChange={onChange}
         className="mt-1 w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
         style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
       />

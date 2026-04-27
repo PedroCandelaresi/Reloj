@@ -8,6 +8,9 @@ import {
 } from './entities/attendance-day-summary.entity';
 import { Employee } from '../employees/employee.entity';
 import { Device } from '../devices/device.entity';
+import { Company } from '../companies/company.entity';
+import { ScheduleProfile } from '../companies/schedule-profile.entity';
+import { Holiday } from './entities/holiday.entity';
 import { AuthenticatedUser } from '../auth/authenticated-user.interface';
 import { CompanyRole } from '../companies/company-role.enum';
 import { PairingService } from '../reports/services/pairing.service';
@@ -27,6 +30,23 @@ export interface RecalculateResult {
   summariesUpdated: number;
   dateFrom: string;
   dateTo: string;
+  absentDays: number;
+  incompleteDays: number;
+  lateDays: number;
+  earlyDepartureDays: number;
+  holidayDays: number;
+  weekendDays: number;
+}
+
+interface ExpectedSchedule {
+  entryTime: string;
+  exitTime: string;
+  lateToleranceMinutes: number;
+  earlyDepartureToleranceMinutes: number;
+  expectedMinutes: number;
+  breakMinutes: number;
+  overtimeAfterMinutes: number;
+  workDays: string[];
 }
 
 export interface AttendanceDaySummaryView {
@@ -69,6 +89,10 @@ export class AttendanceCalculationService {
     private readonly employeesRepo: Repository<Employee>,
     @InjectRepository(Device)
     private readonly devicesRepo: Repository<Device>,
+    @InjectRepository(Company)
+    private readonly companiesRepo: Repository<Company>,
+    @InjectRepository(Holiday)
+    private readonly holidaysRepo: Repository<Holiday>,
     private readonly pairing: PairingService,
   ) {}
 
@@ -147,7 +171,15 @@ export class AttendanceCalculationService {
     const existing = await this.getExistingSummaries(companyId, dates, employees.map((employee) => employee.id));
     let summariesCreated = 0;
     let summariesUpdated = 0;
+    let absentDays = 0;
+    let incompleteDays = 0;
+    let lateDays = 0;
+    let earlyDepartureDays = 0;
+    let holidayDays = 0;
+    let weekendDays = 0;
     const toSave: AttendanceDaySummary[] = [];
+    const company = await this.companiesRepo.findOneBy({ id: companyId });
+    const holidays = await this.getHolidays(companyId, dates);
 
     for (const employee of employees) {
       const employeeGroups = recordGroups.get(employee.id);
@@ -169,7 +201,13 @@ export class AttendanceCalculationService {
           summariesCreated += 1;
         }
 
-        this.applyRecordsToSummary(summary, records, devicesById);
+        this.applyRecordsToSummary(summary, records, devicesById, employee, company, holidays.get(date) ?? null);
+        if (summary.isAbsent) absentDays += 1;
+        if (summary.hasIncompleteRecord) incompleteDays += 1;
+        if (summary.lateMinutes > 0) lateDays += 1;
+        if (summary.earlyDepartureMinutes > 0) earlyDepartureDays += 1;
+        if (summary.isHoliday) holidayDays += 1;
+        if (summary.isWeekend) weekendDays += 1;
         toSave.push(summary);
       }
     }
@@ -185,6 +223,12 @@ export class AttendanceCalculationService {
       summariesUpdated,
       dateFrom,
       dateTo,
+      absentDays,
+      incompleteDays,
+      lateDays,
+      earlyDepartureDays,
+      holidayDays,
+      weekendDays,
     };
   }
 
@@ -242,6 +286,7 @@ export class AttendanceCalculationService {
   private getEmployees(companyId: string, employeeId?: string): Promise<Employee[]> {
     const qb = this.employeesRepo
       .createQueryBuilder('employee')
+      .leftJoinAndSelect('employee.scheduleProfile', 'scheduleProfile')
       .where('employee.company_id = :companyId', { companyId });
 
     if (employeeId) {
@@ -309,6 +354,25 @@ export class AttendanceCalculationService {
     return existing;
   }
 
+  private async getHolidays(companyId: string, dates: string[]): Promise<Map<string, Holiday>> {
+    const holidays = await this.holidaysRepo
+      .createQueryBuilder('holiday')
+      .where('holiday.date IN (:...dates)', { dates })
+      .andWhere('(holiday.company_id = :companyId OR holiday.company_id IS NULL)', { companyId })
+      .orderBy('holiday.company_id', 'ASC', 'NULLS FIRST')
+      .getMany();
+    const byDate = new Map<string, Holiday>();
+
+    for (const holiday of holidays) {
+      const current = byDate.get(holiday.date);
+      if (!current || holiday.companyId === companyId) {
+        byDate.set(holiday.date, holiday);
+      }
+    }
+
+    return byDate;
+  }
+
   private async getDevicesById(
     recordGroups: Map<string, Map<string, AttendanceRecord[]>>,
   ): Promise<Map<number, Device>> {
@@ -336,6 +400,9 @@ export class AttendanceCalculationService {
     summary: AttendanceDaySummary,
     records: AttendanceRecord[],
     devicesById: Map<number, Device>,
+    employee: Employee,
+    company: Company | null,
+    holiday: Holiday | null,
   ): void {
     const pairing = this.pairing.summarize(
       records.map((record) => ({
@@ -346,6 +413,13 @@ export class AttendanceCalculationService {
     );
     const primaryDevice = this.resolvePrimaryDevice(records, devicesById);
     const hasRecords = pairing.punchCount > 0;
+    const schedule = this.resolveExpectedSchedule(employee, company);
+    const isHoliday = Boolean(holiday && !holiday.isWorkable);
+    const isWorkDay = schedule ? this.isWorkDay(summary.date, schedule.workDays) : false;
+    const isWeekend = schedule ? !isWorkDay : this.isArgentinaWeekend(summary.date);
+    const expectedEntry = schedule ? this.dateTimeFor(summary.date, schedule.entryTime) : null;
+    const expectedExit = schedule ? this.dateTimeFor(summary.date, schedule.exitTime) : null;
+    const workedMinutes = pairing.isIncomplete ? 0 : pairing.workedMinutes;
 
     summary.firstPunchAt = pairing.firstPunch;
     summary.lastPunchAt = pairing.lastPunch;
@@ -358,16 +432,105 @@ export class AttendanceCalculationService {
     summary.hasRecords = hasRecords;
     summary.isPresent = hasRecords;
     summary.hasIncompleteRecord = pairing.isIncomplete;
-    summary.workedMinutes = pairing.workedMinutes;
-    summary.expectedMinutes = 0;
-    summary.lateMinutes = 0;
-    summary.earlyDepartureMinutes = 0;
-    summary.overtimeMinutes = 0;
-    summary.isAbsent = false;
-    summary.isHoliday = false;
-    summary.isWeekend = false;
-    summary.status = !hasRecords ? 'no_records' : pairing.isIncomplete ? 'incomplete' : 'present';
+    summary.workedMinutes = workedMinutes;
+    summary.expectedMinutes = schedule?.expectedMinutes ?? 0;
+    summary.lateMinutes = this.calculateLateMinutes(pairing.firstPunch, expectedEntry, schedule?.lateToleranceMinutes ?? 0);
+    summary.earlyDepartureMinutes =
+      pairing.isIncomplete
+        ? 0
+        : this.calculateEarlyDepartureMinutes(pairing.lastPunch, expectedExit, schedule?.earlyDepartureToleranceMinutes ?? 0);
+    summary.overtimeMinutes =
+      schedule && schedule.expectedMinutes > 0
+        ? Math.max(workedMinutes - schedule.expectedMinutes - schedule.overtimeAfterMinutes, 0)
+        : 0;
+    summary.isHoliday = isHoliday;
+    summary.isWeekend = !isHoliday && isWeekend;
+    summary.isAbsent = Boolean(schedule && isWorkDay && !isHoliday && !hasRecords);
+    summary.status = this.resolveStatus({
+      hasRecords,
+      isIncomplete: pairing.isIncomplete,
+      hasSchedule: Boolean(schedule),
+      isAbsent: summary.isAbsent,
+      isHoliday: summary.isHoliday,
+      isWeekend: summary.isWeekend,
+    });
     summary.calculatedAt = new Date();
+  }
+
+  private resolveExpectedSchedule(employee: Employee, company: Company | null): ExpectedSchedule | null {
+    const profile = employee.scheduleProfile as ScheduleProfile | null | undefined;
+    const entryTime = profile?.entryTime ?? employee.entryTime ?? company?.defaultEntryTime ?? null;
+    const exitTime = profile?.exitTime ?? employee.exitTime ?? company?.defaultExitTime ?? null;
+
+    if (!entryTime || !exitTime) {
+      return null;
+    }
+
+    const breakMinutes = profile?.breakMinutes ?? 0;
+    const expectedMinutes =
+      profile?.expectedMinutesPerDay ??
+      Math.max(this.minutesFromTime(exitTime) - this.minutesFromTime(entryTime) - breakMinutes, 0);
+
+    return {
+      entryTime,
+      exitTime,
+      lateToleranceMinutes: profile?.lateToleranceMinutes ?? 0,
+      earlyDepartureToleranceMinutes: profile?.earlyDepartureToleranceMinutes ?? 0,
+      expectedMinutes,
+      breakMinutes,
+      overtimeAfterMinutes: profile?.overtimeAfterMinutes ?? 0,
+      workDays: profile?.workDays?.length ? profile.workDays : ['mon', 'tue', 'wed', 'thu', 'fri'],
+    };
+  }
+
+  private resolveStatus(opts: {
+    hasRecords: boolean;
+    isIncomplete: boolean;
+    hasSchedule: boolean;
+    isAbsent: boolean;
+    isHoliday: boolean;
+    isWeekend: boolean;
+  }): AttendanceDaySummary['status'] {
+    if (opts.hasRecords && opts.isIncomplete) return 'incomplete';
+    if (opts.isAbsent) return 'absent';
+    if (!opts.hasRecords && opts.isHoliday) return 'holiday';
+    if (!opts.hasRecords && opts.isWeekend) return 'weekend';
+    if (opts.hasRecords && opts.hasSchedule) return 'calculated';
+    if (opts.hasRecords) return 'present';
+    return 'no_records';
+  }
+
+  private calculateLateMinutes(actual: Date | null, expected: Date | null, tolerance: number): number {
+    if (!actual || !expected) return 0;
+    return Math.max(Math.floor((actual.getTime() - expected.getTime()) / 60000) - tolerance, 0);
+  }
+
+  private calculateEarlyDepartureMinutes(actual: Date | null, expected: Date | null, tolerance: number): number {
+    if (!actual || !expected) return 0;
+    return Math.max(Math.floor((expected.getTime() - actual.getTime()) / 60000) - tolerance, 0);
+  }
+
+  private dateTimeFor(date: string, time: string): Date {
+    return new Date(`${date}T${time}:00.000-03:00`);
+  }
+
+  private isWorkDay(date: string, workDays: string[]): boolean {
+    return workDays.includes(this.dayCode(date));
+  }
+
+  private isArgentinaWeekend(date: string): boolean {
+    const code = this.dayCode(date);
+    return code === 'sat' || code === 'sun';
+  }
+
+  private dayCode(date: string): string {
+    const day = new Date(`${date}T12:00:00.000-03:00`).getUTCDay();
+    return ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][day];
+  }
+
+  private minutesFromTime(time: string): number {
+    const [hours, minutes] = time.split(':').map(Number);
+    return hours * 60 + minutes;
   }
 
   private resolvePrimaryDevice(
