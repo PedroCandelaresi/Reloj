@@ -5,9 +5,12 @@ import {
   Get,
   Param,
   ParseIntPipe,
+  Post,
   Put,
   UseGuards,
 } from '@nestjs/common';
+import { CurrentUser } from '../auth/current-user.decorator';
+import type { AuthenticatedUser } from '../auth/authenticated-user.interface';
 import { JwtAuthGuard } from '../auth/auth.guard';
 import { SuperAdminGuard } from '../auth/guards/super-admin.guard';
 import { AssignDeviceCompanyDto } from './dto/assign-device-company.dto';
@@ -44,5 +47,14 @@ export class AdminDevicesController {
   @Delete(':id/company')
   unassignCompany(@Param('id', ParseIntPipe) id: number) {
     return this.devices.unassignCompany(id);
+  }
+
+  @Post(':id/command')
+  enqueueCommand(
+    @Param('id', ParseIntPipe) id: number,
+    @Body('commandType') commandType: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.devices.enqueueCommand(id, commandType, user.username);
   }
 }

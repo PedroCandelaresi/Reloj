@@ -12,6 +12,11 @@ import { Device } from './device.entity';
 
 export const DEVICE_COMMAND_TYPES = {
   ATTENDANCE_SYNC: 'attendance_sync',
+  SET_TIME:        'set_time',
+  REBOOT:          'reboot',
+  CHECK:           'check',
+  CLEAR_ATTLOG:    'clear_attlog',
+  CUSTOM:          'custom',
 } as const;
 
 export type DeviceCommandType =

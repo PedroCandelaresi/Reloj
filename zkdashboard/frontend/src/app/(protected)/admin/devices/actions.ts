@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import {
   assignAdminDeviceCompany,
   unassignAdminDeviceCompany,
+  sendAdminDeviceCommand,
 } from '@/lib/api';
 
 export interface AdminDeviceActionResult {
@@ -70,5 +71,25 @@ export async function unassignDeviceCompanyAction(
     return { ok: true };
   } catch (error) {
     return { error: getErrorMessage(error, 'No se pudo desasignar el dispositivo.') };
+  }
+}
+
+export async function sendDeviceCommandAction(
+  deviceId: number,
+  commandType: string,
+): Promise<AdminDeviceActionResult> {
+  if (!Number.isInteger(deviceId) || deviceId <= 0) {
+    return { error: 'Dispositivo inválido.' };
+  }
+  if (!commandType) {
+    return { error: 'Tipo de comando requerido.' };
+  }
+
+  try {
+    await sendAdminDeviceCommand(deviceId, commandType);
+    revalidateAdminViews();
+    return { ok: true };
+  } catch (error) {
+    return { error: getErrorMessage(error, 'No se pudo enviar el comando.') };
   }
 }

@@ -22,8 +22,20 @@ const STATUS_LABELS: Record<number, string> = {
 const VERIFY_LABELS: Record<number, string> = {
   0: 'Contraseña',
   1: 'Huella',
-  4: 'Cara',
-  15: 'Tarjeta',
+  2: 'Tarjeta badge',
+  4: 'Tarjeta RFID',
+  5: 'Huella o contraseña',
+  6: 'Huella o tarjeta',
+  8: 'Tarjeta y huella',
+  9: 'Huella y contraseña',
+  15: 'Rostro',
+  16: 'Rostro y huella',
+  17: 'Rostro y contraseña',
+  21: 'Vena de dedo',
+  25: 'Palmilla',
+  101: 'GPS',
+  102: 'AI Camera',
+  200: 'Otro',
 };
 
 const TZ = 'America/Argentina/Buenos_Aires';
