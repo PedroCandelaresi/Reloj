@@ -35,6 +35,7 @@ export async function createEmployeeAction(input: EmployeeInput): Promise<Action
   const email = cleanText(input.email);
   const entryTime = cleanText(input.entryTime);
   const exitTime = cleanText(input.exitTime);
+  const scheduleProfileId = cleanText(input.scheduleProfileId);
 
   if (!id || !nombre || !apellido) {
     return { error: 'Completá DNI, nombre y apellido.' };
@@ -49,6 +50,7 @@ export async function createEmployeeAction(input: EmployeeInput): Promise<Action
       email: email || null,
       entryTime: entryTime || null,
       exitTime: exitTime || null,
+      scheduleProfileId: scheduleProfileId || null,
     });
     revalidateEmployeeViews();
     return { ok: true };
@@ -68,6 +70,7 @@ export async function updateEmployeeAction(
   const email = cleanText(input.email);
   const entryTime = cleanText(input.entryTime);
   const exitTime = cleanText(input.exitTime);
+  const scheduleProfileId = cleanText(input.scheduleProfileId);
 
   if (!cleanId || !nombre || !apellido) {
     return { error: 'Completá DNI, nombre y apellido.' };
@@ -81,6 +84,7 @@ export async function updateEmployeeAction(
       email: email || null,
       entryTime: entryTime || null,
       exitTime: exitTime || null,
+      scheduleProfileId: scheduleProfileId || null,
     });
     revalidateEmployeeViews();
     return { ok: true };

@@ -58,4 +58,9 @@ export class UpdateEmployeeDto {
   @IsOptional()
   @IsUUID()
   companyId?: string | null;
+
+  @Transform(trimNullableValue)
+  @IsOptional()
+  @IsUUID()
+  scheduleProfileId?: string | null;
 }

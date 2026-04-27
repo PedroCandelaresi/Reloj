@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
-import type { Employee } from '@/lib/api';
+import type { Employee, ScheduleProfile } from '@/lib/api';
 import type { ActionResult } from '@/app/(protected)/employees/actions';
 import {
   createEmployeeAction,
@@ -21,6 +21,7 @@ type FormValues = {
   email: string;
   entryTime: string;
   exitTime: string;
+  scheduleProfileId: string;
 };
 
 type BannerState =
@@ -36,6 +37,7 @@ const EMPTY_FORM: FormValues = {
   email: '',
   entryTime: '',
   exitTime: '',
+  scheduleProfileId: '',
 };
 
 function toFormValues(employee: Employee): FormValues {
@@ -47,18 +49,21 @@ function toFormValues(employee: Employee): FormValues {
     email: employee.email ?? '',
     entryTime: employee.entryTime ?? '',
     exitTime: employee.exitTime ?? '',
+    scheduleProfileId: employee.scheduleProfileId ?? '',
   };
 }
 
 export function EmployeesManager({ employees }: { employees: Employee[] }) {
-  return <EmployeesManagerContent employees={employees} canManage />;
+  return <EmployeesManagerContent employees={employees} scheduleProfiles={[]} canManage />;
 }
 
 export function EmployeesManagerContent({
   employees,
+  scheduleProfiles,
   canManage,
 }: {
   employees: Employee[];
+  scheduleProfiles: ScheduleProfile[];
   canManage: boolean;
 }) {
   const router = useRouter();
@@ -90,7 +95,7 @@ export function EmployeesManagerContent({
     setFormError(null);
   };
 
-  const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = event.target;
     setForm((current) => ({ ...current, [name]: value }));
   };
@@ -107,6 +112,7 @@ export function EmployeesManagerContent({
     const email = form.email.trim();
     const entryTime = form.entryTime.trim();
     const exitTime = form.exitTime.trim();
+    const scheduleProfileId = form.scheduleProfileId.trim();
 
     if (!id || !nombre || !apellido) {
       setFormError('Completá DNI, nombre y apellido.');
@@ -124,6 +130,7 @@ export function EmployeesManagerContent({
               email: email || null,
               entryTime: entryTime || null,
               exitTime: exitTime || null,
+              scheduleProfileId: scheduleProfileId || null,
             })
           : updateEmployeeAction(id, {
               nombre,
@@ -132,6 +139,7 @@ export function EmployeesManagerContent({
               email: email || null,
               entryTime: entryTime || null,
               exitTime: exitTime || null,
+              scheduleProfileId: scheduleProfileId || null,
             });
 
       void request
@@ -241,6 +249,7 @@ export function EmployeesManagerContent({
                 <th className="px-6 py-4 text-left font-semibold">Email</th>
                 <th className="px-6 py-4 text-left font-semibold">Entrada</th>
                 <th className="px-6 py-4 text-left font-semibold">Salida</th>
+                <th className="px-6 py-4 text-left font-semibold">Perfil</th>
                 {canManage && (
                   <th className="px-6 py-4 text-right font-semibold">Acciones</th>
                 )}
@@ -250,7 +259,7 @@ export function EmployeesManagerContent({
               {employees.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={canManage ? 8 : 7}
+                    colSpan={canManage ? 9 : 8}
                     className="px-6 py-10 text-center text-gray-500"
                   >
                     No hay empleados registrados todavía.
@@ -266,6 +275,9 @@ export function EmployeesManagerContent({
                     <td className="px-6 py-4 text-gray-500">{employee.email || '—'}</td>
                     <td className="px-6 py-4 text-gray-500">{employee.entryTime || '—'}</td>
                     <td className="px-6 py-4 text-gray-500">{employee.exitTime || '—'}</td>
+                    <td className="px-6 py-4 text-gray-500">
+                      {employee.scheduleProfile?.name || '—'}
+                    </td>
                     {canManage && (
                       <td className="px-6 py-4">
                         <div className="flex justify-end gap-2">
@@ -297,7 +309,7 @@ export function EmployeesManagerContent({
 
       {canManage && isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/45 px-4">
-          <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl border border-gray-100">
+          <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-xl border border-gray-100">
             <div className="px-6 py-4 border-b border-gray-100">
               <h3 className="text-lg font-semibold text-gray-900">
                 {mode === 'create' ? 'Agregar empleado' : 'Editar empleado'}
@@ -349,6 +361,28 @@ export function EmployeesManagerContent({
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Perfil horario
+                </label>
+                <select
+                  name="scheduleProfileId"
+                  value={form.scheduleProfileId}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Sin perfil asignado</option>
+                  {scheduleProfiles.map((profile) => (
+                    <option key={profile.id} value={profile.id}>
+                      {profile.name} ({profile.entryTime} - {profile.exitTime})
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-gray-500">
+                  Los horarios propios de abajo pisan al perfil. Dejalos vacíos para usar verano/invierno del perfil.
+                </p>
               </div>
 
               <div>

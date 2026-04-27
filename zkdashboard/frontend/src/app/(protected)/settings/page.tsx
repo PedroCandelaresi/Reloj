@@ -1,6 +1,7 @@
 import { CompanySettingsManager } from '@/components/CompanySettingsManager';
 import { Navbar } from '@/components/Navbar';
-import { getCompanySettings } from '@/lib/api';
+import { ScheduleProfilesManager } from '@/components/ScheduleProfilesManager';
+import { getCompanySettings, getScheduleProfiles } from '@/lib/api';
 import { requireCurrentSession } from '@/lib/session';
 import { redirect } from 'next/navigation';
 
@@ -15,12 +16,15 @@ export default async function SettingsPage() {
     redirect('/dashboard');
   }
 
-  const company = await getCompanySettings();
+  const [company, scheduleProfiles] = await Promise.all([
+    getCompanySettings(),
+    getScheduleProfiles(),
+  ]);
 
   return (
     <>
       <Navbar user={user} />
-      <main className="max-w-4xl mx-auto px-4 py-8 pt-32">
+      <main className="max-w-7xl mx-auto px-4 py-8 pt-32">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-white drop-shadow-md">Configuración</h1>
           <p className="text-emerald-200/70 text-sm mt-1">
@@ -28,7 +32,10 @@ export default async function SettingsPage() {
           </p>
         </div>
 
-        <CompanySettingsManager company={company} />
+        <div className="space-y-6">
+          <CompanySettingsManager company={company} />
+          <ScheduleProfilesManager profiles={scheduleProfiles} />
+        </div>
       </main>
     </>
   );

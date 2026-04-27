@@ -7,6 +7,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Employee } from './employee.entity';
+import { ScheduleProfile } from '../companies/schedule-profile.entity';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
 import { AuthenticatedUser } from '../auth/authenticated-user.interface';
@@ -17,6 +18,8 @@ export class EmployeesService {
   constructor(
     @InjectRepository(Employee)
     private readonly repo: Repository<Employee>,
+    @InjectRepository(ScheduleProfile)
+    private readonly scheduleProfilesRepo: Repository<ScheduleProfile>,
   ) {}
 
   findAll(user: AuthenticatedUser): Promise<Employee[]> {
@@ -24,6 +27,9 @@ export class EmployeesService {
 
     return this.repo.find({
       where: companyId ? { companyId } : {},
+      relations: {
+        scheduleProfile: true,
+      },
       order: {
         apellido: 'ASC',
         nombre: 'ASC',
@@ -57,6 +63,10 @@ export class EmployeesService {
       email: dto.email ?? null,
       entryTime: dto.entryTime ?? null,
       exitTime: dto.exitTime ?? null,
+      scheduleProfileId: await this.resolveScheduleProfileId(
+        dto.scheduleProfileId,
+        resolvedCompanyId,
+      ),
       companyId: resolvedCompanyId,
     });
 
@@ -77,8 +87,23 @@ export class EmployeesService {
     if (dto.email !== undefined) employee.email = dto.email;
     if (dto.entryTime !== undefined) employee.entryTime = dto.entryTime;
     if (dto.exitTime !== undefined) employee.exitTime = dto.exitTime;
-    if (dto.companyId !== undefined || (!user.isSuperAdmin && employee.companyId !== resolvedCompanyId)) {
+    if (dto.scheduleProfileId !== undefined) {
+      employee.scheduleProfileId = await this.resolveScheduleProfileId(
+        dto.scheduleProfileId,
+        resolvedCompanyId,
+      );
+    }
+    if (
+      dto.companyId !== undefined ||
+      (!user.isSuperAdmin && employee.companyId !== resolvedCompanyId)
+    ) {
       employee.companyId = resolvedCompanyId;
+      if (employee.scheduleProfileId) {
+        employee.scheduleProfileId = await this.resolveScheduleProfileId(
+          employee.scheduleProfileId,
+          resolvedCompanyId,
+        );
+      }
     }
 
     return this.repo.save(employee);
@@ -111,10 +136,20 @@ export class EmployeesService {
     user: AuthenticatedUser,
   ): Promise<Employee | null> {
     if (user.isSuperAdmin) {
-      return this.repo.findOneBy({ id });
+      return this.repo.findOne({
+        where: { id },
+        relations: {
+          scheduleProfile: true,
+        },
+      });
     }
 
-    return this.repo.findOneBy({ id, companyId: getCompanyScope(user) });
+    return this.repo.findOne({
+      where: { id, companyId: getCompanyScope(user) },
+      relations: {
+        scheduleProfile: true,
+      },
+    });
   }
 
   private resolveWritableCompanyId(
@@ -133,5 +168,31 @@ export class EmployeesService {
     }
 
     return companyId;
+  }
+
+  private async resolveScheduleProfileId(
+    requestedProfileId: string | null | undefined,
+    companyId: string | null,
+  ): Promise<string | null> {
+    if (!requestedProfileId) {
+      return null;
+    }
+
+    if (!companyId) {
+      throw new ForbiddenException(
+        'El perfil horario solo puede asignarse a empleados con empresa.',
+      );
+    }
+
+    const profile = await this.scheduleProfilesRepo.findOneBy({
+      id: requestedProfileId,
+      companyId,
+    });
+
+    if (!profile) {
+      throw new NotFoundException('Perfil horario no encontrado para esta empresa');
+    }
+
+    return profile.id;
   }
 }

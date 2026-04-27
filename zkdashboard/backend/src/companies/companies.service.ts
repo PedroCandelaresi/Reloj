@@ -12,12 +12,15 @@ import { Employee } from '../employees/employee.entity';
 import { AuthenticatedUser } from '../auth/authenticated-user.interface';
 import { getCompanyScope } from '../auth/company-scope.util';
 import { CreateCompanyDto } from './dto/create-company.dto';
+import { CreateScheduleProfileDto } from './dto/create-schedule-profile.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
 import { UpdateCompanySettingsDto } from './dto/update-company-settings.dto';
+import { UpdateScheduleProfileDto } from './dto/update-schedule-profile.dto';
 import { AssignCompanyUserDto } from './dto/assign-company-user.dto';
 import { UpdateCompanyUserDto } from './dto/update-company-user.dto';
 import { CompanyMembership } from './company-membership.entity';
 import { Company } from './company.entity';
+import { ScheduleProfile } from './schedule-profile.entity';
 import { normalizeCuit } from './validation/cuit.util';
 
 function trimRequired(value: string): string {
@@ -40,6 +43,8 @@ export class CompaniesService {
     private readonly companiesRepo: Repository<Company>,
     @InjectRepository(CompanyMembership)
     private readonly membershipsRepo: Repository<CompanyMembership>,
+    @InjectRepository(ScheduleProfile)
+    private readonly scheduleProfilesRepo: Repository<ScheduleProfile>,
     @InjectRepository(AdminUser)
     private readonly usersRepo: Repository<AdminUser>,
     @InjectRepository(Employee)
@@ -108,6 +113,26 @@ export class CompaniesService {
             companyId: membership.user.employee.companyId,
           }
         : null,
+    };
+  }
+
+  private toScheduleProfile(profile: ScheduleProfile) {
+    return {
+      id: profile.id,
+      companyId: profile.companyId,
+      name: profile.name,
+      entryTime: profile.entryTime,
+      exitTime: profile.exitTime,
+      summerEntryTime: profile.summerEntryTime,
+      summerExitTime: profile.summerExitTime,
+      summerStart: profile.summerStart,
+      summerEnd: profile.summerEnd,
+      winterEntryTime: profile.winterEntryTime,
+      winterExitTime: profile.winterExitTime,
+      winterStart: profile.winterStart,
+      winterEnd: profile.winterEnd,
+      createdAt: profile.createdAt,
+      updatedAt: profile.updatedAt,
     };
   }
 
@@ -260,6 +285,105 @@ export class CompaniesService {
     }
 
     return this.toCompany(await this.companiesRepo.save(company));
+  }
+
+  async listScopedScheduleProfiles(user: AuthenticatedUser) {
+    const companyId = this.getScopedCompanyId(user);
+    const profiles = await this.scheduleProfilesRepo.find({
+      where: { companyId },
+      order: {
+        name: 'ASC',
+        createdAt: 'ASC',
+      },
+    });
+
+    return profiles.map((profile) => this.toScheduleProfile(profile));
+  }
+
+  async createScopedScheduleProfile(
+    user: AuthenticatedUser,
+    dto: CreateScheduleProfileDto,
+  ) {
+    const company = await this.ensureCompanyIsActive(this.getScopedCompanyId(user));
+    const profile = this.scheduleProfilesRepo.create({
+      companyId: company.id,
+      name: trimRequired(dto.name),
+      entryTime: dto.entryTime,
+      exitTime: dto.exitTime,
+      summerEntryTime: dto.summerEntryTime ?? null,
+      summerExitTime: dto.summerExitTime ?? null,
+      summerStart: dto.summerStart ?? null,
+      summerEnd: dto.summerEnd ?? null,
+      winterEntryTime: dto.winterEntryTime ?? null,
+      winterExitTime: dto.winterExitTime ?? null,
+      winterStart: dto.winterStart ?? null,
+      winterEnd: dto.winterEnd ?? null,
+    });
+
+    try {
+      return this.toScheduleProfile(await this.scheduleProfilesRepo.save(profile));
+    } catch (error) {
+      if ((error as { code?: string }).code === '23505') {
+        throw new ConflictException('Ya existe un perfil horario con ese nombre.');
+      }
+      throw error;
+    }
+  }
+
+  async updateScopedScheduleProfile(
+    user: AuthenticatedUser,
+    profileId: string,
+    dto: UpdateScheduleProfileDto,
+  ) {
+    const companyId = this.getScopedCompanyId(user);
+    const profile = await this.scheduleProfilesRepo.findOneBy({ id: profileId, companyId });
+    if (!profile) {
+      throw new NotFoundException('Perfil horario no encontrado');
+    }
+
+    if (dto.name !== undefined) profile.name = trimRequired(dto.name);
+    if (dto.entryTime !== undefined) profile.entryTime = dto.entryTime;
+    if (dto.exitTime !== undefined) profile.exitTime = dto.exitTime;
+    if (dto.summerEntryTime !== undefined) profile.summerEntryTime = dto.summerEntryTime;
+    if (dto.summerExitTime !== undefined) profile.summerExitTime = dto.summerExitTime;
+    if (dto.summerStart !== undefined) profile.summerStart = dto.summerStart;
+    if (dto.summerEnd !== undefined) profile.summerEnd = dto.summerEnd;
+    if (dto.winterEntryTime !== undefined) profile.winterEntryTime = dto.winterEntryTime;
+    if (dto.winterExitTime !== undefined) profile.winterExitTime = dto.winterExitTime;
+    if (dto.winterStart !== undefined) profile.winterStart = dto.winterStart;
+    if (dto.winterEnd !== undefined) profile.winterEnd = dto.winterEnd;
+
+    try {
+      return this.toScheduleProfile(await this.scheduleProfilesRepo.save(profile));
+    } catch (error) {
+      if ((error as { code?: string }).code === '23505') {
+        throw new ConflictException('Ya existe un perfil horario con ese nombre.');
+      }
+      throw error;
+    }
+  }
+
+  async removeScopedScheduleProfile(user: AuthenticatedUser, profileId: string) {
+    const companyId = this.getScopedCompanyId(user);
+    const profile = await this.scheduleProfilesRepo.findOne({
+      where: { id: profileId, companyId },
+      relations: {
+        employees: true,
+      },
+    });
+
+    if (!profile) {
+      throw new NotFoundException('Perfil horario no encontrado');
+    }
+
+    if ((profile.employees?.length ?? 0) > 0) {
+      throw new ConflictException(
+        'No se puede eliminar el perfil porque tiene empleados asignados.',
+      );
+    }
+
+    await this.scheduleProfilesRepo.remove(profile);
+    return { success: true as const };
   }
 
   async remove(id: string) {

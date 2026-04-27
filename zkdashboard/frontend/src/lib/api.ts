@@ -59,6 +59,8 @@ export interface Employee extends EmployeeSummary {
   email: string | null;
   entryTime: string | null;
   exitTime: string | null;
+  scheduleProfileId: string | null;
+  scheduleProfile?: ScheduleProfile | null;
   companyId: string | null;
   createdAt: string;
 }
@@ -71,6 +73,7 @@ export interface EmployeeInput {
   email?: string | null;
   entryTime?: string | null;
   exitTime?: string | null;
+  scheduleProfileId?: string | null;
   companyId?: string | null;
 }
 
@@ -81,6 +84,7 @@ export interface EmployeeUpdateInput {
   email?: string | null;
   entryTime?: string | null;
   exitTime?: string | null;
+  scheduleProfileId?: string | null;
   companyId?: string | null;
 }
 
@@ -298,6 +302,38 @@ export interface CompanySettingsInput {
   defaultExitTime?: string | null;
 }
 
+export interface ScheduleProfile {
+  id: string;
+  companyId: string;
+  name: string;
+  entryTime: string;
+  exitTime: string;
+  summerEntryTime: string | null;
+  summerExitTime: string | null;
+  summerStart: string | null;
+  summerEnd: string | null;
+  winterEntryTime: string | null;
+  winterExitTime: string | null;
+  winterStart: string | null;
+  winterEnd: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ScheduleProfileInput {
+  name: string;
+  entryTime: string;
+  exitTime: string;
+  summerEntryTime?: string | null;
+  summerExitTime?: string | null;
+  summerStart?: string | null;
+  summerEnd?: string | null;
+  winterEntryTime?: string | null;
+  winterExitTime?: string | null;
+  winterStart?: string | null;
+  winterEnd?: string | null;
+}
+
 export interface AssignAdminDeviceCompanyInput {
   companyId: string;
   alias?: string | null;
@@ -473,6 +509,30 @@ export function updateCompanySettings(input: CompanySettingsInput) {
   return apiFetch<CompanySummary>('/company/settings', {
     method: 'PUT',
     body: JSON.stringify(input),
+  });
+}
+
+export function getScheduleProfiles() {
+  return apiFetch<ScheduleProfile[]>('/company/schedule-profiles');
+}
+
+export function createScheduleProfile(input: ScheduleProfileInput) {
+  return apiFetch<ScheduleProfile>('/company/schedule-profiles', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export function updateScheduleProfile(id: string, input: Partial<ScheduleProfileInput>) {
+  return apiFetch<ScheduleProfile>(`/company/schedule-profiles/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(input),
+  });
+}
+
+export function deleteScheduleProfile(id: string) {
+  return apiFetch<{ success: true }>(`/company/schedule-profiles/${id}`, {
+    method: 'DELETE',
   });
 }
 

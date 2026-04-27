@@ -6,6 +6,7 @@ import { AttendanceRecord } from '../attendance/attendance.entity';
 import { InboundRequest } from '../adms/inbound-request.entity';
 import { CompanyMembership } from '../companies/company-membership.entity';
 import { Company } from '../companies/company.entity';
+import { ScheduleProfile } from '../companies/schedule-profile.entity';
 import { Device } from '../devices/device.entity';
 import { DeviceCommand } from '../devices/device-command.entity';
 import { Employee } from '../employees/employee.entity';
@@ -18,6 +19,7 @@ export const DATABASE_ENTITIES = [
   AttendanceRecord,
   Company,
   CompanyMembership,
+  ScheduleProfile,
   Device,
   DeviceCommand,
   AdminUser,
