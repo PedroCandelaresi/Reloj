@@ -1,6 +1,8 @@
 import {
   Controller,
+  Body,
   Get,
+  Post,
   Query,
   UseGuards,
   DefaultValuePipe,
@@ -9,17 +11,21 @@ import {
 } from '@nestjs/common';
 import { Response } from 'express';
 import { AttendanceService } from './attendance.service';
+import { AttendanceCalculationService } from './attendance-calculation.service';
 import { ExportService } from './export.service';
 import { JwtAuthGuard } from '../auth/auth.guard';
 import { DevicesService } from '../devices/devices.service';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { AuthenticatedUser } from '../auth/authenticated-user.interface';
+import { RecalculateAttendanceDto } from './dto/recalculate-attendance.dto';
+import { DaySummariesQueryDto } from './dto/day-summaries-query.dto';
 
 @Controller('attendance')
 @UseGuards(JwtAuthGuard)
 export class AttendanceController {
   constructor(
     private readonly attendance: AttendanceService,
+    private readonly calculations: AttendanceCalculationService,
     private readonly exports: ExportService,
     private readonly devices: DevicesService,
   ) {}
@@ -47,6 +53,34 @@ export class AttendanceController {
   @Get('devices')
   getDevices(@CurrentUser() user: AuthenticatedUser) {
     return this.devices.findAllForUser(user);
+  }
+
+  @Post('recalculate')
+  recalculate(
+    @Body() dto: RecalculateAttendanceDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    const companyId = this.calculations.resolveWritableCompanyId(user, dto.companyId);
+    return this.calculations.recalculateCompanyRange(
+      companyId,
+      dto.dateFrom,
+      dto.dateTo,
+      dto.employeeId,
+    );
+  }
+
+  @Get('day-summaries')
+  getDaySummaries(
+    @Query() query: DaySummariesQueryDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.calculations.getDaySummaries({
+      user,
+      dateFrom: query.dateFrom,
+      dateTo: query.dateTo,
+      employeeId: query.employeeId,
+      companyId: query.companyId,
+    });
   }
 
   @Get('export')

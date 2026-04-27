@@ -391,6 +391,128 @@ export interface PaginatedResult {
   pages: number;
 }
 
+export type BasicAttendanceStatus = 'present' | 'no_records' | 'incomplete';
+export type IncompleteReason =
+  | 'single_punch'
+  | 'odd_punch_count'
+  | 'missing_exit'
+  | 'missing_entry_unknown';
+
+export interface ReportEmployeeSummary {
+  id: string;
+  nombre: string;
+  apellido: string;
+  companyId: string | null;
+}
+
+export interface DailyPresenceReportRow {
+  employee: ReportEmployeeSummary;
+  userId: string;
+  date: string;
+  firstPunch: string | null;
+  lastPunch: string | null;
+  punchCount: number;
+  workedMinutes: number;
+  primaryDevice: string | null;
+  devices: string[];
+  status: BasicAttendanceStatus;
+}
+
+export interface IncompleteRecordsReportRow {
+  employee: ReportEmployeeSummary;
+  userId: string;
+  date: string;
+  punchCount: number;
+  punchTimes: string[];
+  devices: string[];
+  reason: IncompleteReason;
+}
+
+export interface MonthlySummaryDay {
+  day: number;
+  date: string;
+  firstPunch: string | null;
+  lastPunch: string | null;
+  punchCount: number;
+  workedMinutes: number;
+  status: BasicAttendanceStatus;
+}
+
+export interface MonthlySummaryReportRow {
+  employee: ReportEmployeeSummary;
+  userId: string;
+  year: number;
+  month: number;
+  daysWithRecords: number;
+  totalPunches: number;
+  totalWorkedMinutes: number;
+  totalWorkedHours: number;
+  incompleteDays: number;
+  days: MonthlySummaryDay[];
+}
+
+export interface ReportFilterParams {
+  dateFrom?: string;
+  dateTo?: string;
+  employeeId?: string;
+  userId?: string;
+  deviceId?: string;
+  companyId?: string;
+}
+
+export interface MonthlySummaryParams {
+  year: number | string;
+  month: number | string;
+  employeeId?: string;
+  userId?: string;
+  companyId?: string;
+}
+
+export interface AttendanceDaySummary {
+  id: string;
+  companyId: string;
+  employeeId: string;
+  employee: EmployeeSummary | null;
+  date: string;
+  firstPunchAt: string | null;
+  lastPunchAt: string | null;
+  totalPunchCount: number;
+  punchTimesJson: string[] | null;
+  deviceIdsJson: number[] | null;
+  primaryDeviceId: number | null;
+  primaryDeviceSn: string | null;
+  primaryDeviceName: string | null;
+  isPresent: boolean;
+  hasRecords: boolean;
+  hasIncompleteRecord: boolean;
+  workedMinutes: number;
+  expectedMinutes: number;
+  lateMinutes: number;
+  earlyDepartureMinutes: number;
+  overtimeMinutes: number;
+  isAbsent: boolean;
+  isHoliday: boolean;
+  isWeekend: boolean;
+  status: 'no_records' | 'present' | 'incomplete' | 'calculated' | 'needs_review';
+  calculatedAt: string | null;
+}
+
+export interface AttendanceSummaryParams {
+  dateFrom: string;
+  dateTo: string;
+  employeeId?: string;
+  companyId?: string;
+}
+
+export interface RecalculateAttendanceResult {
+  employeesProcessed: number;
+  daysProcessed: number;
+  summariesCreated: number;
+  summariesUpdated: number;
+  dateFrom: string;
+  dateTo: string;
+}
+
 export const STATUS_LABELS: Record<number, string> = {
   0: 'Entrada',
   1: 'Salida',
@@ -703,4 +825,50 @@ export function getRecords(params: {
   if (params.dateTo) qs.set('dateTo', params.dateTo);
   const search = qs.toString();
   return apiFetch<PaginatedResult>(`/attendance${search ? `?${search}` : ''}`);
+}
+
+function buildReportQuery(params: object) {
+  const qs = new URLSearchParams();
+  for (const [key, value] of Object.entries(params) as Array<[string, string | number | undefined]>) {
+    if (value !== undefined && value !== '') {
+      qs.set(key, String(value));
+    }
+  }
+  const search = qs.toString();
+  return search ? `?${search}` : '';
+}
+
+export function getDailyPresenceReport(params: ReportFilterParams = {}) {
+  return apiFetch<DailyPresenceReportRow[]>(`/reports/daily-presence${buildReportQuery(params)}`);
+}
+
+export function exportDailyPresenceReport(params: ReportFilterParams = {}) {
+  return `/api/reports/export${buildReportQuery({ ...params, report: 'daily-presence' })}`;
+}
+
+export function getIncompleteRecordsReport(params: ReportFilterParams = {}) {
+  return apiFetch<IncompleteRecordsReportRow[]>(`/reports/incomplete-records${buildReportQuery(params)}`);
+}
+
+export function exportIncompleteRecordsReport(params: ReportFilterParams = {}) {
+  return `/api/reports/export${buildReportQuery({ ...params, report: 'incomplete-records' })}`;
+}
+
+export function getMonthlySummaryReport(params: MonthlySummaryParams) {
+  return apiFetch<MonthlySummaryReportRow[]>(`/reports/monthly-summary${buildReportQuery(params)}`);
+}
+
+export function exportMonthlySummaryReport(params: MonthlySummaryParams) {
+  return `/api/reports/export${buildReportQuery({ ...params, report: 'monthly-summary' })}`;
+}
+
+export function getAttendanceDaySummaries(params: AttendanceSummaryParams) {
+  return apiFetch<AttendanceDaySummary[]>(`/attendance/day-summaries${buildReportQuery(params)}`);
+}
+
+export function recalculateAttendanceSummaries(params: AttendanceSummaryParams) {
+  return apiFetch<RecalculateAttendanceResult>('/attendance/recalculate', {
+    method: 'POST',
+    body: JSON.stringify(params),
+  });
 }

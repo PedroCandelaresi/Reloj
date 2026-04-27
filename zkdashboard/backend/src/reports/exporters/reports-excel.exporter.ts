@@ -1,0 +1,151 @@
+import { Injectable } from '@nestjs/common';
+import * as ExcelJS from 'exceljs';
+import {
+  DailyPresenceRow,
+  IncompleteRecordRow,
+  MonthlySummaryRow,
+} from '../types/report.types';
+import { formatArgentinaDateTime, formatArgentinaTime } from '../utils/argentina-date.util';
+
+@Injectable()
+export class ReportsExcelExporter {
+  async dailyPresence(rows: DailyPresenceRow[]): Promise<Buffer> {
+    const wb = new ExcelJS.Workbook();
+    const sheet = wb.addWorksheet('Presencia diaria');
+    sheet.columns = [
+      { header: 'Empleado', key: 'employee', width: 28 },
+      { header: 'PIN', key: 'userId', width: 18 },
+      { header: 'Fecha', key: 'date', width: 14 },
+      { header: 'Primera fichada', key: 'firstPunch', width: 22 },
+      { header: 'Ultima fichada', key: 'lastPunch', width: 22 },
+      { header: 'Fichadas', key: 'punchCount', width: 10 },
+      { header: 'Minutos estimados', key: 'workedMinutes', width: 18 },
+      { header: 'Dispositivo principal', key: 'primaryDevice', width: 24 },
+      { header: 'Estado', key: 'status', width: 14 },
+    ];
+
+    rows.forEach((row) => {
+      sheet.addRow({
+        employee: this.employeeName(row.employee),
+        userId: row.userId,
+        date: row.date,
+        firstPunch: formatArgentinaDateTime(row.firstPunch),
+        lastPunch: formatArgentinaDateTime(row.lastPunch),
+        punchCount: row.punchCount,
+        workedMinutes: row.workedMinutes,
+        primaryDevice: row.primaryDevice ?? '',
+        status: row.status,
+      });
+    });
+
+    this.styleSheet(sheet);
+    return this.writeBuffer(wb);
+  }
+
+  async incompleteRecords(rows: IncompleteRecordRow[]): Promise<Buffer> {
+    const wb = new ExcelJS.Workbook();
+    const sheet = wb.addWorksheet('Fichadas incompletas');
+    sheet.columns = [
+      { header: 'Empleado', key: 'employee', width: 28 },
+      { header: 'PIN', key: 'userId', width: 18 },
+      { header: 'Fecha', key: 'date', width: 14 },
+      { header: 'Fichadas', key: 'punchCount', width: 10 },
+      { header: 'Horarios', key: 'punchTimes', width: 44 },
+      { header: 'Dispositivos', key: 'devices', width: 32 },
+      { header: 'Motivo', key: 'reason', width: 22 },
+    ];
+
+    rows.forEach((row) => {
+      sheet.addRow({
+        employee: this.employeeName(row.employee),
+        userId: row.userId,
+        date: row.date,
+        punchCount: row.punchCount,
+        punchTimes: row.punchTimes.map((date) => formatArgentinaTime(date)).join(', '),
+        devices: row.devices.join(', '),
+        reason: row.reason,
+      });
+    });
+
+    this.styleSheet(sheet);
+    return this.writeBuffer(wb);
+  }
+
+  async monthlySummary(rows: MonthlySummaryRow[]): Promise<Buffer> {
+    const wb = new ExcelJS.Workbook();
+    const summary = wb.addWorksheet('Resumen mensual');
+    summary.columns = [
+      { header: 'Empleado', key: 'employee', width: 28 },
+      { header: 'PIN', key: 'userId', width: 18 },
+      { header: 'Mes', key: 'period', width: 12 },
+      { header: 'Dias con fichadas', key: 'daysWithRecords', width: 18 },
+      { header: 'Total fichadas', key: 'totalPunches', width: 15 },
+      { header: 'Minutos estimados', key: 'totalWorkedMinutes', width: 18 },
+      { header: 'Horas estimadas', key: 'totalWorkedHours', width: 16 },
+      { header: 'Dias incompletos', key: 'incompleteDays', width: 18 },
+    ];
+
+    rows.forEach((row) => {
+      summary.addRow({
+        employee: this.employeeName(row.employee),
+        userId: row.userId,
+        period: `${String(row.month).padStart(2, '0')}/${row.year}`,
+        daysWithRecords: row.daysWithRecords,
+        totalPunches: row.totalPunches,
+        totalWorkedMinutes: row.totalWorkedMinutes,
+        totalWorkedHours: row.totalWorkedHours,
+        incompleteDays: row.incompleteDays,
+      });
+    });
+    this.styleSheet(summary);
+
+    const detail = wb.addWorksheet('Detalle diario');
+    detail.columns = [
+      { header: 'Empleado', key: 'employee', width: 28 },
+      { header: 'PIN', key: 'userId', width: 18 },
+      { header: 'Fecha', key: 'date', width: 14 },
+      { header: 'Primera fichada', key: 'firstPunch', width: 22 },
+      { header: 'Ultima fichada', key: 'lastPunch', width: 22 },
+      { header: 'Fichadas', key: 'punchCount', width: 10 },
+      { header: 'Minutos estimados', key: 'workedMinutes', width: 18 },
+      { header: 'Estado', key: 'status', width: 14 },
+    ];
+
+    rows.forEach((row) => {
+      row.days.forEach((day) => {
+        detail.addRow({
+          employee: this.employeeName(row.employee),
+          userId: row.userId,
+          date: day.date,
+          firstPunch: formatArgentinaDateTime(day.firstPunch),
+          lastPunch: formatArgentinaDateTime(day.lastPunch),
+          punchCount: day.punchCount,
+          workedMinutes: day.workedMinutes,
+          status: day.status,
+        });
+      });
+    });
+    this.styleSheet(detail);
+
+    return this.writeBuffer(wb);
+  }
+
+  private employeeName(employee: { nombre: string; apellido: string }): string {
+    return [employee.apellido, employee.nombre].filter(Boolean).join(', ') || 'Sin nombre';
+  }
+
+  private styleSheet(sheet: ExcelJS.Worksheet): void {
+    sheet.getRow(1).font = { bold: true };
+    sheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE2E8F0' },
+    };
+    sheet.views = [{ state: 'frozen', ySplit: 1 }];
+  }
+
+  private async writeBuffer(wb: ExcelJS.Workbook): Promise<Buffer> {
+    const buffer = await wb.xlsx.writeBuffer();
+    return Buffer.from(buffer);
+  }
+}

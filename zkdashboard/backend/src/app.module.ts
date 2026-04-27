@@ -9,6 +9,7 @@ import { DevicesModule } from './devices/devices.module';
 import { UsersModule } from './users/users.module';
 import { EmployeesModule } from './employees/employees.module';
 import { AdminDashboardModule } from './admin-dashboard/admin-dashboard.module';
+import { ReportsModule } from './reports/reports.module';
 import { buildDatabaseOptions } from './database/data-source';
 
 @Module({
@@ -36,6 +37,7 @@ import { buildDatabaseOptions } from './database/data-source';
     DevicesModule,
     EmployeesModule,
     AttendanceModule,
+    ReportsModule,
     AdmsModule,
   ],
 })

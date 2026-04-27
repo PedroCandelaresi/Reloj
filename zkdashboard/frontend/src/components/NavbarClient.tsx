@@ -65,6 +65,7 @@ function getNavigationItems(user?: CurrentUserProfile | null) {
   const commonItems = [
     { href: '/dashboard', label: 'Dashboard' },
     { href: '/records', label: 'Fichadas' },
+    { href: '/reports', label: 'Reportes' },
     { href: '/employees', label: 'Empleados' },
   ];
 
@@ -78,6 +79,7 @@ function getNavigationItems(user?: CurrentUserProfile | null) {
     { href: '/admin/dashboard', label: 'Panel global' },
     { href: '/admin/companies', label: 'Empresas' },
     { href: '/admin/devices', label: 'Dispositivos' },
+    { href: '/reports', label: 'Reportes' },
   ];
 }
 
