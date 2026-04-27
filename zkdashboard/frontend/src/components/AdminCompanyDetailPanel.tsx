@@ -137,38 +137,36 @@ export function AdminCompanyDetailPanel({
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-lg border border-gray-200 mt-6">
-      <div className="px-6 py-4 border-b border-gray-200">
-        <h3 className="font-semibold text-gray-900">
+    <div className="card rounded-xl mt-6">
+      <div className="px-6 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
+        <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>
           {company.nombreFantasia || company.razonSocial}
-          <span className="ml-2 text-sm font-normal text-gray-400">{company.cuit}</span>
+          <span className="ml-2 text-sm font-normal" style={{ color: 'var(--text-muted)' }}>{company.cuit}</span>
         </h3>
       </div>
 
       {banner && (
-        <div
-          className={`mx-6 mt-4 rounded-lg border px-4 py-3 text-sm ${
-            banner.type === 'success'
-              ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
-              : 'bg-red-50 border-red-200 text-red-700'
-          }`}
-        >
+        <div className="mx-6 mt-4 rounded-lg border px-4 py-3 text-sm" style={
+          banner.type === 'success'
+            ? { background: 'var(--brand-soft)', borderColor: 'rgba(31,199,119,0.3)', color: 'var(--brand-text)' }
+            : { background: 'var(--danger-soft)', borderColor: 'rgba(230,45,66,0.3)', color: 'var(--danger-text)' }
+        }>
           {banner.text}
         </div>
       )}
 
       {/* Tabs */}
-      <div className="flex border-b border-gray-200 px-6 mt-4">
+      <div className="flex px-6 mt-4" style={{ borderBottom: '1px solid var(--border)' }}>
         {(['employees', 'users'] as Tab[]).map((t) => (
           <button
             key={t}
             type="button"
             onClick={() => setTab(t)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              tab === t
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
+            className="px-4 py-2 text-sm font-medium border-b-2 transition-colors"
+            style={tab === t
+              ? { borderColor: 'var(--brand)', color: 'var(--brand-text)' }
+              : { borderColor: 'transparent', color: 'var(--text-muted)' }
+            }
           >
             {t === 'employees' ? `Empleados (${employees.length})` : `Usuarios (${users.length})`}
           </button>
@@ -183,7 +181,7 @@ export function AdminCompanyDetailPanel({
               <select
                 value={selectedEligible}
                 onChange={(e) => setSelectedEligible(e.target.value)}
-                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
               >
                 <option value="">Asignar empleado existente...</option>
                 {eligibleEmployees.map((emp) => (
@@ -204,32 +202,26 @@ export function AdminCompanyDetailPanel({
           )}
 
           {employees.length === 0 ? (
-            <p className="text-sm text-gray-500 py-4 text-center">No hay empleados asignados.</p>
+            <p className="text-sm py-4 text-center" style={{ color: 'var(--text-muted)' }}>No hay empleados asignados.</p>
           ) : (
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-xs uppercase text-gray-500 border-b border-gray-200">
+                <tr className="text-xs uppercase" style={{ borderBottom: '1px solid var(--border)', color: 'var(--text-muted)' }}>
                   <th className="py-2 text-left">DNI</th>
                   <th className="py-2 text-left">Nombre</th>
                   <th className="py-2 text-left">Email</th>
                   <th className="py-2 text-right">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody>
                 {employees.map((emp) => (
-                  <tr key={emp.id}>
-                    <td className="py-2.5 text-gray-500">{emp.id}</td>
-                    <td className="py-2.5 font-medium text-gray-900">
-                      {emp.apellido}, {emp.nombre}
-                    </td>
-                    <td className="py-2.5 text-gray-500">{emp.email || '—'}</td>
+                  <tr key={emp.id} className="border-t" style={{ borderColor: 'var(--border)' }}>
+                    <td className="py-2.5" style={{ color: 'var(--text-muted)' }}>{emp.id}</td>
+                    <td className="py-2.5 font-medium" style={{ color: 'var(--text-primary)' }}>{emp.apellido}, {emp.nombre}</td>
+                    <td className="py-2.5" style={{ color: 'var(--text-muted)' }}>{emp.email || '—'}</td>
                     <td className="py-2.5 text-right">
-                      <button
-                        type="button"
-                        disabled={isPending}
-                        onClick={() => handleRemoveEmployee(emp.id)}
-                        className="text-red-500 hover:text-red-600 text-xs font-medium"
-                      >
+                      <button type="button" disabled={isPending} onClick={() => handleRemoveEmployee(emp.id)}
+                        className="text-xs font-medium transition-colors" style={{ color: 'var(--danger-text)' }}>
                         Quitar
                       </button>
                     </td>
@@ -255,12 +247,12 @@ export function AdminCompanyDetailPanel({
           </div>
 
           {showUserForm && (
-            <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 space-y-3">
-              <p className="text-sm font-medium text-blue-800">
+            <div className="rounded-xl p-4 space-y-3" style={{ border: '1px solid var(--border)', background: 'var(--surface-raised)' }}>
+              <p className="text-sm font-medium" style={{ color: 'var(--brand-text)' }}>
                 {editingUserId ? 'Editar acceso' : 'Crear acceso'}
               </p>
               {formError && (
-                <p className="text-sm text-red-600">{formError}</p>
+                <p className="text-sm" style={{ color: 'var(--danger-text)' }}>{formError}</p>
               )}
               {!editingUserId && (
                 <select
@@ -281,14 +273,14 @@ export function AdminCompanyDetailPanel({
                   placeholder="Usuario"
                   value={userForm.username}
                   onChange={(e) => setUserForm((f) => ({ ...f, username: e.target.value }))}
-                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
                 />
                 <input
                   placeholder={editingUserId ? 'Nueva contraseña (opcional)' : 'Contraseña'}
                   type="password"
                   value={userForm.password}
                   onChange={(e) => setUserForm((f) => ({ ...f, password: e.target.value }))}
-                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
                 />
               </div>
               <select
@@ -304,7 +296,8 @@ export function AdminCompanyDetailPanel({
                 <button
                   type="button"
                   onClick={() => { setShowUserForm(false); setFormError(null); }}
-                  className="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  className="px-3 py-1.5 text-sm rounded-lg transition-colors"
+                  style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
                 >
                   Cancelar
                 </button>
@@ -321,49 +314,35 @@ export function AdminCompanyDetailPanel({
           )}
 
           {users.length === 0 ? (
-            <p className="text-sm text-gray-500 py-4 text-center">No hay usuarios con acceso.</p>
+            <p className="text-sm py-4 text-center" style={{ color: 'var(--text-muted)' }}>No hay usuarios con acceso.</p>
           ) : (
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-xs uppercase text-gray-500 border-b border-gray-200">
+                <tr className="text-xs uppercase" style={{ borderBottom: '1px solid var(--border)', color: 'var(--text-muted)' }}>
                   <th className="py-2 text-left">Usuario</th>
                   <th className="py-2 text-left">Empleado</th>
                   <th className="py-2 text-left">Rol</th>
                   <th className="py-2 text-right">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody>
                 {users.map((u) => (
-                  <tr key={u.id}>
-                    <td className="py-2.5 font-medium text-gray-900">
-                      {u.user?.username ?? '—'}
-                    </td>
-                    <td className="py-2.5 text-gray-500">
-                      {u.employee
-                        ? `${u.employee.apellido}, ${u.employee.nombre}`
-                        : '—'}
-                    </td>
+                  <tr key={u.id} className="border-t" style={{ borderColor: 'var(--border)' }}>
+                    <td className="py-2.5 font-medium" style={{ color: 'var(--text-primary)' }}>{u.user?.username ?? '—'}</td>
+                    <td className="py-2.5" style={{ color: 'var(--text-muted)' }}>{u.employee ? `${u.employee.apellido}, ${u.employee.nombre}` : '—'}</td>
                     <td className="py-2.5">
-                      <span className="inline-flex rounded-full px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700">
+                      <span className="inline-flex rounded-full px-2 py-0.5 text-xs font-medium" style={{ background: 'var(--blue-soft)', color: 'var(--blue-text)' }}>
                         {ROLE_LABELS[u.role] ?? u.role}
                       </span>
                     </td>
                     <td className="py-2.5 text-right flex justify-end gap-3">
-                      <button
-                        type="button"
-                        disabled={isPending}
-                        onClick={() => openEditUser(u)}
-                        className="text-blue-600 hover:text-blue-700 text-xs font-medium"
-                      >
+                      <button type="button" disabled={isPending} onClick={() => openEditUser(u)}
+                        className="text-xs font-medium transition-colors" style={{ color: 'var(--blue-text)' }}>
                         Editar
                       </button>
                       {u.user && (
-                        <button
-                          type="button"
-                          disabled={isPending}
-                          onClick={() => handleRemoveUser(u.user!.id)}
-                          className="text-red-500 hover:text-red-600 text-xs font-medium"
-                        >
+                        <button type="button" disabled={isPending} onClick={() => handleRemoveUser(u.user!.id)}
+                          className="text-xs font-medium transition-colors" style={{ color: 'var(--danger-text)' }}>
                           Eliminar
                         </button>
                       )}

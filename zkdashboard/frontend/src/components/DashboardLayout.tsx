@@ -20,7 +20,8 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen relative">
-      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+      {/* Dark mode: matrix + scanlines + particles */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0 dark:block hidden">
         <div className="absolute inset-0 conflunet-matrix-bg" />
         <div className="absolute inset-0 conflunet-scanlines opacity-45" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(154,164,175,0.12),transparent_30%),linear-gradient(180deg,rgba(0,0,0,0.08),rgba(0,0,0,0.28))]" />
@@ -44,6 +45,14 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
         <div className="absolute left-[-7rem] top-28 w-[30rem] opacity-[0.12] blur-[0.4px]">
           <BrandLogo variant="emerald" layout="stacked" iconClassName="w-48" wordmarkClassName="w-[28rem]" />
         </div>
+      </div>
+
+      {/* Light mode: clean GNOME-like warm bg */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0 dark:hidden block">
+        <div className="absolute inset-0" style={{ background: 'var(--bg-page)' }} />
+        <div className="absolute inset-0 opacity-30" style={{
+          backgroundImage: 'radial-gradient(circle at 20% 30%, rgba(31,199,119,0.08) 0%, transparent 50%), radial-gradient(circle at 80% 70%, rgba(31,199,119,0.05) 0%, transparent 40%)',
+        }} />
       </div>
 
       <div className="relative z-10">{children}</div>

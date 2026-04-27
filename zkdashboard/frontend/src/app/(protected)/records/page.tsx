@@ -56,7 +56,6 @@ export default async function RecordsPage({ searchParams }: PageProps) {
 
   const filterBase = { userId, dateFrom, dateTo };
 
-  // QS para exportación (sin page, con filtros actuales)
   const exportQs = new URLSearchParams();
   if (userId)   exportQs.set('userId',   userId);
   if (dateFrom) exportQs.set('dateFrom', dateFrom);
@@ -68,66 +67,44 @@ export default async function RecordsPage({ searchParams }: PageProps) {
       <Navbar user={user} />
       <main className="max-w-7xl mx-auto px-4 py-8 pt-32">
 
-        {/* Header */}
         <div className="flex items-start justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-white drop-shadow-md">Todos los Registros</h1>
-            <p className="text-emerald-200/70 text-sm mt-1">{result.total} registros encontrados</p>
+            <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Todos los Registros</h1>
+            <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>{result.total} registros encontrados</p>
           </div>
 
-          {/* Botones exportación */}
-          <div className="flex gap-2">
-            <a
-              href={`/api/export?format=excel${exportFilter}`}
-              className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-            >
-              <ExcelIcon />
-              Exportar Excel
+          <div className="flex flex-wrap gap-2">
+            <a href={`/api/export?format=excel${exportFilter}`}
+              className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+              <ExcelIcon /> Exportar Excel
             </a>
-            <a
-              href={`/api/export?format=pdf${exportFilter}`}
-              className="inline-flex items-center gap-2 bg-teal-700 hover:bg-teal-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-            >
-              <PdfIcon />
-              Exportar PDF
+            <a href={`/api/export?format=pdf${exportFilter}`}
+              className="inline-flex items-center gap-2 bg-teal-700 hover:bg-teal-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+              <PdfIcon /> Exportar PDF
             </a>
-            <a
-              href={`/api/export?format=excel&report=hours${exportFilter}`}
-              className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-            >
-              <ExcelIcon />
-              Horas Excel
+            <a href={`/api/export?format=excel&report=hours${exportFilter}`}
+              className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+              <ExcelIcon /> Horas Excel
             </a>
-            <a
-              href={`/api/export?format=pdf&report=hours${exportFilter}`}
-              className="inline-flex items-center gap-2 bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-            >
-              <PdfIcon />
-              Horas PDF
+            <a href={`/api/export?format=pdf&report=hours${exportFilter}`}
+              className="inline-flex items-center gap-2 bg-slate-600 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+              <PdfIcon /> Horas PDF
             </a>
           </div>
         </div>
 
         <RecordsSyncControls
           devices={devices}
-          canSync={
-            user.isSuperAdmin ||
-            user.companyRole === 'company_admin' ||
-            user.companyRole === 'operator'
-          }
+          canSync={user.isSuperAdmin || user.companyRole === 'company_admin' || user.companyRole === 'operator'}
         />
 
         {/* Filtros */}
-        <form
-          method="get"
-          className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 p-4 mb-6 flex flex-wrap gap-4 items-end"
-        >
+        <form method="get" className="card rounded-xl p-4 mb-6 flex flex-wrap gap-4 items-end">
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Empleado</label>
-            <select
-              name="userId"
-              defaultValue={userId}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            <label className="block text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Empleado</label>
+            <select name="userId" defaultValue={userId}
+              className="rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
             >
               <option value="">Todos</option>
               {userOptions.map((option) => (
@@ -138,49 +115,36 @@ export default async function RecordsPage({ searchParams }: PageProps) {
             </select>
           </div>
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Desde</label>
-            <input
-              type="date"
-              name="dateFrom"
-              defaultValue={dateFrom}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            <label className="block text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Desde</label>
+            <input type="date" name="dateFrom" defaultValue={dateFrom}
+              className="rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
             />
           </div>
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Hasta</label>
-            <input
-              type="date"
-              name="dateTo"
-              defaultValue={dateTo}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            <label className="block text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Hasta</label>
+            <input type="date" name="dateTo" defaultValue={dateTo}
+              className="rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
             />
           </div>
-          <button
-            type="submit"
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition-colors"
-          >
+          <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">
             Filtrar
           </button>
-          <Link
-            href="/records"
-            className="text-gray-500 hover:text-gray-700 px-4 py-2 rounded-lg text-sm border border-gray-300 transition-colors"
+          <Link href="/records"
+            className="px-4 py-2 rounded-lg text-sm transition-colors"
+            style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
           >
             Limpiar
           </Link>
         </form>
 
         {/* Tabla */}
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200">
+        <div className="card rounded-xl">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr
-                  className="text-xs uppercase"
-                  style={{
-                    background: 'linear-gradient(180deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%)',
-                    color: '#475569',
-                  }}
-                >
+                <tr className="table-header-row text-xs uppercase">
                   <th className="px-6 py-4 text-left font-semibold">Usuario</th>
                   <th className="px-6 py-4 text-left font-semibold">Fecha y Hora</th>
                   <th className="px-6 py-4 text-left font-semibold">Estado</th>
@@ -188,28 +152,27 @@ export default async function RecordsPage({ searchParams }: PageProps) {
                   <th className="px-6 py-4 text-left font-semibold">Dispositivo</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody>
                 {result.data.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-10 text-center text-gray-500">
+                    <td colSpan={5} className="px-6 py-10 text-center" style={{ color: 'var(--text-muted)' }}>
                       No hay registros para los filtros seleccionados
                     </td>
                   </tr>
                 ) : (
                   result.data.map((r) => (
-                    <tr key={r.id} className="hover:bg-emerald-50/50 transition-colors">
+                    <tr key={r.id} className="transition-colors border-t" style={{ borderColor: 'var(--border)' }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--row-hover)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = '')}
+                    >
                       <td className="px-6 py-4">
-                        <div className="font-medium text-gray-900">{formatAttendanceUser(r)}</div>
-                        {r.employee && <div className="text-xs text-gray-500 mt-1">{r.userId}</div>}
+                        <div className="font-medium" style={{ color: 'var(--text-primary)' }}>{formatAttendanceUser(r)}</div>
+                        {r.employee && <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{r.userId}</div>}
                       </td>
-                      <td className="px-6 py-4 text-gray-600">{formatDate(r.timestamp)}</td>
-                      <td className="px-6 py-4">
-                        <StatusBadge status={r.status} />
-                      </td>
-                      <td className="px-6 py-4 text-gray-500">
-                        {VERIFY_LABELS[r.verifyType] ?? r.verifyType}
-                      </td>
-                      <td className="px-6 py-4 text-gray-400 text-xs">{r.deviceSn}</td>
+                      <td className="px-6 py-4" style={{ color: 'var(--text-secondary)' }}>{formatDate(r.timestamp)}</td>
+                      <td className="px-6 py-4"><StatusBadge status={r.status} /></td>
+                      <td className="px-6 py-4" style={{ color: 'var(--text-muted)' }}>{VERIFY_LABELS[r.verifyType] ?? r.verifyType}</td>
+                      <td className="px-6 py-4 text-xs" style={{ color: 'var(--text-muted)' }}>{r.deviceSn}</td>
                     </tr>
                   ))
                 )}
@@ -217,26 +180,25 @@ export default async function RecordsPage({ searchParams }: PageProps) {
             </table>
           </div>
 
-          {/* Paginación */}
           {result.pages > 1 && (
-            <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between text-sm">
-              <span className="text-gray-500">
+            <div className="px-6 py-4 flex items-center justify-between text-sm" style={{ borderTop: '1px solid var(--border)' }}>
+              <span style={{ color: 'var(--text-muted)' }}>
                 Página {result.page} de {result.pages}
-                <span className="ml-2 text-gray-400">({result.total} registros)</span>
+                <span className="ml-2" style={{ color: 'var(--text-muted)', opacity: 0.7 }}>({result.total} registros)</span>
               </span>
               <div className="flex gap-2">
                 {result.page > 1 && (
-                  <Link
-                    href={`/records${buildQs({ ...filterBase, page: String(result.page - 1) })}`}
-                    className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50"
+                  <Link href={`/records${buildQs({ ...filterBase, page: String(result.page - 1) })}`}
+                    className="px-3 py-1 rounded text-sm transition-colors"
+                    style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
                   >
                     Anterior
                   </Link>
                 )}
                 {result.page < result.pages && (
-                  <Link
-                    href={`/records${buildQs({ ...filterBase, page: String(result.page + 1) })}`}
-                    className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50"
+                  <Link href={`/records${buildQs({ ...filterBase, page: String(result.page + 1) })}`}
+                    className="px-3 py-1 rounded text-sm transition-colors"
+                    style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
                   >
                     Siguiente
                   </Link>
@@ -249,8 +211,6 @@ export default async function RecordsPage({ searchParams }: PageProps) {
     </>
   );
 }
-
-// ─── Íconos inline ────────────────────────────────────────────────────────────
 
 function ExcelIcon() {
   return (

@@ -123,10 +123,10 @@ export function ScheduleProfilesManager({ profiles }: { profiles: ScheduleProfil
   };
 
   return (
-    <section className="bg-white rounded-xl shadow-lg border border-gray-200">
-      <div className="px-6 py-4 border-b border-gray-200">
-        <h2 className="font-semibold text-gray-900">Perfiles de horario</h2>
-        <p className="text-sm text-gray-500 mt-1">
+    <section className="card rounded-xl">
+      <div className="px-6 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
+        <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Perfiles de horario</h2>
+        <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
           Creá perfiles para grupos de empleados y ajustá variaciones de verano o invierno.
         </p>
       </div>
@@ -135,7 +135,7 @@ export function ScheduleProfilesManager({ profiles }: { profiles: ScheduleProfil
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-xs uppercase text-gray-500 bg-gray-50">
+              <tr className="table-header-row text-xs uppercase">
                 <th className="px-4 py-3 text-left">Perfil</th>
                 <th className="px-4 py-3 text-left">Base</th>
                 <th className="px-4 py-3 text-left">Verano</th>
@@ -143,54 +143,37 @@ export function ScheduleProfilesManager({ profiles }: { profiles: ScheduleProfil
                 <th className="px-4 py-3 text-right">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody>
               {profiles.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={5} className="px-4 py-8 text-center" style={{ color: 'var(--text-muted)' }}>
                     Todavía no hay perfiles horarios.
                   </td>
                 </tr>
               ) : (
                 profiles.map((profile) => (
-                  <tr key={profile.id} className="hover:bg-emerald-50/50">
-                    <td className="px-4 py-3 font-medium text-gray-900">{profile.name}</td>
-                    <td className="px-4 py-3 text-gray-600">
-                      {profile.entryTime} - {profile.exitTime}
+                  <tr key={profile.id} className="transition-colors border-t" style={{ borderColor: 'var(--border)' }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--row-hover)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = '')}
+                  >
+                    <td className="px-4 py-3 font-medium" style={{ color: 'var(--text-primary)' }}>{profile.name}</td>
+                    <td className="px-4 py-3" style={{ color: 'var(--text-secondary)' }}>{profile.entryTime} - {profile.exitTime}</td>
+                    <td className="px-4 py-3" style={{ color: 'var(--text-secondary)' }}>
+                      {profile.summerEntryTime && profile.summerExitTime ? `${profile.summerEntryTime} - ${profile.summerExitTime}` : '—'}
+                      {profile.summerStart && profile.summerEnd ? ` · ${profile.summerStart} a ${profile.summerEnd}` : ''}
                     </td>
-                    <td className="px-4 py-3 text-gray-600">
-                      {profile.summerEntryTime && profile.summerExitTime
-                        ? `${profile.summerEntryTime} - ${profile.summerExitTime}`
-                        : '—'}
-                      {profile.summerStart && profile.summerEnd
-                        ? ` · ${profile.summerStart} a ${profile.summerEnd}`
-                        : ''}
-                    </td>
-                    <td className="px-4 py-3 text-gray-600">
-                      {profile.winterEntryTime && profile.winterExitTime
-                        ? `${profile.winterEntryTime} - ${profile.winterExitTime}`
-                        : '—'}
-                      {profile.winterStart && profile.winterEnd
-                        ? ` · ${profile.winterStart} a ${profile.winterEnd}`
-                        : ''}
+                    <td className="px-4 py-3" style={{ color: 'var(--text-secondary)' }}>
+                      {profile.winterEntryTime && profile.winterExitTime ? `${profile.winterEntryTime} - ${profile.winterExitTime}` : '—'}
+                      {profile.winterStart && profile.winterEnd ? ` · ${profile.winterStart} a ${profile.winterEnd}` : ''}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex justify-end gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setForm(toFormValues(profile));
-                            setMessage(null);
-                          }}
-                          className="font-medium text-emerald-600 hover:text-emerald-700"
-                        >
+                        <button type="button" onClick={() => { setForm(toFormValues(profile)); setMessage(null); }}
+                          className="font-medium transition-colors" style={{ color: 'var(--brand-text)' }}>
                           Editar
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(profile)}
-                          disabled={isPending}
-                          className="font-medium text-red-500 hover:text-red-600 disabled:opacity-60"
-                        >
+                        <button type="button" onClick={() => handleDelete(profile)} disabled={isPending}
+                          className="font-medium transition-colors disabled:opacity-60" style={{ color: 'var(--danger-text)' }}>
                           Eliminar
                         </button>
                       </div>
@@ -202,36 +185,31 @@ export function ScheduleProfilesManager({ profiles }: { profiles: ScheduleProfil
           </table>
         </div>
 
-        <form onSubmit={handleSubmit} className="rounded-xl border border-gray-200 p-4 space-y-4">
+        <form onSubmit={handleSubmit} className="rounded-xl p-4 space-y-4" style={{ border: '1px solid var(--border)', background: 'var(--surface-raised)' }}>
           <div>
-            <h3 className="font-semibold text-gray-900">
+            <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>
               {isEditing ? 'Editar perfil' : 'Nuevo perfil'}
             </h3>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
               Las fechas de temporada usan formato MM-DD, por ejemplo 12-01.
             </p>
           </div>
 
           {message && (
-            <div
-              className={`rounded-lg border px-3 py-2 text-sm ${
-                message.type === 'success'
-                  ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                  : 'border-red-200 bg-red-50 text-red-700'
-              }`}
-            >
+            <div className="rounded-lg border px-3 py-2 text-sm" style={
+              message.type === 'success'
+                ? { background: 'var(--brand-soft)', borderColor: 'rgba(31,199,119,0.3)', color: 'var(--brand-text)' }
+                : { background: 'var(--danger-soft)', borderColor: 'rgba(230,45,66,0.3)', color: 'var(--danger-text)' }
+            }>
               {message.text}
             </div>
           )}
 
           <label className="block text-sm">
-            <span className="font-medium text-gray-700">Nombre</span>
-            <input
-              name="name"
-              value={form.name}
-              onChange={handleChange}
-              required
-              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            <span className="font-medium" style={{ color: 'var(--text-secondary)' }}>Nombre</span>
+            <input name="name" value={form.name} onChange={handleChange} required
+              className="mt-1 w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
             />
           </label>
 
@@ -240,8 +218,8 @@ export function ScheduleProfilesManager({ profiles }: { profiles: ScheduleProfil
             <TimeInput label="Salida base" name="exitTime" value={form.exitTime} onChange={handleChange} required />
           </div>
 
-          <div className="rounded-lg bg-blue-50/70 p-3 space-y-3">
-            <p className="text-xs font-semibold uppercase text-blue-700">Verano</p>
+          <div className="rounded-lg p-3 space-y-3" style={{ background: 'var(--blue-soft)', border: '1px solid rgba(59,130,246,0.2)' }}>
+            <p className="text-xs font-semibold uppercase" style={{ color: 'var(--blue-text)' }}>Verano</p>
             <div className="grid grid-cols-2 gap-3">
               <TimeInput label="Entrada" name="summerEntryTime" value={form.summerEntryTime} onChange={handleChange} />
               <TimeInput label="Salida" name="summerExitTime" value={form.summerExitTime} onChange={handleChange} />
@@ -250,8 +228,8 @@ export function ScheduleProfilesManager({ profiles }: { profiles: ScheduleProfil
             </div>
           </div>
 
-          <div className="rounded-lg bg-slate-50 p-3 space-y-3">
-            <p className="text-xs font-semibold uppercase text-slate-700">Invierno</p>
+          <div className="rounded-lg p-3 space-y-3" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+            <p className="text-xs font-semibold uppercase" style={{ color: 'var(--text-secondary)' }}>Invierno</p>
             <div className="grid grid-cols-2 gap-3">
               <TimeInput label="Entrada" name="winterEntryTime" value={form.winterEntryTime} onChange={handleChange} />
               <TimeInput label="Salida" name="winterExitTime" value={form.winterExitTime} onChange={handleChange} />
@@ -262,20 +240,14 @@ export function ScheduleProfilesManager({ profiles }: { profiles: ScheduleProfil
 
           <div className="flex justify-end gap-2">
             {isEditing && (
-              <button
-                type="button"
-                onClick={resetForm}
-                disabled={isPending}
-                className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-600"
-              >
+              <button type="button" onClick={resetForm} disabled={isPending}
+                className="rounded-lg px-4 py-2 text-sm transition-colors"
+                style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
                 Cancelar
               </button>
             )}
-            <button
-              type="submit"
-              disabled={isPending}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
-            >
+            <button type="submit" disabled={isPending}
+              className="rounded-lg bg-blue-600 hover:bg-blue-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-60 transition-colors">
               {isPending ? 'Guardando...' : isEditing ? 'Guardar perfil' : 'Crear perfil'}
             </button>
           </div>
@@ -300,15 +272,10 @@ function TimeInput({
 }) {
   return (
     <label className="block text-sm">
-      <span className="font-medium text-gray-700">{label}</span>
-      <input
-        type="time"
-        name={name}
-        value={value}
-        onChange={onChange}
-        required={required}
-        step={60}
-        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+      <span className="font-medium" style={{ color: 'var(--text-secondary)' }}>{label}</span>
+      <input type="time" name={name} value={value} onChange={onChange} required={required} step={60}
+        className="mt-1 w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+        style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
       />
     </label>
   );
@@ -327,14 +294,10 @@ function MonthDayInput({
 }) {
   return (
     <label className="block text-sm">
-      <span className="font-medium text-gray-700">{label}</span>
-      <input
-        name={name}
-        value={value}
-        onChange={onChange}
-        placeholder="MM-DD"
-        pattern="^(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$"
-        className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+      <span className="font-medium" style={{ color: 'var(--text-secondary)' }}>{label}</span>
+      <input name={name} value={value} onChange={onChange} placeholder="MM-DD" pattern="^(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$"
+        className="mt-1 w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+        style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
       />
     </label>
   );

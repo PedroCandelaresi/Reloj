@@ -206,11 +206,11 @@ export function AdminCompaniesManager({
 
   return (
     <>
-      <section className="bg-white rounded-xl shadow-lg border border-gray-200">
-        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between gap-4">
+      <section className="card rounded-xl">
+        <div className="px-6 py-4 flex items-center justify-between gap-4" style={{ borderBottom: '1px solid var(--border)' }}>
           <div>
-            <h2 className="font-semibold text-gray-900">Empresas registradas</h2>
-            <p className="text-sm text-gray-500 mt-1">{companies.length} empresas cargadas</p>
+            <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Empresas registradas</h2>
+            <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>{companies.length} empresas cargadas</p>
           </div>
           <button
             type="button"
@@ -222,13 +222,11 @@ export function AdminCompaniesManager({
         </div>
 
         {banner && (
-          <div
-            className={`mx-6 mt-6 rounded-lg border px-4 py-3 text-sm ${
-              banner.type === 'success'
-                ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
-                : 'bg-red-50 border-red-200 text-red-700'
-            }`}
-          >
+          <div className="mx-6 mt-6 rounded-lg border px-4 py-3 text-sm" style={
+            banner.type === 'success'
+              ? { background: 'var(--brand-soft)', borderColor: 'rgba(31,199,119,0.3)', color: 'var(--brand-text)' }
+              : { background: 'var(--danger-soft)', borderColor: 'rgba(230,45,66,0.3)', color: 'var(--danger-text)' }
+          }>
             {banner.text}
           </div>
         )}
@@ -236,13 +234,7 @@ export function AdminCompaniesManager({
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr
-                className="text-xs uppercase"
-                style={{
-                  background: 'linear-gradient(180deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%)',
-                  color: '#475569',
-                }}
-              >
+              <tr className="table-header-row text-xs uppercase">
                 <th className="px-6 py-4 text-left font-semibold">CUIT</th>
                 <th className="px-6 py-4 text-left font-semibold">Razón social</th>
                 <th className="px-6 py-4 text-left font-semibold">Nombre fantasía</th>
@@ -251,60 +243,42 @@ export function AdminCompaniesManager({
                 <th className="px-6 py-4 text-right font-semibold">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody>
               {companies.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-10 text-center text-gray-500">
+                  <td colSpan={6} className="px-6 py-10 text-center" style={{ color: 'var(--text-muted)' }}>
                     No hay empresas registradas todavía.
                   </td>
                 </tr>
               ) : (
                 companies.map((company) => (
-                  <tr key={company.id} className="hover:bg-emerald-50/50 transition-colors">
-                    <td className="px-6 py-4 font-medium text-gray-900">{company.cuit}</td>
-                    <td className="px-6 py-4 text-gray-700">{company.razonSocial}</td>
-                    <td className="px-6 py-4 text-gray-500">
-                      {company.nombreFantasia || '—'}
-                    </td>
+                  <tr key={company.id} className="transition-colors border-t" style={{ borderColor: 'var(--border)' }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--row-hover)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = '')}
+                  >
+                    <td className="px-6 py-4 font-medium" style={{ color: 'var(--text-primary)' }}>{company.cuit}</td>
+                    <td className="px-6 py-4" style={{ color: 'var(--text-secondary)' }}>{company.razonSocial}</td>
+                    <td className="px-6 py-4" style={{ color: 'var(--text-muted)' }}>{company.nombreFantasia || '—'}</td>
                     <td className="px-6 py-4">
-                      <span
-                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
-                          company.isActive
-                            ? 'bg-emerald-100 text-emerald-700'
-                            : 'bg-gray-200 text-gray-600'
-                        }`}
-                      >
+                      <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
+                        company.isActive
+                          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                          : 'bg-gray-200 text-gray-600 dark:bg-gray-700/50 dark:text-gray-400'
+                      }`}>
                         {company.isActive ? 'Activa' : 'Inactiva'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-gray-500">{formatDate(company.updatedAt)}</td>
+                    <td className="px-6 py-4" style={{ color: 'var(--text-muted)' }}>{formatDate(company.updatedAt)}</td>
                     <td className="px-6 py-4">
                       <div className="flex justify-end gap-3">
-                        <a
-                          href={`/admin/companies?company=${company.id}`}
-                          className={`font-medium transition-colors ${
-                            activeCompanyId === company.id
-                              ? 'text-blue-700 underline'
-                              : 'text-blue-500 hover:text-blue-700'
-                          }`}
+                        <a href={`/admin/companies?company=${company.id}`}
+                          className="font-medium transition-colors"
+                          style={{ color: activeCompanyId === company.id ? 'var(--blue-text)' : 'var(--blue-text)', textDecoration: activeCompanyId === company.id ? 'underline' : 'none' }}
                         >
                           {activeCompanyId === company.id ? 'Abierta ↓' : 'Detalle'}
                         </a>
-                        <button
-                          type="button"
-                          onClick={() => openEdit(company)}
-                          className="text-emerald-600 hover:text-emerald-700 font-medium transition-colors"
-                        >
-                          Editar
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(company)}
-                          disabled={isPending}
-                          className="text-red-500 hover:text-red-600 font-medium transition-colors disabled:opacity-60"
-                        >
-                          Eliminar
-                        </button>
+                        <button type="button" onClick={() => openEdit(company)} className="font-medium transition-colors" style={{ color: 'var(--brand-text)' }}>Editar</button>
+                        <button type="button" onClick={() => handleDelete(company)} disabled={isPending} className="font-medium transition-colors disabled:opacity-60" style={{ color: 'var(--danger-text)' }}>Eliminar</button>
                       </div>
                     </td>
                   </tr>
@@ -316,155 +290,103 @@ export function AdminCompaniesManager({
       </section>
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/45 px-4">
-          <div className="w-full max-w-2xl bg-white rounded-2xl shadow-xl border border-gray-100">
-            <div className="px-6 py-4 border-b border-gray-100">
-              <h3 className="text-lg font-semibold text-gray-900">
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: 'rgba(0,0,0,0.5)' }}>
+          <div className="w-full max-w-2xl rounded-2xl" style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: '0 24px 48px rgba(0,0,0,0.4)' }}>
+            <div className="px-6 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
+              <h3 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
                 {mode === 'create' ? 'Crear empresa' : 'Editar empresa'}
               </h3>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
                 Configurá los datos básicos para operar la empresa en CONFLUNET.
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
               {formError && (
-                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                <div className="rounded-lg border px-4 py-3 text-sm" style={{ background: 'var(--danger-soft)', borderColor: 'rgba(230,45,66,0.3)', color: 'var(--danger-text)' }}>
                   {formError}
                 </div>
               )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">CUIT</label>
-                  <input
-                    name="cuit"
-                    value={form.cuit}
-                    onChange={handleChange}
-                    required
-                    inputMode="numeric"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>CUIT</label>
+                  <input name="cuit" value={form.cuit} onChange={handleChange} required inputMode="numeric"
+                    className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
                   />
                 </div>
                 <div className="flex items-end">
-                  <label className="inline-flex items-center gap-3 rounded-lg border border-gray-200 px-4 py-2.5 text-sm text-gray-700">
-                    <input
-                      type="checkbox"
-                      name="isActive"
-                      checked={form.isActive}
-                      onChange={handleChange}
-                    />
+                  <label className="inline-flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm" style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
+                    <input type="checkbox" name="isActive" checked={form.isActive} onChange={handleChange} />
                     Empresa activa
                   </label>
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Razón social
-                </label>
-                <input
-                  name="razonSocial"
-                  value={form.razonSocial}
-                  onChange={handleChange}
-                  required
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Razón social</label>
+                <input name="razonSocial" value={form.razonSocial} onChange={handleChange} required
+                  className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nombre fantasía
-                </label>
-                <input
-                  name="nombreFantasia"
-                  value={form.nombreFantasia}
-                  onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Nombre fantasía</label>
+                <input name="nombreFantasia" value={form.nombreFantasia} onChange={handleChange}
+                  className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
                 />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Entrada global <span className="text-gray-400 font-normal">(HH:MM)</span>
+                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
+                    Entrada global <span style={{ color: 'var(--text-muted)', fontWeight: 'normal' }}>(HH:MM)</span>
                   </label>
-                  <input
-                    name="defaultEntryTime"
-                    type="text"
-                    inputMode="numeric"
-                    value={form.defaultEntryTime}
-                    onChange={handleChange}
-                    placeholder="08:00"
-                    pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  <input name="defaultEntryTime" type="text" inputMode="numeric" value={form.defaultEntryTime} onChange={handleChange} placeholder="08:00" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$"
+                    className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Salida global <span className="text-gray-400 font-normal">(HH:MM)</span>
+                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
+                    Salida global <span style={{ color: 'var(--text-muted)', fontWeight: 'normal' }}>(HH:MM)</span>
                   </label>
-                  <input
-                    name="defaultExitTime"
-                    type="text"
-                    inputMode="numeric"
-                    value={form.defaultExitTime}
-                    onChange={handleChange}
-                    placeholder="17:00"
-                    pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  <input name="defaultExitTime" type="text" inputMode="numeric" value={form.defaultExitTime} onChange={handleChange} placeholder="17:00" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$"
+                    className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Email de contacto
-                  </label>
-                  <input
-                    name="email"
-                    type="email"
-                    value={form.email}
-                    onChange={handleChange}
-                    placeholder="contacto@empresa.com"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Email de contacto</label>
+                  <input name="email" type="email" value={form.email} onChange={handleChange} placeholder="contacto@empresa.com"
+                    className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Teléfono
-                  </label>
-                  <input
-                    name="phone"
-                    type="tel"
-                    value={form.phone}
-                    onChange={handleChange}
-                    placeholder="+54 299 000-0000"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Teléfono</label>
+                  <input name="phone" type="tel" value={form.phone} onChange={handleChange} placeholder="+54 299 000-0000"
+                    className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
                   />
                 </div>
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  disabled={isPending}
-                  className="px-4 py-2 rounded-lg border border-gray-300 text-sm text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-60"
-                >
+                <button type="button" onClick={closeModal} disabled={isPending}
+                  className="px-4 py-2 rounded-lg text-sm transition-colors disabled:opacity-60"
+                  style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
                   Cancelar
                 </button>
-                <button
-                  type="submit"
-                  disabled={isPending}
-                  className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-60"
-                >
-                  {isPending
-                    ? 'Guardando...'
-                    : mode === 'create'
-                      ? 'Crear empresa'
-                      : 'Guardar cambios'}
+                <button type="submit" disabled={isPending}
+                  className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors disabled:opacity-60">
+                  {isPending ? 'Guardando...' : mode === 'create' ? 'Crear empresa' : 'Guardar cambios'}
                 </button>
               </div>
             </form>

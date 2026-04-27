@@ -6,6 +6,7 @@ import { logout } from '@/lib/actions';
 import type { CurrentUserProfile } from '@/lib/api';
 import type { CompanyRole } from '@/lib/auth-token';
 import { BrandLogo } from './BrandLogo';
+import { ThemeToggle } from './ThemeToggle';
 
 function MenuIcon() {
   return (
@@ -41,14 +42,10 @@ function formatUserName(user?: CurrentUserProfile | null) {
 function formatRoleLabel(role?: CompanyRole | null, isSuperAdmin?: boolean) {
   if (isSuperAdmin) return 'Super admin';
   switch (role) {
-    case 'company_admin':
-      return 'Admin empresa';
-    case 'operator':
-      return 'Operador';
-    case 'read_only':
-      return 'Solo lectura';
-    default:
-      return 'Usuario';
+    case 'company_admin': return 'Admin empresa';
+    case 'operator':      return 'Operador';
+    case 'read_only':     return 'Solo lectura';
+    default:              return 'Usuario';
   }
 }
 
@@ -73,11 +70,7 @@ function getNavigationItems(user?: CurrentUserProfile | null) {
 
   if (!user?.isSuperAdmin) {
     return user?.companyRole === 'company_admin'
-      ? [
-          ...commonItems,
-          { href: '/users', label: 'Usuarios' },
-          { href: '/settings', label: 'Configuración' },
-        ]
+      ? [...commonItems, { href: '/users', label: 'Usuarios' }, { href: '/settings', label: 'Configuración' }]
       : commonItems;
   }
 
@@ -96,12 +89,14 @@ export function NavbarClient({ user }: { user?: CurrentUserProfile | null }) {
   const activeCompanyName = getActiveCompanyName(user);
   const navigationItems = getNavigationItems(user);
 
+  /* Navbar keeps dark bg in both themes (GNOME Adwaita headerbar style) */
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 text-white px-4 py-4 flex items-center justify-between shadow-[0_12px_34px_rgba(0,0,0,0.36)]">
-      <div className="absolute inset-0 pointer-events-none" style={{ background: '#13181e' }}>
-        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-emerald-400/25 to-transparent" />
-      </div>
-      <div className="relative flex items-center gap-2">
+    <nav
+      className="fixed top-0 left-0 right-0 z-50 text-white px-4 py-4 flex items-center justify-between"
+      style={{ background: 'var(--bg-navbar)', borderBottom: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 2px 12px rgba(0,0,0,0.35)' }}
+    >
+      {/* Logo + hamburger */}
+      <div className="flex items-center gap-2">
         <button
           onClick={() => setIsOpen(!isOpen)}
           className="lg:hidden p-2 hover:bg-white/10 rounded-md transition-colors"
@@ -120,64 +115,66 @@ export function NavbarClient({ user }: { user?: CurrentUserProfile | null }) {
         </Link>
       </div>
 
-      <div className="relative hidden lg:flex items-center gap-6">
+      {/* Desktop nav links */}
+      <div className="hidden lg:flex items-center gap-6">
         {navigationItems.map((item) => (
           <Link
             key={item.href}
             href={item.href}
-            className="text-slate-200 hover:text-white text-sm transition-colors"
+            className="text-slate-300 hover:text-white text-sm transition-colors"
           >
             {item.label}
           </Link>
         ))}
       </div>
 
-      <div className="relative hidden lg:flex items-center gap-3">
-        <div className="text-right">
+      {/* Desktop right: theme toggle + user */}
+      <div className="hidden lg:flex items-center gap-2">
+        <ThemeToggle />
+
+        <div className="text-right ml-2">
           <span className="block text-slate-100/95 text-sm">{displayName}</span>
-          <span className="block text-[11px] text-emerald-100/70">
-            {roleLabel}
-            {activeCompanyName ? ` · ${activeCompanyName}` : ''}
+          <span className="block text-[11px] text-emerald-300/70">
+            {roleLabel}{activeCompanyName ? ` · ${activeCompanyName}` : ''}
           </span>
         </div>
         <button
           type="button"
-          onClick={() => setIsProfileMenuOpen((current) => !current)}
-          className="h-10 w-10 rounded-full border border-slate-200/25 bg-white/10 hover:bg-white/15 transition-colors flex items-center justify-center"
+          onClick={() => setIsProfileMenuOpen((c) => !c)}
+          className="h-10 w-10 rounded-full border border-slate-200/20 bg-white/10 hover:bg-white/15 transition-colors flex items-center justify-center"
           aria-label="Abrir menú de perfil"
         >
           <UserIcon />
         </button>
 
         {isProfileMenuOpen && (
-          <div className="absolute right-0 top-full mt-3 w-60 rounded-2xl border border-emerald-900/30 bg-white/95 text-gray-800 shadow-2xl backdrop-blur-sm overflow-hidden">
-            <div className="px-4 py-3 border-b border-gray-100">
-              <p className="text-sm font-semibold text-gray-900">{displayName}</p>
-              {user?.username && <p className="text-xs text-gray-500 mt-1">@{user.username}</p>}
-              <p className="text-xs text-emerald-700 mt-2 font-medium">{roleLabel}</p>
-              {activeCompanyName && (
-                <p className="text-xs text-gray-500 mt-1">{activeCompanyName}</p>
-              )}
+          <div className="absolute right-4 top-full mt-2 w-60 rounded-xl border overflow-hidden"
+            style={{ background: 'var(--surface)', borderColor: 'var(--border)', boxShadow: 'var(--shadow-card)' }}
+          >
+            <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--border)' }}>
+              <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{displayName}</p>
+              {user?.username && <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>@{user.username}</p>}
+              <p className="text-xs mt-2 font-medium" style={{ color: 'var(--brand-text)' }}>{roleLabel}</p>
+              {activeCompanyName && <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{activeCompanyName}</p>}
             </div>
-            <div className="py-2">
-              <Link
-                href="/profile"
-                onClick={() => setIsProfileMenuOpen(false)}
-                className="block px-4 py-2.5 text-sm hover:bg-emerald-50 transition-colors"
+            <div className="py-1">
+              <Link href="/profile" onClick={() => setIsProfileMenuOpen(false)}
+                className="block px-4 py-2.5 text-sm transition-colors hover:bg-black/5 dark:hover:bg-white/5"
+                style={{ color: 'var(--text-primary)' }}
               >
                 Mi Perfil
               </Link>
-              <Link
-                href="/profile/password"
-                onClick={() => setIsProfileMenuOpen(false)}
-                className="block px-4 py-2.5 text-sm hover:bg-emerald-50 transition-colors"
+              <Link href="/profile/password" onClick={() => setIsProfileMenuOpen(false)}
+                className="block px-4 py-2.5 text-sm transition-colors hover:bg-black/5 dark:hover:bg-white/5"
+                style={{ color: 'var(--text-primary)' }}
               >
                 Cambiar contraseña
               </Link>
               <form action={logout}>
                 <button
                   type="submit"
-                  className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                  className="w-full text-left px-4 py-2.5 text-sm transition-colors hover:bg-red-500/10"
+                  style={{ color: 'var(--danger)' }}
                 >
                   Cerrar sesión
                 </button>
@@ -187,44 +184,47 @@ export function NavbarClient({ user }: { user?: CurrentUserProfile | null }) {
         )}
       </div>
 
+      {/* Mobile menu */}
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 shadow-lg lg:hidden z-50" style={{ background: 'linear-gradient(180deg, #15191f 0%, #050708 100%)' }}>
-          <div className="flex flex-col p-4 gap-4">
+        <div
+          className="absolute top-full left-0 right-0 lg:hidden z-50 border-t"
+          style={{ background: 'var(--bg-navbar)', borderColor: 'rgba(255,255,255,0.08)' }}
+        >
+          <div className="flex flex-col p-4 gap-1">
             {navigationItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="text-emerald-100 hover:text-white text-sm py-2"
+                className="text-slate-300 hover:text-white text-sm py-2 px-2 rounded-md hover:bg-white/8 transition-colors"
                 onClick={() => setIsOpen(false)}
               >
                 {item.label}
               </Link>
             ))}
-            <div className="border-t border-emerald-600/50 pt-4">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="h-10 w-10 rounded-full border border-emerald-200/30 bg-white/10 flex items-center justify-center">
-                  <UserIcon />
+            <div className="mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <div className="h-9 w-9 rounded-full border border-slate-200/20 bg-white/10 flex items-center justify-center">
+                    <UserIcon />
+                  </div>
+                  <div>
+                    <p className="text-slate-100 text-sm font-medium">{displayName}</p>
+                    {user?.username && <p className="text-slate-400 text-xs">@{user.username}</p>}
+                    <p className="text-emerald-300/70 text-xs mt-0.5">
+                      {roleLabel}{activeCompanyName ? ` · ${activeCompanyName}` : ''}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-emerald-50 text-sm font-medium">{displayName}</p>
-                  {user?.username && <p className="text-emerald-100/70 text-xs">@{user.username}</p>}
-                  <p className="text-emerald-100/70 text-xs mt-1">
-                    {roleLabel}
-                    {activeCompanyName ? ` · ${activeCompanyName}` : ''}
-                  </p>
-                </div>
+                <ThemeToggle />
               </div>
-              <Link href="/profile" className="text-emerald-100 hover:text-white text-sm block py-2" onClick={() => setIsOpen(false)}>
+              <Link href="/profile" className="text-slate-300 hover:text-white text-sm block py-2 px-2 rounded-md hover:bg-white/8 transition-colors" onClick={() => setIsOpen(false)}>
                 Mi Perfil
               </Link>
-              <Link href="/profile/password" className="text-emerald-100 hover:text-white text-sm block py-2" onClick={() => setIsOpen(false)}>
+              <Link href="/profile/password" className="text-slate-300 hover:text-white text-sm block py-2 px-2 rounded-md hover:bg-white/8 transition-colors" onClick={() => setIsOpen(false)}>
                 Cambiar contraseña
               </Link>
               <form action={logout}>
-                <button
-                  type="submit"
-                  className="text-red-200 hover:text-white text-sm py-2"
-                >
+                <button type="submit" className="text-sm py-2 px-2 block transition-colors" style={{ color: 'var(--danger)' }}>
                   Cerrar sesión
                 </button>
               </form>
@@ -232,46 +232,6 @@ export function NavbarClient({ user }: { user?: CurrentUserProfile | null }) {
           </div>
         </div>
       )}
-      <style jsx>{`
-        @keyframes driftSlow {
-          0% { transform: translate3d(0, 0, 0) scale(1); }
-          50% { transform: translate3d(-2%, 2%, 0) scale(1.05); }
-          100% { transform: translate3d(0, 0, 0) scale(1); }
-        }
-        @keyframes blob1 {
-          0% { transform: translate(0, 0) scale(1); }
-          33% { transform: translate(50px, -20px) scale(1.08); }
-          66% { transform: translate(-20px, 35px) scale(0.95); }
-          100% { transform: translate(0, 0) scale(1); }
-        }
-        @keyframes blob2 {
-          0% { transform: translate(0, 0) scale(1); }
-          50% { transform: translate(-40px, 25px) scale(1.1); }
-          100% { transform: translate(0, 0) scale(1); }
-        }
-        @keyframes blob3 {
-          0% { transform: translate(0, 0) scale(1); }
-          33% { transform: translate(25px, -20px) scale(1.04); }
-          66% { transform: translate(-35px, 10px) scale(1.1); }
-          100% { transform: translate(0, 0) scale(1); }
-        }
-        @keyframes water {
-          0% { transform: translate3d(0, 0, 0) scale(1.1) rotate(0deg); }
-          50% { transform: translate3d(-2%, 2%, 0) scale(1.15) rotate(1.5deg); }
-          100% { transform: translate3d(0, 0, 0) scale(1.1) rotate(0deg); }
-        }
-        @keyframes waterReverse {
-          0% { transform: translate3d(0, 0, 0) scale(1.1) rotate(0deg); }
-          50% { transform: translate3d(2%, -2%, 0) scale(1.16) rotate(-1.5deg); }
-          100% { transform: translate3d(0, 0, 0) scale(1.1) rotate(0deg); }
-        }
-        .animate-drift-slow { animation: driftSlow 18s ease-in-out infinite; }
-        .animate-blob1 { animation: blob1 20s ease-in-out infinite; }
-        .animate-blob2 { animation: blob2 18s ease-in-out infinite; }
-        .animate-blob3 { animation: blob3 22s ease-in-out infinite; }
-        .animate-water { animation: water 14s ease-in-out infinite; }
-        .animate-water-reverse { animation: waterReverse 17s ease-in-out infinite; }
-      `}</style>
     </nav>
   );
 }
