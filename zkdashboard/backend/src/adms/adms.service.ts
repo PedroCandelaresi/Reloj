@@ -5,7 +5,7 @@ import { AttendanceService } from '../attendance/attendance.service';
 import { Device } from '../devices/device.entity';
 import { DevicesService } from '../devices/devices.service';
 import { InboundRequest } from './inbound-request.entity';
-import { logAttendance } from '../logging/file-log.util';
+import { logAttendance, logSecurity } from '../logging/file-log.util';
 
 export interface AdmsProcessResult {
   body: string;
@@ -103,8 +103,6 @@ export class AdmsService {
     method: string,
     path: string,
   ): Promise<AdmsProcessResult> {
-    const device = await this.devices.upsert(serialNumber, ipAddress);
-
     logAttendance({
       ipAddress,
       serialNumber,
@@ -115,6 +113,7 @@ export class AdmsService {
     });
 
     if (table !== 'ATTLOG') {
+      const device = await this.devices.upsert(serialNumber, ipAddress);
       return {
         body: 'OK',
         device,
@@ -122,6 +121,48 @@ export class AdmsService {
       };
     }
 
+    const existingDevice = await this.devices.findBySerialNumber(serialNumber);
+    if (!existingDevice) {
+      const message = 'ATTLOG rechazado: dispositivo no registrado.';
+      this.logger.warn(`${message} sn=${serialNumber || '-'}`);
+      logSecurity({
+        event: 'adms_attlog_rejected',
+        message,
+        ipAddress,
+        method,
+        path,
+        serialNumber,
+      });
+
+      return {
+        body: 'OK',
+        device: null,
+        processedOk: false,
+        parseError: message,
+      };
+    }
+
+    if (!existingDevice.companyId) {
+      const message = 'ATTLOG rechazado: dispositivo sin empresa asignada.';
+      this.logger.warn(`${message} sn=${existingDevice.serialNumber}`);
+      logSecurity({
+        event: 'adms_attlog_rejected',
+        message,
+        ipAddress,
+        method,
+        path,
+        serialNumber: existingDevice.serialNumber,
+      });
+
+      return {
+        body: 'OK',
+        device: existingDevice,
+        processedOk: false,
+        parseError: message,
+      };
+    }
+
+    const device = await this.devices.upsert(serialNumber, ipAddress);
     const lines = body.trim().split('\n').filter(Boolean);
     const records: Parameters<AttendanceService['saveRecords']>[0] = [];
 
@@ -136,6 +177,8 @@ export class AdmsService {
 
         records.push({
           deviceSn: serialNumber,
+          deviceId: device.id,
+          companyId: device.companyId ?? null,
           userId: userId.trim(),
           timestamp,
           status: parseInt(rawStatus, 10),

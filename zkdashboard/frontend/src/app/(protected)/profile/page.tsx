@@ -7,7 +7,7 @@ export default async function ProfilePage() {
 
   return (
     <>
-      <Navbar />
+      <Navbar user={profile} />
       <main className="max-w-5xl mx-auto px-4 py-8 pt-32">
         <ProfileManager profile={profile} />
       </main>

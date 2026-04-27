@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { logout } from '@/lib/actions';
 import type { CurrentUserProfile } from '@/lib/api';
+import type { CompanyRole } from '@/lib/auth-token';
 
 function MenuIcon() {
   return (
@@ -36,10 +37,59 @@ function formatUserName(user?: CurrentUserProfile | null) {
   return fullName || user.username;
 }
 
+function formatRoleLabel(role?: CompanyRole | null, isSuperAdmin?: boolean) {
+  if (isSuperAdmin) return 'Super admin';
+  switch (role) {
+    case 'company_admin':
+      return 'Admin empresa';
+    case 'operator':
+      return 'Operador';
+    case 'read_only':
+      return 'Solo lectura';
+    default:
+      return 'Usuario';
+  }
+}
+
+function getActiveCompanyName(user?: CurrentUserProfile | null) {
+  if (!user || user.isSuperAdmin) return null;
+  const activeMembership = user.memberships.find(
+    (membership) => membership.companyId === user.companyId,
+  );
+  return (
+    activeMembership?.company?.nombreFantasia ||
+    activeMembership?.company?.razonSocial ||
+    null
+  );
+}
+
+function getNavigationItems(user?: CurrentUserProfile | null) {
+  const commonItems = [
+    { href: '/dashboard', label: 'Inicio' },
+    { href: '/employees', label: 'Empleados' },
+    { href: '/records', label: 'Registros' },
+  ];
+
+  if (!user?.isSuperAdmin) {
+    return user?.companyRole === 'company_admin'
+      ? [...commonItems, { href: '/users', label: 'Usuarios' }]
+      : commonItems;
+  }
+
+  return [
+    { href: '/admin/companies', label: 'Empresas' },
+    { href: '/admin/devices', label: 'Dispositivos' },
+    ...commonItems,
+  ];
+}
+
 export function NavbarClient({ user }: { user?: CurrentUserProfile | null }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const displayName = formatUserName(user);
+  const roleLabel = formatRoleLabel(user?.companyRole, user?.isSuperAdmin);
+  const activeCompanyName = getActiveCompanyName(user);
+  const navigationItems = getNavigationItems(user);
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 text-white px-4 py-5 flex items-center justify-between shadow-md">
@@ -84,19 +134,25 @@ export function NavbarClient({ user }: { user?: CurrentUserProfile | null }) {
       </div>
 
       <div className="relative hidden lg:flex items-center gap-6">
-        <Link href="/dashboard" className="text-emerald-100 hover:text-white text-sm transition-colors">
-          Inicio
-        </Link>
-        <Link href="/employees" className="text-emerald-100 hover:text-white text-sm transition-colors">
-          Empleados
-        </Link>
-        <Link href="/records" className="text-emerald-100 hover:text-white text-sm transition-colors">
-          Registros
-        </Link>
+        {navigationItems.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className="text-emerald-100 hover:text-white text-sm transition-colors"
+          >
+            {item.label}
+          </Link>
+        ))}
       </div>
 
       <div className="relative hidden lg:flex items-center gap-3">
-        <span className="text-emerald-100/80 text-sm">{displayName}</span>
+        <div className="text-right">
+          <span className="block text-emerald-100/90 text-sm">{displayName}</span>
+          <span className="block text-[11px] text-emerald-100/65">
+            {roleLabel}
+            {activeCompanyName ? ` · ${activeCompanyName}` : ''}
+          </span>
+        </div>
         <button
           type="button"
           onClick={() => setIsProfileMenuOpen((current) => !current)}
@@ -111,6 +167,10 @@ export function NavbarClient({ user }: { user?: CurrentUserProfile | null }) {
             <div className="px-4 py-3 border-b border-gray-100">
               <p className="text-sm font-semibold text-gray-900">{displayName}</p>
               {user?.username && <p className="text-xs text-gray-500 mt-1">@{user.username}</p>}
+              <p className="text-xs text-emerald-700 mt-2 font-medium">{roleLabel}</p>
+              {activeCompanyName && (
+                <p className="text-xs text-gray-500 mt-1">{activeCompanyName}</p>
+              )}
             </div>
             <div className="py-2">
               <Link
@@ -143,15 +203,16 @@ export function NavbarClient({ user }: { user?: CurrentUserProfile | null }) {
       {isOpen && (
         <div className="absolute top-full left-0 right-0 shadow-lg lg:hidden z-50" style={{ background: 'linear-gradient(180deg, #032415 0%, #02120b 100%)' }}>
           <div className="flex flex-col p-4 gap-4">
-            <Link href="/dashboard" className="text-emerald-100 hover:text-white text-sm py-2" onClick={() => setIsOpen(false)}>
-              Inicio
-            </Link>
-            <Link href="/employees" className="text-emerald-100 hover:text-white text-sm py-2" onClick={() => setIsOpen(false)}>
-              Empleados
-            </Link>
-            <Link href="/records" className="text-emerald-100 hover:text-white text-sm py-2" onClick={() => setIsOpen(false)}>
-              Registros
-            </Link>
+            {navigationItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="text-emerald-100 hover:text-white text-sm py-2"
+                onClick={() => setIsOpen(false)}
+              >
+                {item.label}
+              </Link>
+            ))}
             <div className="border-t border-emerald-600/50 pt-4">
               <div className="flex items-center gap-3 mb-3">
                 <div className="h-10 w-10 rounded-full border border-emerald-200/30 bg-white/10 flex items-center justify-center">
@@ -160,6 +221,10 @@ export function NavbarClient({ user }: { user?: CurrentUserProfile | null }) {
                 <div>
                   <p className="text-emerald-50 text-sm font-medium">{displayName}</p>
                   {user?.username && <p className="text-emerald-100/70 text-xs">@{user.username}</p>}
+                  <p className="text-emerald-100/70 text-xs mt-1">
+                    {roleLabel}
+                    {activeCompanyName ? ` · ${activeCompanyName}` : ''}
+                  </p>
                 </div>
               </div>
               <Link href="/profile" className="text-emerald-100 hover:text-white text-sm block py-2" onClick={() => setIsOpen(false)}>

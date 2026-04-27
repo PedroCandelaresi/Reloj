@@ -23,11 +23,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('Usuario no encontrado');
     }
 
-    return {
-      id: user.id,
-      username: user.username,
-      isSuperAdmin: user.isSuperAdmin,
-      employeeId: user.employeeId,
-    };
+    const authUser = this.users.buildAuthenticatedUser(user);
+    if (!authUser.isSuperAdmin && !authUser.companyId) {
+      throw new UnauthorizedException(
+        'El usuario no tiene una empresa activa asignada.',
+      );
+    }
+
+    return authUser;
   }
 }

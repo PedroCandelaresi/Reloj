@@ -2,6 +2,7 @@
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { decodeJwtPayload, getDefaultAppPath } from './auth-token';
 
 const API = process.env.API_URL || 'http://localhost:4370';
 
@@ -32,7 +33,7 @@ export async function login(_: unknown, formData: FormData) {
     maxAge: 60 * 60 * 24 * 7, // 7 días
   });
 
-  redirect('/dashboard');
+  redirect(getDefaultAppPath(decodeJwtPayload(access_token)));
 }
 
 export async function logout() {

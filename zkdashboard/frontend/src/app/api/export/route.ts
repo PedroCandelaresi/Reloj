@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 
-const API = process.env.API_URL || 'http://localhost:4201';
+const API = process.env.API_URL || 'http://localhost:4370';
 
 export async function GET(req: NextRequest) {
   const cookieStore = await cookies();

@@ -9,6 +9,8 @@ import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
 import { AdminUser } from '../users/admin-user.entity';
 import { Employee } from '../employees/employee.entity';
+import { AuthenticatedUser } from '../auth/authenticated-user.interface';
+import { getCompanyScope } from '../auth/company-scope.util';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
 import { AssignCompanyUserDto } from './dto/assign-company-user.dto';
@@ -130,6 +132,17 @@ export class CompaniesService {
     if (existing && existing.id !== excludedId) {
       throw new ConflictException(`Ya existe una empresa registrada con CUIT ${cuit}`);
     }
+  }
+
+  private getScopedCompanyId(user: AuthenticatedUser): string {
+    const companyId = getCompanyScope(user);
+    if (!companyId) {
+      throw new BadRequestException(
+        'Este endpoint requiere una empresa activa. Usá los endpoints globales de super admin.',
+      );
+    }
+
+    return companyId;
   }
 
   private async ensureUsernameAvailable(
@@ -285,6 +298,30 @@ export class CompaniesService {
         return !roleForCompany;
       })
       .map((employee) => this.toEmployee(employee));
+  }
+
+  async listScopedCompanyUsers(user: AuthenticatedUser) {
+    return this.listCompanyUsers(this.getScopedCompanyId(user));
+  }
+
+  async listScopedEligibleEmployees(user: AuthenticatedUser) {
+    return this.listEligibleEmployees(this.getScopedCompanyId(user));
+  }
+
+  async assignScopedCompanyUser(user: AuthenticatedUser, dto: AssignCompanyUserDto) {
+    return this.assignCompanyUser(this.getScopedCompanyId(user), dto);
+  }
+
+  async updateScopedCompanyUser(
+    user: AuthenticatedUser,
+    userId: number,
+    dto: UpdateCompanyUserDto,
+  ) {
+    return this.updateCompanyUser(this.getScopedCompanyId(user), userId, dto);
+  }
+
+  async removeScopedCompanyUser(user: AuthenticatedUser, userId: number) {
+    return this.removeCompanyUser(this.getScopedCompanyId(user), userId);
   }
 
   async assignEmployee(companyId: string, employeeId: string) {

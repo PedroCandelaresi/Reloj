@@ -7,6 +7,8 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { AuthenticatedUser } from '../auth/authenticated-user.interface';
+import { getCompanyScope } from '../auth/company-scope.util';
 import { Company } from '../companies/company.entity';
 import { Device } from './device.entity';
 import {
@@ -17,6 +19,7 @@ import {
 
 const FORCE_SYNC_COMMAND = 'DATA QUERY ATTLOG';
 const FORCE_SYNC_DUPLICATE_WINDOW_MS = 5 * 60 * 1000;
+const DEFAULT_ONLINE_THRESHOLD_MS = 5 * 60 * 1000;
 const ACTIVE_SENT_REPLACEMENT_REASON =
   'Sin confirmación del dispositivo. Reemplazado por una nueva solicitud manual.';
 
@@ -37,6 +40,21 @@ export interface AdminDeviceView {
     nombreFantasia: string | null;
     isActive: boolean;
   } | null;
+}
+
+export interface DeviceOperationalView extends AdminDeviceView {
+  name: string;
+  online: boolean;
+  status: 'online' | 'offline';
+  lastSyncAt: Date | null;
+  pendingCommandsCount: number;
+}
+
+export interface DeviceDashboardMetrics {
+  onlineCount: number;
+  offlineCount: number;
+  lastSyncAt: Date | null;
+  technicalNews: string[];
 }
 
 @Injectable()
@@ -86,7 +104,24 @@ export class DevicesService {
     return this.repo.find({ order: { lastSeen: 'DESC' } });
   }
 
-  async findAllForAdmin(): Promise<AdminDeviceView[]> {
+  async findAllForUser(user: AuthenticatedUser): Promise<DeviceOperationalView[]> {
+    const companyId = getCompanyScope(user);
+
+    const devices = await this.repo.find({
+      where: companyId ? { companyId } : {},
+      relations: {
+        company: true,
+      },
+      order: {
+        lastSeen: 'DESC',
+        serialNumber: 'ASC',
+      },
+    });
+
+    return Promise.all(devices.map((device) => this.serializeOperationalDevice(device)));
+  }
+
+  async findAllForAdmin(): Promise<DeviceOperationalView[]> {
     const devices = await this.repo.find({
       relations: {
         company: true,
@@ -97,10 +132,10 @@ export class DevicesService {
       },
     });
 
-    return devices.map((device) => this.serializeDevice(device));
+    return Promise.all(devices.map((device) => this.serializeOperationalDevice(device)));
   }
 
-  async findUnassignedForAdmin(): Promise<AdminDeviceView[]> {
+  async findUnassignedForAdmin(): Promise<DeviceOperationalView[]> {
     const devices = await this.repo.find({
       where: {
         companyId: null,
@@ -114,10 +149,10 @@ export class DevicesService {
       },
     });
 
-    return devices.map((device) => this.serializeDevice(device));
+    return Promise.all(devices.map((device) => this.serializeOperationalDevice(device)));
   }
 
-  async findOneForAdmin(id: number): Promise<AdminDeviceView> {
+  async findOneForAdmin(id: number): Promise<DeviceOperationalView> {
     const device = await this.repo.findOne({
       where: { id },
       relations: {
@@ -129,11 +164,61 @@ export class DevicesService {
       throw new NotFoundException('Dispositivo no encontrado.');
     }
 
-    return this.serializeDevice(device);
+    return this.serializeOperationalDevice(device);
   }
 
-  async enqueueAttendanceSync(deviceId: number, requestedBy?: string) {
-    const device = await this.repo.findOneBy({ id: deviceId });
+  async getDashboardMetrics(user: AuthenticatedUser): Promise<DeviceDashboardMetrics> {
+    const devices = await this.findAllForUser(user);
+    const onlineCount = devices.filter((device) => device.online).length;
+    const offlineDevices = devices.filter((device) => !device.online);
+    const lastSyncAt = devices.reduce<Date | null>((latest, device) => {
+      if (!device.lastSyncAt) {
+        return latest;
+      }
+
+      if (!latest || new Date(device.lastSyncAt).getTime() > latest.getTime()) {
+        return new Date(device.lastSyncAt);
+      }
+
+      return latest;
+    }, null);
+    const pendingTotal = devices.reduce(
+      (total, device) => total + device.pendingCommandsCount,
+      0,
+    );
+    const technicalNews: string[] = [];
+
+    if (offlineDevices.length > 0) {
+      technicalNews.push(`${offlineDevices.length} dispositivo(s) sin heartbeat reciente.`);
+    }
+
+    if (pendingTotal > 0) {
+      technicalNews.push(`${pendingTotal} comando(s) pendientes de retirar por relojes.`);
+    }
+
+    const failedCommands = await this.countRecentFailedCommands(user);
+    if (failedCommands > 0) {
+      technicalNews.push(`${failedCommands} comando(s) fallidos en las últimas 24 horas.`);
+    }
+
+    if (technicalNews.length === 0) {
+      technicalNews.push('Sin novedades técnicas relevantes.');
+    }
+
+    return {
+      onlineCount,
+      offlineCount: offlineDevices.length,
+      lastSyncAt,
+      technicalNews,
+    };
+  }
+
+  async enqueueAttendanceSync(
+    deviceId: number,
+    requestedBy?: string,
+    user?: AuthenticatedUser,
+  ) {
+    const device = await this.findDeviceForOperation(deviceId, user);
     if (!device) {
       throw new NotFoundException('Dispositivo no encontrado.');
     }
@@ -195,7 +280,7 @@ export class DevicesService {
     }
 
     const saved = await this.repo.save(device);
-    return this.serializeDevice({ ...saved, company });
+    return this.serializeOperationalDevice({ ...saved, company });
   }
 
   async unassignCompany(deviceId: number) {
@@ -214,7 +299,7 @@ export class DevicesService {
     device.assignedAt = null;
 
     const saved = await this.repo.save(device);
-    return this.serializeDevice(saved);
+    return this.serializeOperationalDevice(saved);
   }
 
   async getNextCommandForHeartbeat(
@@ -370,6 +455,34 @@ export class DevicesService {
     };
   }
 
+  private async serializeOperationalDevice(device: Device): Promise<DeviceOperationalView> {
+    const [lastSync, pendingCommandsCount] = await Promise.all([
+      this.findLatestAttendanceSync(device.id),
+      this.countPendingCommands(device.id),
+    ]);
+    const base = this.serializeDevice(device);
+    const online = this.isOnline(device.lastSeen);
+
+    return {
+      ...base,
+      name: device.alias || device.serialNumber,
+      online,
+      status: online ? 'online' : 'offline',
+      lastSyncAt: lastSync?.acknowledgedAt ?? null,
+      pendingCommandsCount,
+    };
+  }
+
+  private isOnline(lastSeen: Date): boolean {
+    const rawThreshold = Number.parseInt(process.env.DEVICE_ONLINE_THRESHOLD_MS || '', 10);
+    const thresholdMs =
+      Number.isFinite(rawThreshold) && rawThreshold > 0
+        ? rawThreshold
+        : DEFAULT_ONLINE_THRESHOLD_MS;
+
+    return Date.now() - new Date(lastSeen).getTime() <= thresholdMs;
+  }
+
   private normalizeSerialNumber(value: string | undefined | null): string | null {
     if (typeof value !== 'string') {
       return null;
@@ -425,6 +538,44 @@ export class DevicesService {
       })
       .orderBy('COALESCE(command.sent_at, command.requested_at)', 'DESC')
       .getOne();
+  }
+
+  private countPendingCommands(deviceId: number): Promise<number> {
+    return this.commandsRepo.count({
+      where: {
+        deviceId,
+        status: DEVICE_COMMAND_STATUSES.PENDING,
+      },
+    });
+  }
+
+  private findLatestAttendanceSync(deviceId: number): Promise<DeviceCommand | null> {
+    return this.commandsRepo.findOne({
+      where: {
+        deviceId,
+        commandType: DEVICE_COMMAND_TYPES.ATTENDANCE_SYNC,
+        status: DEVICE_COMMAND_STATUSES.ACKNOWLEDGED,
+      },
+      order: {
+        acknowledgedAt: 'DESC',
+        requestedAt: 'DESC',
+      },
+    });
+  }
+
+  private async countRecentFailedCommands(user: AuthenticatedUser): Promise<number> {
+    const companyId = getCompanyScope(user);
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const qb = this.commandsRepo
+      .createQueryBuilder('command')
+      .where('command.status = :status', { status: DEVICE_COMMAND_STATUSES.FAILED })
+      .andWhere('command.acknowledged_at >= :since', { since });
+
+    if (companyId) {
+      qb.andWhere('command.company_id = :companyId', { companyId });
+    }
+
+    return qb.getCount();
   }
 
   private async cancelStaleAttendanceSyncs(deviceId: number): Promise<void> {
@@ -553,5 +704,19 @@ export class DevicesService {
     }
 
     return `ATTLOG recibido. registros=${recordCount}\n${preview}`;
+  }
+
+  private findDeviceForOperation(
+    deviceId: number,
+    user?: AuthenticatedUser,
+  ): Promise<Device | null> {
+    if (!user || user.isSuperAdmin) {
+      return this.repo.findOneBy({ id: deviceId });
+    }
+
+    return this.repo.findOneBy({
+      id: deviceId,
+      companyId: getCompanyScope(user),
+    });
   }
 }

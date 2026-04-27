@@ -114,14 +114,14 @@ async function seed() {
 
   // 2. Admin inicial
   if ((await userRepo.count()) === 0) {
-    const hash = await bcrypt.hash(process.env.ADMIN_PASSWORD || 'admin123', 10);
+    const hash = await bcrypt.hash(process.env.ADMIN_PASSWORD || 'admin1234', 10);
     await userRepo.save({
       username: process.env.ADMIN_USERNAME || 'admin',
       passwordHash: hash,
       isSuperAdmin: true,
       employeeId: null,
     });
-    console.log('✓ Admin creado: usuario=admin, contraseña=admin123');
+    console.log('✓ Admin creado: usuario=admin, contraseña=admin1234');
   }
 
   // 3. Maestra de empleados

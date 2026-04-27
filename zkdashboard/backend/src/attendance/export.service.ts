@@ -5,6 +5,8 @@ import * as ExcelJS from 'exceljs';
 import PDFDocument = require('pdfkit');
 import { AttendanceRecord } from './attendance.entity';
 import { Employee } from '../employees/employee.entity';
+import { AuthenticatedUser } from '../auth/authenticated-user.interface';
+import { getCompanyScope } from '../auth/company-scope.util';
 
 const STATUS_LABELS: Record<number, string> = {
   0: 'Entrada',
@@ -52,10 +54,16 @@ export class ExportService {
     userId?: string;
     dateFrom?: string;
     dateTo?: string;
-  }): Promise<AttendanceRecord[]> {
+  }, user: AuthenticatedUser): Promise<AttendanceRecord[]> {
     const qb = this.repo
       .createQueryBuilder('r')
       .leftJoinAndMapOne('r.employee', Employee, 'e', 'e.id = r.user_id');
+
+    const companyId = getCompanyScope(user);
+    if (companyId) {
+      qb.andWhere('r.company_id = :companyId', { companyId });
+    }
+
     if (opts.userId) qb.andWhere('r.user_id = :userId', { userId: opts.userId });
     if (opts.dateFrom) qb.andWhere('r.timestamp >= :df', { df: new Date(opts.dateFrom) });
     if (opts.dateTo) {
@@ -91,8 +99,8 @@ export class ExportService {
     userId?: string;
     dateFrom?: string;
     dateTo?: string;
-  }): Promise<Buffer> {
-    const records = await this.getFiltered(opts);
+  }, user: AuthenticatedUser): Promise<Buffer> {
+    const records = await this.getFiltered(opts, user);
     const generatedAt = new Date();
 
     const wb = new ExcelJS.Workbook();
@@ -190,8 +198,8 @@ export class ExportService {
     userId?: string;
     dateFrom?: string;
     dateTo?: string;
-  }): Promise<Buffer> {
-    const records = await this.getFiltered(opts);
+  }, user: AuthenticatedUser): Promise<Buffer> {
+    const records = await this.getFiltered(opts, user);
     const generatedAt = new Date();
 
     return new Promise<Buffer>((resolve, reject) => {

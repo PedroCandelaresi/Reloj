@@ -1,5 +1,6 @@
 import { Transform } from 'class-transformer';
-import { IsEnum, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsPasswordPolicy } from '../../auth/dto/password-policy';
 import { CompanyRole } from '../company-role.enum';
 
 function trimValue({ value }: { value: unknown }) {
@@ -15,7 +16,7 @@ export class UpdateCompanyUserDto {
 
   @IsOptional()
   @IsString()
-  @MinLength(6)
+  @IsPasswordPolicy()
   @MaxLength(200)
   password?: string;
 

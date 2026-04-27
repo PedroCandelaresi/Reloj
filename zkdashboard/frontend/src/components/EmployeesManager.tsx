@@ -45,6 +45,16 @@ function toFormValues(employee: Employee): FormValues {
 }
 
 export function EmployeesManager({ employees }: { employees: Employee[] }) {
+  return <EmployeesManagerContent employees={employees} canManage />;
+}
+
+export function EmployeesManagerContent({
+  employees,
+  canManage,
+}: {
+  employees: Employee[];
+  canManage: boolean;
+}) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [mode, setMode] = useState<FormMode>('create');
@@ -175,13 +185,19 @@ export function EmployeesManager({ employees }: { employees: Employee[] }) {
             <h2 className="font-semibold text-gray-900">Maestra de empleados</h2>
             <p className="text-sm text-gray-500 mt-1">{employees.length} empleados registrados</p>
           </div>
-          <button
-            type="button"
-            onClick={openCreate}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-          >
-            Agregar empleado
-          </button>
+          {canManage ? (
+            <button
+              type="button"
+              onClick={openCreate}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            >
+              Agregar empleado
+            </button>
+          ) : (
+            <span className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700">
+              Vista de solo lectura
+            </span>
+          )}
         </div>
 
         {banner && (
@@ -211,13 +227,18 @@ export function EmployeesManager({ employees }: { employees: Employee[] }) {
                 <th className="px-6 py-4 text-left font-semibold">Nombre</th>
                 <th className="px-6 py-4 text-left font-semibold">Teléfono</th>
                 <th className="px-6 py-4 text-left font-semibold">Email</th>
-                <th className="px-6 py-4 text-right font-semibold">Acciones</th>
+                {canManage && (
+                  <th className="px-6 py-4 text-right font-semibold">Acciones</th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {employees.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-10 text-center text-gray-500">
+                  <td
+                    colSpan={canManage ? 6 : 5}
+                    className="px-6 py-10 text-center text-gray-500"
+                  >
                     No hay empleados registrados todavía.
                   </td>
                 </tr>
@@ -229,25 +250,27 @@ export function EmployeesManager({ employees }: { employees: Employee[] }) {
                     <td className="px-6 py-4 text-gray-700">{employee.nombre}</td>
                     <td className="px-6 py-4 text-gray-500">{employee.telefono || '—'}</td>
                     <td className="px-6 py-4 text-gray-500">{employee.email || '—'}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex justify-end gap-2">
-                        <button
-                          type="button"
-                          onClick={() => openEdit(employee)}
-                          className="text-emerald-600 hover:text-emerald-700 font-medium transition-colors"
-                        >
-                          Editar
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(employee)}
-                          disabled={isPending}
-                          className="text-red-500 hover:text-red-600 font-medium transition-colors disabled:opacity-60"
-                        >
-                          Eliminar
-                        </button>
-                      </div>
-                    </td>
+                    {canManage && (
+                      <td className="px-6 py-4">
+                        <div className="flex justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => openEdit(employee)}
+                            className="text-emerald-600 hover:text-emerald-700 font-medium transition-colors"
+                          >
+                            Editar
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(employee)}
+                            disabled={isPending}
+                            className="text-red-500 hover:text-red-600 font-medium transition-colors disabled:opacity-60"
+                          >
+                            Eliminar
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))
               )}
@@ -256,7 +279,7 @@ export function EmployeesManager({ employees }: { employees: Employee[] }) {
         </div>
       </div>
 
-      {isModalOpen && (
+      {canManage && isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/45 px-4">
           <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl border border-gray-100">
             <div className="px-6 py-4 border-b border-gray-100">

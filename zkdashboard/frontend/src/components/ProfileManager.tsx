@@ -25,6 +25,39 @@ function formatDisplayName(profile: CurrentUserProfile) {
   return fullName || profile.username;
 }
 
+function formatRole(profile: CurrentUserProfile) {
+  if (profile.isSuperAdmin) {
+    return 'Super admin';
+  }
+
+  switch (profile.companyRole) {
+    case 'company_admin':
+      return 'Administrador de empresa';
+    case 'operator':
+      return 'Operador';
+    case 'read_only':
+      return 'Solo lectura';
+    default:
+      return 'Usuario';
+  }
+}
+
+function getActiveCompanyName(profile: CurrentUserProfile) {
+  if (profile.isSuperAdmin) {
+    return 'Acceso global';
+  }
+
+  const membership = profile.memberships.find(
+    (candidate) => candidate.companyId === profile.companyId,
+  );
+
+  return (
+    membership?.company?.nombreFantasia ||
+    membership?.company?.razonSocial ||
+    'Sin empresa activa'
+  );
+}
+
 export function ProfileManager({ profile }: { profile: CurrentUserProfile }) {
   const router = useRouter();
   const [isProfilePending, startProfileTransition] = useTransition();
@@ -88,9 +121,11 @@ export function ProfileManager({ profile }: { profile: CurrentUserProfile }) {
         </div>
       </div>
 
-      <div className="px-6 py-6 grid grid-cols-1 md:grid-cols-3 gap-4 border-b border-gray-100 bg-gray-50/60">
+      <div className="px-6 py-6 grid grid-cols-1 md:grid-cols-5 gap-4 border-b border-gray-100 bg-gray-50/60">
         <InfoItem label="Usuario" value={profile.username} />
         <InfoItem label="Alta" value={new Date(profile.createdAt).toLocaleString('es-AR')} />
+        <InfoItem label="Rol" value={formatRole(profile)} />
+        <InfoItem label="Empresa activa" value={getActiveCompanyName(profile)} />
         <InfoItem label="DNI actual" value={profile.dni || '—'} />
       </div>
 
