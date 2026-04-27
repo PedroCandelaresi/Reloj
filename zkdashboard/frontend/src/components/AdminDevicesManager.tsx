@@ -17,6 +17,9 @@ type BannerState =
 type DeviceDraft = {
   companyId: string;
   alias: string;
+  address: string;
+  email: string;
+  phone: string;
 };
 
 const TZ = 'America/Argentina/Buenos_Aires';
@@ -61,6 +64,9 @@ export function AdminDevicesManager({
           {
             companyId: device.companyId ?? '',
             alias: device.alias ?? '',
+            address: device.address ?? '',
+            email: device.email ?? '',
+            phone: device.phone ?? '',
           },
         ]),
       ),
@@ -95,6 +101,9 @@ export function AdminDevicesManager({
     const draft = drafts[device.id] ?? {
       companyId: device.companyId ?? '',
       alias: device.alias ?? '',
+      address: device.address ?? '',
+      email: device.email ?? '',
+      phone: device.phone ?? '',
     };
 
     if (!draft.companyId) {
@@ -108,7 +117,10 @@ export function AdminDevicesManager({
       void assignDeviceCompanyAction({
         deviceId: device.id,
         companyId: draft.companyId,
-        alias: draft.alias,
+        alias: draft.alias || null,
+        address: draft.address || null,
+        email: draft.email || null,
+        phone: draft.phone || null,
       })
         .then((result: AdminDeviceActionResult) => {
           if (result.error) {
@@ -215,20 +227,40 @@ export function AdminDevicesManager({
                 </tr>
               ) : (
                 unassignedDevices.map((device) => {
-                  const draft = drafts[device.id] ?? { companyId: '', alias: device.alias ?? '' };
+                  const draft = drafts[device.id] ?? { companyId: '', alias: '', address: '', email: '', phone: '' };
 
                   return (
                     <tr key={device.id} className="hover:bg-emerald-50/50 transition-colors">
                       <td className="px-6 py-4 font-medium text-gray-900">{device.serialNumber}</td>
                       <td className="px-6 py-4">
-                        <input
-                          value={draft.alias}
-                          onChange={(event) =>
-                            handleDraftChange(device.id, 'alias', event.target.value)
-                          }
-                          placeholder="Alias opcional"
-                          className="w-full min-w-[180px] rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
+                        <div className="space-y-1.5 min-w-[200px]">
+                          <input
+                            value={draft.alias}
+                            onChange={(e) => handleDraftChange(device.id, 'alias', e.target.value)}
+                            placeholder="Alias / nombre"
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                          <input
+                            value={draft.address}
+                            onChange={(e) => handleDraftChange(device.id, 'address', e.target.value)}
+                            placeholder="Dirección / sucursal"
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                          <input
+                            value={draft.email}
+                            type="email"
+                            onChange={(e) => handleDraftChange(device.id, 'email', e.target.value)}
+                            placeholder="Email de contacto"
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                          <input
+                            value={draft.phone}
+                            type="tel"
+                            onChange={(e) => handleDraftChange(device.id, 'phone', e.target.value)}
+                            placeholder="Teléfono"
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
                       </td>
                       <td className="px-6 py-4 text-gray-500">{device.ipAddress || '—'}</td>
                       <td className="px-6 py-4 text-gray-500">{formatDate(device.lastSeen)}</td>
@@ -308,6 +340,9 @@ export function AdminDevicesManager({
                   const draft = drafts[device.id] ?? {
                     companyId: device.companyId ?? '',
                     alias: device.alias ?? '',
+                    address: device.address ?? '',
+                    email: device.email ?? '',
+                    phone: device.phone ?? '',
                   };
 
                   return (
@@ -315,14 +350,34 @@ export function AdminDevicesManager({
                       <td className="px-6 py-4 font-medium text-gray-900">{device.serialNumber}</td>
                       <td className="px-6 py-4 text-gray-700">{getCompanyLabel(device.company)}</td>
                       <td className="px-6 py-4">
-                        <input
-                          value={draft.alias}
-                          onChange={(event) =>
-                            handleDraftChange(device.id, 'alias', event.target.value)
-                          }
-                          placeholder="Alias opcional"
-                          className="w-full min-w-[180px] rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
+                        <div className="space-y-1.5 min-w-[200px]">
+                          <input
+                            value={draft.alias}
+                            onChange={(e) => handleDraftChange(device.id, 'alias', e.target.value)}
+                            placeholder="Alias / nombre"
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                          <input
+                            value={draft.address}
+                            onChange={(e) => handleDraftChange(device.id, 'address', e.target.value)}
+                            placeholder="Dirección / sucursal"
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                          <input
+                            value={draft.email}
+                            type="email"
+                            onChange={(e) => handleDraftChange(device.id, 'email', e.target.value)}
+                            placeholder="Email de contacto"
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                          <input
+                            value={draft.phone}
+                            type="tel"
+                            onChange={(e) => handleDraftChange(device.id, 'phone', e.target.value)}
+                            placeholder="Teléfono"
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
                       </td>
                       <td className="px-6 py-4 text-gray-500">{device.ipAddress || '—'}</td>
                       <td className="px-6 py-4">

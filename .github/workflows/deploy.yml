@@ -39,7 +39,9 @@ jobs:
           FRONTEND_PORT: ${{ secrets.FRONTEND_PORT }}
           INTERNAL_API_URL: ${{ secrets.INTERNAL_API_URL }}
         run: |
-          if [ -n "${DB_USERNAME}${DB_PASSWORD}${DB_NAME}${JWT_SECRET}" ]; then
+          if [ -f .env ]; then
+            echo ".env ya existe en el runner — se respeta sin modificar."
+          elif [ -n "${DB_USERNAME}${DB_PASSWORD}${DB_NAME}${JWT_SECRET}" ]; then
             {
               echo "DB_USERNAME=${DB_USERNAME:-zkuser}"
               echo "DB_PASSWORD=${DB_PASSWORD:-zkpassword}"
@@ -57,12 +59,10 @@ jobs:
               echo "FRONTEND_PORT=${FRONTEND_PORT:-4200}"
               echo "INTERNAL_API_URL=${INTERNAL_API_URL:-http://backend:4370}"
             } > .env
-            echo ".env generado desde GitHub Secrets"
-          elif [ ! -f .env ]; then
-            echo "No hay secrets configurados; generando .env desde .env.example"
-            cp .env.example .env
+            echo ".env generado desde GitHub Secrets (primera vez)."
           else
-            echo "Usando .env existente en el runner"
+            echo "Sin .env y sin secrets — copiando .env.example como base."
+            cp .env.example .env
           fi
 
       - name: Mostrar versión de Docker

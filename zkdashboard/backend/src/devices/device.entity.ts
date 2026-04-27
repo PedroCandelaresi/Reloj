@@ -35,6 +35,15 @@ export class Device {
   @Column({ nullable: true, length: 150 })
   alias: string | null;
 
+  @Column({ length: 300, nullable: true })
+  address: string | null;
+
+  @Column({ length: 200, nullable: true })
+  email: string | null;
+
+  @Column({ length: 50, nullable: true })
+  phone: string | null;
+
   @Column({ name: 'assigned_at', type: 'timestamptz', nullable: true })
   assignedAt: Date | null;
 

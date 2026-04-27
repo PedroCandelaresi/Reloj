@@ -96,6 +96,8 @@ export interface CompanySummary {
   isActive: boolean;
   defaultEntryTime?: string | null;
   defaultExitTime?: string | null;
+  email?: string | null;
+  phone?: string | null;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -159,6 +161,9 @@ export interface Device {
   serialNumber: string;
   ipAddress: string | null;
   alias: string | null;
+  address: string | null;
+  email: string | null;
+  phone: string | null;
   company: CompanySummary | null;
   companyId: string | null;
   assignedAt: string | null;
@@ -286,6 +291,8 @@ export interface CompanyInput {
   isActive?: boolean;
   defaultEntryTime?: string | null;
   defaultExitTime?: string | null;
+  email?: string | null;
+  phone?: string | null;
 }
 
 export interface CompanyUpdateInput {
@@ -295,6 +302,8 @@ export interface CompanyUpdateInput {
   isActive?: boolean;
   defaultEntryTime?: string | null;
   defaultExitTime?: string | null;
+  email?: string | null;
+  phone?: string | null;
 }
 
 export interface CompanySettingsInput {
@@ -337,6 +346,9 @@ export interface ScheduleProfileInput {
 export interface AssignAdminDeviceCompanyInput {
   companyId: string;
   alias?: string | null;
+  address?: string | null;
+  email?: string | null;
+  phone?: string | null;
 }
 
 export interface CompanyUser {

@@ -29,6 +29,9 @@ export async function assignDeviceCompanyAction(input: {
   deviceId: number;
   companyId: string;
   alias?: string | null;
+  address?: string | null;
+  email?: string | null;
+  phone?: string | null;
 }): Promise<AdminDeviceActionResult> {
   if (!Number.isInteger(input.deviceId) || input.deviceId <= 0) {
     return { error: 'Dispositivo inválido.' };
@@ -43,6 +46,9 @@ export async function assignDeviceCompanyAction(input: {
     await assignAdminDeviceCompany(input.deviceId, {
       companyId,
       alias: cleanText(input.alias) || null,
+      address: cleanText(input.address) || null,
+      email: cleanText(input.email) || null,
+      phone: cleanText(input.phone) || null,
     });
     revalidateAdminViews();
     return { ok: true };
