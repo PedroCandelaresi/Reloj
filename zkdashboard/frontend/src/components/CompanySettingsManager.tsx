@@ -47,13 +47,15 @@ export function CompanySettingsManager({ company }: { company: CompanySummary })
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Entrada global</label>
-            <input type="time" value={defaultEntryTime} onChange={(e) => setDefaultEntryTime(e.target.value)} step={60}
+            <input type="text" value={defaultEntryTime} onChange={(e) => setDefaultEntryTime(e.target.value)}
+              placeholder="HH:MM" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$" inputMode="numeric"
               className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
               style={inputStyle} />
           </div>
           <div>
             <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Salida global</label>
-            <input type="time" value={defaultExitTime} onChange={(e) => setDefaultExitTime(e.target.value)} step={60}
+            <input type="text" value={defaultExitTime} onChange={(e) => setDefaultExitTime(e.target.value)}
+              placeholder="HH:MM" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$" inputMode="numeric"
               className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
               style={inputStyle} />
           </div>

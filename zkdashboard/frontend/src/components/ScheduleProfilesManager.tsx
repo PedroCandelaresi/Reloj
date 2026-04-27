@@ -273,7 +273,9 @@ function TimeInput({
   return (
     <label className="block text-sm">
       <span className="font-medium" style={{ color: 'var(--text-secondary)' }}>{label}</span>
-      <input type="time" name={name} value={value} onChange={onChange} required={required} step={60}
+      <input
+        type="text" name={name} value={value} onChange={onChange} required={required}
+        placeholder="HH:MM" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$" inputMode="numeric"
         className="mt-1 w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
         style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
       />

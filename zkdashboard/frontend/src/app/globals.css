@@ -7,7 +7,7 @@
   color-scheme: light;
 
   --bg-page:        #f0ede8;
-  --bg-navbar:      #3d3d3d;
+  --bg-navbar:      #6a6662;
   --surface:        #ffffff;
   --surface-raised: #fafafa;
   --surface-header: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%);
@@ -124,6 +124,27 @@ body {
 
 .input-field::placeholder {
   color: var(--text-muted);
+}
+
+/* ── Login: always-dark matrix (ignores theme) ──────────────────── */
+.matrix-dark {
+  background:
+    linear-gradient(rgba(0, 255, 110, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 110, 0.035) 1px, transparent 1px),
+    radial-gradient(circle at 50% 12%, rgba(0, 255, 130, 0.10), transparent 34%),
+    radial-gradient(circle at 15% 18%, rgba(40, 255, 166, 0.07), transparent 22%),
+    linear-gradient(180deg, #020b05 0%, #03140a 48%, #050708 100%);
+  background-size: 26px 26px, 26px 26px, auto, auto, auto;
+}
+.scanlines-dark {
+  background:
+    repeating-linear-gradient(
+      180deg,
+      rgba(0, 255, 100, 0) 0px,
+      rgba(0, 255, 100, 0) 10px,
+      rgba(0, 255, 100, 0.04) 11px,
+      rgba(0, 255, 100, 0) 12px
+    );
 }
 
 /* ── Dark mode: matrix / scanlines bg (DashboardLayout) ────────── */
