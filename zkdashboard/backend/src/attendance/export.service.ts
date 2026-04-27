@@ -6,6 +6,7 @@ import PDFDocument = require('pdfkit');
 import { AttendanceRecord } from './attendance.entity';
 import { Employee } from '../employees/employee.entity';
 import { Company } from '../companies/company.entity';
+import { ScheduleProfile } from '../companies/schedule-profile.entity';
 import { AuthenticatedUser } from '../auth/authenticated-user.interface';
 import { getCompanyScope } from '../auth/company-scope.util';
 
@@ -52,6 +53,8 @@ export class ExportService {
     private readonly repo: Repository<AttendanceRecord>,
     @InjectRepository(Company)
     private readonly companiesRepo: Repository<Company>,
+    @InjectRepository(ScheduleProfile)
+    private readonly scheduleProfilesRepo: Repository<ScheduleProfile>,
   ) {}
 
   private async getFiltered(opts: {
@@ -119,6 +122,49 @@ export class ExportService {
     });
   }
 
+  private getMonthDay(date: Date | string): string {
+    const value = new Date(date);
+    return `${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`;
+  }
+
+  private isMonthDayInRange(monthDay: string, start: string | null, end: string | null): boolean {
+    if (!start || !end) return false;
+    return start <= end
+      ? monthDay >= start && monthDay <= end
+      : monthDay >= start || monthDay <= end;
+  }
+
+  private getProfileTimesForDate(profile: ScheduleProfile, date: string) {
+    const monthDay = this.getMonthDay(date);
+
+    if (
+      this.isMonthDayInRange(monthDay, profile.summerStart, profile.summerEnd) &&
+      profile.summerEntryTime &&
+      profile.summerExitTime
+    ) {
+      return {
+        entryTime: profile.summerEntryTime,
+        exitTime: profile.summerExitTime,
+      };
+    }
+
+    if (
+      this.isMonthDayInRange(monthDay, profile.winterStart, profile.winterEnd) &&
+      profile.winterEntryTime &&
+      profile.winterExitTime
+    ) {
+      return {
+        entryTime: profile.winterEntryTime,
+        exitTime: profile.winterExitTime,
+      };
+    }
+
+    return {
+      entryTime: profile.entryTime,
+      exitTime: profile.exitTime,
+    };
+  }
+
   private async getCompanyDefaultsById(
     user: AuthenticatedUser,
     records: AttendanceRecord[],
@@ -166,6 +212,17 @@ export class ExportService {
   ) {
     const records = await this.getFiltered(opts, user);
     const companyDefaultsById = await this.getCompanyDefaultsById(user, records);
+    const profileIds = [
+      ...new Set(
+        records
+          .map((record) => record.employee?.scheduleProfileId)
+          .filter((value): value is string => typeof value === 'string' && value.trim() !== ''),
+      ),
+    ];
+    const profiles = profileIds.length > 0
+      ? await this.scheduleProfilesRepo.findBy({ id: In(profileIds) })
+      : [];
+    const profilesById = new Map(profiles.map((profile) => [profile.id, profile]));
     const grouped = new Map<string, AttendanceRecord[]>();
 
     for (const record of records) {
@@ -195,8 +252,16 @@ export class ExportService {
         const companyDefaults = sorted[0]?.companyId
           ? companyDefaultsById.get(sorted[0].companyId)
           : null;
-        const expectedEntry = employee?.entryTime ?? companyDefaults?.entryTime;
-        const expectedExit = employee?.exitTime ?? companyDefaults?.exitTime;
+        const profileTimes = employee?.scheduleProfileId
+          ? profilesById.get(employee.scheduleProfileId)
+          : null;
+        const effectiveProfileTimes = profileTimes
+          ? this.getProfileTimesForDate(profileTimes, date)
+          : null;
+        const expectedEntry =
+          employee?.entryTime ?? effectiveProfileTimes?.entryTime ?? companyDefaults?.entryTime;
+        const expectedExit =
+          employee?.exitTime ?? effectiveProfileTimes?.exitTime ?? companyDefaults?.exitTime;
 
         return {
           userId,

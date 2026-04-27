@@ -9,10 +9,18 @@ import { Employee } from '../employees/employee.entity';
 import { DeviceCommand } from '../devices/device-command.entity';
 import { InboundRequest } from '../adms/inbound-request.entity';
 import { Company } from '../companies/company.entity';
+import { ScheduleProfile } from '../companies/schedule-profile.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([AttendanceRecord, Employee, DeviceCommand, InboundRequest, Company]),
+    TypeOrmModule.forFeature([
+      AttendanceRecord,
+      Employee,
+      DeviceCommand,
+      InboundRequest,
+      Company,
+      ScheduleProfile,
+    ]),
     DevicesModule,
   ],
   providers: [AttendanceService, ExportService],

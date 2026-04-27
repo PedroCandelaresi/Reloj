@@ -72,4 +72,9 @@ export class CreateEmployeeDto {
   @IsOptional()
   @IsUUID()
   companyId?: string | null;
+
+  @Transform(trimNullableValue)
+  @IsOptional()
+  @IsUUID()
+  scheduleProfileId?: string | null;
 }

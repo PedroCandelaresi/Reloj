@@ -1,0 +1,70 @@
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  Index,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
+import { Employee } from '../employees/employee.entity';
+import { Company } from './company.entity';
+
+@Entity('schedule_profiles')
+@Index('UQ_schedule_profiles_company_name', ['companyId', 'name'], { unique: true })
+export class ScheduleProfile {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Index('IDX_schedule_profiles_company_id')
+  @Column({ name: 'company_id', type: 'uuid' })
+  companyId: string;
+
+  @ManyToOne(() => Company, (company) => company.scheduleProfiles, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'company_id' })
+  company: Company;
+
+  @Column({ length: 120 })
+  name: string;
+
+  @Column({ name: 'entry_time', type: 'varchar', length: 5 })
+  entryTime: string;
+
+  @Column({ name: 'exit_time', type: 'varchar', length: 5 })
+  exitTime: string;
+
+  @Column({ name: 'summer_entry_time', type: 'varchar', length: 5, nullable: true })
+  summerEntryTime: string | null;
+
+  @Column({ name: 'summer_exit_time', type: 'varchar', length: 5, nullable: true })
+  summerExitTime: string | null;
+
+  @Column({ name: 'summer_start', type: 'varchar', length: 5, nullable: true })
+  summerStart: string | null;
+
+  @Column({ name: 'summer_end', type: 'varchar', length: 5, nullable: true })
+  summerEnd: string | null;
+
+  @Column({ name: 'winter_entry_time', type: 'varchar', length: 5, nullable: true })
+  winterEntryTime: string | null;
+
+  @Column({ name: 'winter_exit_time', type: 'varchar', length: 5, nullable: true })
+  winterExitTime: string | null;
+
+  @Column({ name: 'winter_start', type: 'varchar', length: 5, nullable: true })
+  winterStart: string | null;
+
+  @Column({ name: 'winter_end', type: 'varchar', length: 5, nullable: true })
+  winterEnd: string | null;
+
+  @OneToMany(() => Employee, (employee) => employee.scheduleProfile)
+  employees?: Employee[];
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
+}

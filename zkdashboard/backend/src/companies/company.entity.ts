@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { Employee } from '../employees/employee.entity';
 import { CompanyMembership } from './company-membership.entity';
+import { ScheduleProfile } from './schedule-profile.entity';
 
 @Entity('companies')
 export class Company {
@@ -39,6 +40,9 @@ export class Company {
 
   @OneToMany(() => CompanyMembership, (membership) => membership.company)
   memberships?: CompanyMembership[];
+
+  @OneToMany(() => ScheduleProfile, (profile) => profile.company)
+  scheduleProfiles?: ScheduleProfile[];
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

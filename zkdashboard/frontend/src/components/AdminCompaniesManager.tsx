@@ -299,7 +299,7 @@ export function AdminCompaniesManager({ companies }: { companies: CompanySummary
                 {mode === 'create' ? 'Crear empresa' : 'Editar empresa'}
               </h3>
               <p className="text-sm text-gray-500 mt-1">
-                Configurá los datos básicos para operar la empresa en STARNET.
+                Configurá los datos básicos para operar la empresa en CONFLUNET.
               </p>
             </div>
 
