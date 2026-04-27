@@ -2,18 +2,80 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Light theme (GNOME Adwaita Light) ──────────────────────────── */
 :root {
   color-scheme: light;
-  --surface-base: #ffffff;
-  --surface-muted: #f4f6f9;
-  --surface-soft: #eef3f8;
-  --ink-strong: #222833;
-  --ink-soft: #667085;
-  --brand: #1fc777;
-  --brand-strong: #03140a;
-  --brand-soft: #e4f8ed;
-  --steel: #9aa4af;
-  --steel-strong: #20262c;
+
+  --bg-page:        #f0ede8;
+  --bg-navbar:      #3d3d3d;
+  --surface:        #ffffff;
+  --surface-raised: #fafafa;
+  --surface-header: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%);
+  --border:         #deddda;
+  --border-strong:  #c0bfbc;
+
+  --text-primary:   #1e1e1e;
+  --text-secondary: #5e5c64;
+  --text-muted:     #9a9996;
+
+  --brand:          #1fc777;
+  --brand-hover:    #17a85f;
+  --brand-soft:     #e8f8f0;
+  --brand-text:     #17a85f;
+
+  --danger:         #c01c28;
+  --danger-soft:    #fde8e8;
+  --danger-text:    #c01c28;
+
+  --amber-soft:     #fef3c7;
+  --amber-text:     #92400e;
+
+  --blue-soft:      #dbeafe;
+  --blue-text:      #1d4ed8;
+
+  --input-bg:       #ffffff;
+  --input-border:   #c0bfbc;
+
+  --row-hover:      rgba(31, 199, 119, 0.06);
+  --shadow-card:    0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+}
+
+/* ── Dark theme (GNOME Adwaita Dark + brand matrix) ─────────────── */
+.dark {
+  color-scheme: dark;
+
+  --bg-page:        #1d1d1d;
+  --bg-navbar:      #242424;
+  --surface:        #303030;
+  --surface-raised: #3d3d3d;
+  --surface-header: linear-gradient(180deg, #3d3d3d 0%, #343434 50%, #2d2d2d 100%);
+  --border:         #474747;
+  --border-strong:  #585858;
+
+  --text-primary:   #ffffff;
+  --text-secondary: #c0bfbc;
+  --text-muted:     #9a9996;
+
+  --brand:          #1fc777;
+  --brand-hover:    #26e085;
+  --brand-soft:     rgba(31, 199, 119, 0.15);
+  --brand-text:     #3de899;
+
+  --danger:         #e62d42;
+  --danger-soft:    rgba(230, 45, 66, 0.15);
+  --danger-text:    #f47b87;
+
+  --amber-soft:     rgba(251, 191, 36, 0.12);
+  --amber-text:     #fbbf24;
+
+  --blue-soft:      rgba(59, 130, 246, 0.15);
+  --blue-text:      #60a5fa;
+
+  --input-bg:       #3d3d3d;
+  --input-border:   #565656;
+
+  --row-hover:      rgba(31, 199, 119, 0.08);
+  --shadow-card:    0 2px 8px rgba(0,0,0,0.4);
 }
 
 html,
@@ -24,14 +86,40 @@ body {
 body {
   margin: 0;
   font-family: var(--font-sans), sans-serif;
+  background-color: var(--bg-page);
+  color: var(--text-primary);
 }
 
 ::selection {
-  background: rgba(35, 255, 153, 0.22);
-  color: var(--ink-strong);
+  background: rgba(31, 199, 119, 0.25);
+  color: var(--text-primary);
 }
 
-.conflunet-matrix-bg {
+/* ── Reusable semantic classes ───────────────────────────────────── */
+.card {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+  border-radius: 0.75rem;
+}
+
+.table-header-row {
+  background: var(--surface-header);
+  color: var(--text-secondary);
+}
+
+.input-field {
+  background-color: var(--input-bg);
+  border: 1px solid var(--input-border);
+  color: var(--text-primary);
+}
+
+.input-field::placeholder {
+  color: var(--text-muted);
+}
+
+/* ── Dark mode: matrix / scanlines bg (DashboardLayout) ────────── */
+.dark .conflunet-matrix-bg {
   background:
     linear-gradient(rgba(0, 255, 110, 0.06) 1px, transparent 1px),
     linear-gradient(90deg, rgba(0, 255, 110, 0.04) 1px, transparent 1px),
@@ -41,14 +129,23 @@ body {
   background-size: 26px 26px, 26px 26px, auto, auto, auto;
 }
 
-.conflunet-steel-bg {
+/* Light mode: no matrix, clean paper-like bg */
+.conflunet-matrix-bg {
+  background: linear-gradient(160deg, #f5f2ec 0%, #ece8e0 40%, #e8e4dc 100%);
+}
+
+.dark .conflunet-steel-bg {
   background:
     radial-gradient(circle at top, rgba(255, 255, 255, 0.08), transparent 28%),
     linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.01) 32%, rgba(0, 0, 0, 0.25) 100%),
     repeating-linear-gradient(-45deg, #15191f 0px, #15191f 14px, #20262c 14px, #20262c 28px);
 }
 
-.conflunet-scanlines {
+.conflunet-steel-bg {
+  background: linear-gradient(135deg, #e8e4dc 0%, #dddad2 100%);
+}
+
+.dark .conflunet-scanlines {
   background:
     repeating-linear-gradient(
       180deg,
@@ -57,4 +154,8 @@ body {
       rgba(0, 255, 100, 0.055) 11px,
       rgba(0, 255, 100, 0) 12px
     );
+}
+
+.conflunet-scanlines {
+  display: none;
 }

@@ -71,46 +71,17 @@ export function CompanyUsersManager({
   const [formError, setFormError] = useState<string | null>(null);
   const [banner, setBanner] = useState<BannerState>(null);
 
-  const openCreate = () => {
-    setMode('create');
-    setForm(EMPTY_FORM);
-    setFormError(null);
-    setIsModalOpen(true);
-  };
-
-  const openEdit = (companyUser: CompanyUser) => {
-    setMode('edit');
-    setForm(toEditForm(companyUser));
-    setFormError(null);
-    setIsModalOpen(true);
-  };
-
-  const closeModal = () => {
-    if (isPending) return;
-    setIsModalOpen(false);
-    setForm(EMPTY_FORM);
-    setFormError(null);
-  };
+  const openCreate = () => { setMode('create'); setForm(EMPTY_FORM); setFormError(null); setIsModalOpen(true); };
+  const openEdit = (companyUser: CompanyUser) => { setMode('edit'); setForm(toEditForm(companyUser)); setFormError(null); setIsModalOpen(true); };
+  const closeModal = () => { if (isPending) return; setIsModalOpen(false); setForm(EMPTY_FORM); setFormError(null); };
 
   const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = event.target;
     setForm((current) => {
-      if (name === 'role') {
-        return { ...current, role: value as CompanyRole };
-      }
-
-      if (name === 'employeeId') {
-        return { ...current, employeeId: value };
-      }
-
-      if (name === 'username') {
-        return { ...current, username: value };
-      }
-
-      if (name === 'password') {
-        return { ...current, password: value };
-      }
-
+      if (name === 'role') return { ...current, role: value as CompanyRole };
+      if (name === 'employeeId') return { ...current, employeeId: value };
+      if (name === 'username') return { ...current, username: value };
+      if (name === 'password') return { ...current, password: value };
       return current;
     });
   };
@@ -124,111 +95,64 @@ export function CompanyUsersManager({
     const username = form.username.trim();
     const password = form.password.trim();
 
-    if (mode === 'create' && (!employeeId || !username || !password)) {
-      setFormError('Seleccioná empleado, usuario y contraseña.');
-      return;
-    }
-
-    if (mode === 'edit' && !form.userId) {
-      setFormError('Usuario inválido.');
-      return;
-    }
+    if (mode === 'create' && (!employeeId || !username || !password)) { setFormError('Seleccioná empleado, usuario y contraseña.'); return; }
+    if (mode === 'edit' && !form.userId) { setFormError('Usuario inválido.'); return; }
 
     startTransition(() => {
       const request =
         mode === 'create'
-          ? createCompanyUserAction({
-              employeeId,
-              username,
-              password,
-              role: form.role,
-            })
-          : updateCompanyUserAction(form.userId ?? 0, {
-              username,
-              password,
-              role: form.role,
-            });
+          ? createCompanyUserAction({ employeeId, username, password, role: form.role })
+          : updateCompanyUserAction(form.userId ?? 0, { username, password, role: form.role });
 
       void request
         .then((result: CompanyUserActionResult) => {
-          if (result.error) {
-            setFormError(result.error);
-            return;
-          }
-
-          setIsModalOpen(false);
-          setForm(EMPTY_FORM);
-          setFormError(null);
-          setBanner({
-            type: 'success',
-            text:
-              mode === 'create'
-                ? 'Usuario creado correctamente.'
-                : 'Usuario actualizado correctamente.',
-          });
+          if (result.error) { setFormError(result.error); return; }
+          setIsModalOpen(false); setForm(EMPTY_FORM); setFormError(null);
+          setBanner({ type: 'success', text: mode === 'create' ? 'Usuario creado correctamente.' : 'Usuario actualizado correctamente.' });
           router.refresh();
         })
-        .catch(() => {
-          setFormError('No se pudo guardar el usuario.');
-        });
+        .catch(() => { setFormError('No se pudo guardar el usuario.'); });
     });
   };
 
   const handleDelete = (companyUser: CompanyUser) => {
     const userId = companyUser.user?.id;
     setBanner(null);
-
-    if (!userId) {
-      setBanner({ type: 'error', text: 'Usuario inválido.' });
-      return;
-    }
-
-    if (!window.confirm(`¿Remover acceso de ${companyUser.user?.username ?? 'este usuario'}?`)) {
-      return;
-    }
+    if (!userId) { setBanner({ type: 'error', text: 'Usuario inválido.' }); return; }
+    if (!window.confirm(`¿Remover acceso de ${companyUser.user?.username ?? 'este usuario'}?`)) return;
 
     startTransition(() => {
       void deleteCompanyUserAction(userId)
         .then((result) => {
-          if (result.error) {
-            setBanner({ type: 'error', text: result.error });
-            return;
-          }
-
+          if (result.error) { setBanner({ type: 'error', text: result.error }); return; }
           setBanner({ type: 'success', text: 'Acceso removido correctamente.' });
           router.refresh();
         })
-        .catch(() => {
-          setBanner({ type: 'error', text: 'No se pudo remover el acceso.' });
-        });
+        .catch(() => { setBanner({ type: 'error', text: 'No se pudo remover el acceso.' }); });
     });
   };
 
+  const inputStyle = { background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' };
+
   return (
     <>
-      <section className="bg-white rounded-xl shadow-lg border border-gray-200">
-        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between gap-4">
+      <section className="card rounded-xl">
+        <div className="px-6 py-4 flex items-center justify-between gap-4" style={{ borderBottom: '1px solid var(--border)' }}>
           <div>
-            <h2 className="font-semibold text-gray-900">Usuarios de empresa</h2>
-            <p className="text-sm text-gray-500 mt-1">{users.length} usuarios con acceso</p>
+            <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Usuarios de empresa</h2>
+            <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>{users.length} usuarios con acceso</p>
           </div>
-          <button
-            type="button"
-            onClick={openCreate}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-          >
+          <button type="button" onClick={openCreate} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
             Nuevo usuario
           </button>
         </div>
 
         {banner && (
-          <div
-            className={`mx-6 mt-6 rounded-lg border px-4 py-3 text-sm ${
-              banner.type === 'success'
-                ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
-                : 'bg-red-50 border-red-200 text-red-700'
-            }`}
-          >
+          <div className="mx-6 mt-6 rounded-lg border px-4 py-3 text-sm" style={
+            banner.type === 'success'
+              ? { background: 'var(--brand-soft)', borderColor: 'rgba(31,199,119,0.3)', color: 'var(--brand-text)' }
+              : { background: 'var(--danger-soft)', borderColor: 'rgba(230,45,66,0.3)', color: 'var(--danger-text)' }
+          }>
             {banner.text}
           </div>
         )}
@@ -236,7 +160,7 @@ export function CompanyUsersManager({
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-slate-100 text-xs uppercase text-slate-600">
+              <tr className="table-header-row text-xs uppercase">
                 <th className="px-6 py-4 text-left font-semibold">Empleado</th>
                 <th className="px-6 py-4 text-left font-semibold">Usuario</th>
                 <th className="px-6 py-4 text-left font-semibold">Rol</th>
@@ -244,47 +168,31 @@ export function CompanyUsersManager({
                 <th className="px-6 py-4 text-right font-semibold">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody>
               {users.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-10 text-center text-gray-500">
+                  <td colSpan={5} className="px-6 py-10 text-center" style={{ color: 'var(--text-muted)' }}>
                     No hay usuarios de empresa todavía.
                   </td>
                 </tr>
               ) : (
                 users.map((companyUser) => (
-                  <tr key={companyUser.id} className="hover:bg-emerald-50/50 transition-colors">
-                    <td className="px-6 py-4 font-medium text-gray-900">
-                      {employeeLabel(companyUser.employee)}
-                    </td>
-                    <td className="px-6 py-4 text-gray-700">
-                      {companyUser.user?.username ?? '—'}
-                    </td>
+                  <tr key={companyUser.id} className="transition-colors border-t" style={{ borderColor: 'var(--border)' }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--row-hover)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = '')}
+                  >
+                    <td className="px-6 py-4 font-medium" style={{ color: 'var(--text-primary)' }}>{employeeLabel(companyUser.employee)}</td>
+                    <td className="px-6 py-4" style={{ color: 'var(--text-secondary)' }}>{companyUser.user?.username ?? '—'}</td>
                     <td className="px-6 py-4">
-                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
+                      <span className="rounded-full px-2.5 py-1 text-xs font-medium" style={{ background: 'var(--surface-raised)', color: 'var(--text-secondary)' }}>
                         {ROLE_LABELS[companyUser.role]}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-gray-500">
-                      {companyUser.employee?.email || '—'}
-                    </td>
+                    <td className="px-6 py-4" style={{ color: 'var(--text-muted)' }}>{companyUser.employee?.email || '—'}</td>
                     <td className="px-6 py-4">
                       <div className="flex justify-end gap-3">
-                        <button
-                          type="button"
-                          onClick={() => openEdit(companyUser)}
-                          className="text-emerald-600 hover:text-emerald-700 font-medium"
-                        >
-                          Editar
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(companyUser)}
-                          disabled={isPending}
-                          className="text-red-500 hover:text-red-600 font-medium disabled:opacity-60"
-                        >
-                          Remover
-                        </button>
+                        <button type="button" onClick={() => openEdit(companyUser)} className="font-medium transition-colors" style={{ color: 'var(--brand-text)' }}>Editar</button>
+                        <button type="button" onClick={() => handleDelete(companyUser)} disabled={isPending} className="font-medium transition-colors disabled:opacity-60" style={{ color: 'var(--danger-text)' }}>Remover</button>
                       </div>
                     </td>
                   </tr>
@@ -296,101 +204,72 @@ export function CompanyUsersManager({
       </section>
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/45 px-4">
-          <div className="w-full max-w-xl bg-white rounded-2xl shadow-xl border border-gray-100">
-            <div className="px-6 py-4 border-b border-gray-100">
-              <h3 className="text-lg font-semibold text-gray-900">
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: 'rgba(0,0,0,0.5)' }}>
+          <div className="w-full max-w-xl rounded-2xl" style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: '0 24px 48px rgba(0,0,0,0.4)' }}>
+            <div className="px-6 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
+              <h3 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
                 {mode === 'create' ? 'Crear usuario' : 'Editar usuario'}
               </h3>
             </div>
 
             <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
               {formError && (
-                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                <div className="rounded-lg border px-4 py-3 text-sm" style={{ background: 'var(--danger-soft)', borderColor: 'rgba(230,45,66,0.3)', color: 'var(--danger-text)' }}>
                   {formError}
                 </div>
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Empleado</label>
-                <select
-                  name="employeeId"
-                  value={form.employeeId}
-                  onChange={handleChange}
-                  disabled={mode === 'edit'}
-                  required
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm disabled:bg-gray-100 disabled:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
+                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Empleado</label>
+                <select name="employeeId" value={form.employeeId} onChange={handleChange} disabled={mode === 'edit'} required
+                  className="w-full rounded-lg px-3 py-2 text-sm disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  style={inputStyle}>
                   <option value="">Seleccionar empleado</option>
                   {mode === 'edit' && form.employeeId && (
-                    <option value={form.employeeId}>
-                      {employeeLabel(users.find((u) => u.user?.id === form.userId)?.employee)}
-                    </option>
+                    <option value={form.employeeId}>{employeeLabel(users.find((u) => u.user?.id === form.userId)?.employee)}</option>
                   )}
                   {eligibleEmployees.map((employee) => (
-                    <option key={employee.id} value={employee.id}>
-                      {employeeLabel(employee)}
-                    </option>
+                    <option key={employee.id} value={employee.id}>{employeeLabel(employee)}</option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Usuario</label>
-                <input
-                  name="username"
-                  value={form.username}
-                  onChange={handleChange}
-                  required={mode === 'create'}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Usuario</label>
+                <input name="username" value={form.username} onChange={handleChange} required={mode === 'create'}
+                  className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  style={inputStyle} />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
                   {mode === 'create' ? 'Contraseña' : 'Nueva contraseña'}
                 </label>
-                <input
-                  name="password"
-                  type="password"
-                  value={form.password}
-                  onChange={handleChange}
-                  required={mode === 'create'}
-                  placeholder={mode === 'edit' ? 'Dejar vacío para conservar' : undefined}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                <input name="password" type="password" value={form.password} onChange={handleChange}
+                  required={mode === 'create'} placeholder={mode === 'edit' ? 'Dejar vacío para conservar' : undefined}
+                  className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  style={inputStyle} />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Rol</label>
-                <select
-                  name="role"
-                  value={form.role}
-                  onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
+                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Rol</label>
+                <select name="role" value={form.role} onChange={handleChange}
+                  className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  style={inputStyle}>
                   {Object.entries(ROLE_LABELS).map(([role, label]) => (
-                    <option key={role} value={role}>
-                      {label}
-                    </option>
+                    <option key={role} value={role}>{label}</option>
                   ))}
                 </select>
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  disabled={isPending}
-                  className="px-4 py-2 rounded-lg border border-gray-300 text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-60"
-                >
+                <button type="button" onClick={closeModal} disabled={isPending}
+                  className="px-4 py-2 rounded-lg text-sm disabled:opacity-60 transition-colors"
+                  style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
                   Cancelar
                 </button>
-                <button
-                  type="submit"
-                  disabled={isPending}
-                  className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-60"
-                >
+                <button type="submit" disabled={isPending}
+                  className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium disabled:opacity-60 transition-colors">
                   {isPending ? 'Guardando...' : 'Guardar'}
                 </button>
               </div>

@@ -122,88 +122,45 @@ export function EmployeesManagerContent({
     startTransition(() => {
       const request =
         mode === 'create'
-            ? createEmployeeAction({
-              id,
-              nombre,
-              apellido,
-              telefono: telefono || null,
-              email: email || null,
-              entryTime: entryTime || null,
-              exitTime: exitTime || null,
-              scheduleProfileId: scheduleProfileId || null,
-            })
-          : updateEmployeeAction(id, {
-              nombre,
-              apellido,
-              telefono: telefono || null,
-              email: email || null,
-              entryTime: entryTime || null,
-              exitTime: exitTime || null,
-              scheduleProfileId: scheduleProfileId || null,
-            });
+          ? createEmployeeAction({ id, nombre, apellido, telefono: telefono || null, email: email || null, entryTime: entryTime || null, exitTime: exitTime || null, scheduleProfileId: scheduleProfileId || null })
+          : updateEmployeeAction(id, { nombre, apellido, telefono: telefono || null, email: email || null, entryTime: entryTime || null, exitTime: exitTime || null, scheduleProfileId: scheduleProfileId || null });
 
       void request
         .then((result: ActionResult) => {
-          if (result.error) {
-            setFormError(result.error);
-            return;
-          }
-
+          if (result.error) { setFormError(result.error); return; }
           setIsModalOpen(false);
           setForm(EMPTY_FORM);
           setFormError(null);
-          setBanner({
-            type: 'success',
-            text:
-              mode === 'create'
-                ? 'Empleado creado correctamente.'
-                : 'Empleado actualizado correctamente.',
-          });
+          setBanner({ type: 'success', text: mode === 'create' ? 'Empleado creado correctamente.' : 'Empleado actualizado correctamente.' });
           router.refresh();
         })
-        .catch(() => {
-          setFormError('No se pudo guardar el empleado.');
-        });
+        .catch(() => { setFormError('No se pudo guardar el empleado.'); });
     });
   };
 
   const handleDelete = (employee: Employee) => {
     setBanner(null);
-
-    if (!window.confirm(`¿Eliminar a ${employee.apellido}, ${employee.nombre}?`)) {
-      return;
-    }
+    if (!window.confirm(`¿Eliminar a ${employee.apellido}, ${employee.nombre}?`)) return;
 
     startTransition(() => {
       void deleteEmployeeAction(employee.id)
         .then((result: ActionResult) => {
-          if (result.error) {
-            setBanner({ type: 'error', text: result.error });
-            return;
-          }
-
-          if (isModalOpen && form.id === employee.id) {
-            setIsModalOpen(false);
-            setForm(EMPTY_FORM);
-            setFormError(null);
-          }
-
+          if (result.error) { setBanner({ type: 'error', text: result.error }); return; }
+          if (isModalOpen && form.id === employee.id) { setIsModalOpen(false); setForm(EMPTY_FORM); setFormError(null); }
           setBanner({ type: 'success', text: 'Empleado eliminado correctamente.' });
           router.refresh();
         })
-        .catch(() => {
-          setBanner({ type: 'error', text: 'No se pudo eliminar el empleado.' });
-        });
+        .catch(() => { setBanner({ type: 'error', text: 'No se pudo eliminar el empleado.' }); });
     });
   };
 
   return (
     <>
-      <div className="bg-white rounded-xl shadow-lg border border-gray-200">
-        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between gap-4">
+      <div className="card rounded-xl">
+        <div className="px-6 py-4 flex items-center justify-between gap-4" style={{ borderBottom: '1px solid var(--border)' }}>
           <div>
-            <h2 className="font-semibold text-gray-900">Maestra de empleados</h2>
-            <p className="text-sm text-gray-500 mt-1">{employees.length} empleados registrados</p>
+            <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Maestra de empleados</h2>
+            <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>{employees.length} empleados registrados</p>
           </div>
           {canManage ? (
             <button
@@ -214,7 +171,7 @@ export function EmployeesManagerContent({
               Agregar empleado
             </button>
           ) : (
-            <span className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700">
+            <span className="rounded-lg border px-3 py-2 text-xs font-medium" style={{ background: 'var(--amber-soft)', borderColor: 'rgba(251,191,36,0.3)', color: 'var(--amber-text)' }}>
               Vista de solo lectura
             </span>
           )}
@@ -222,11 +179,12 @@ export function EmployeesManagerContent({
 
         {banner && (
           <div
-            className={`mx-6 mt-6 rounded-lg border px-4 py-3 text-sm ${
+            className="mx-6 mt-6 rounded-lg border px-4 py-3 text-sm"
+            style={
               banner.type === 'success'
-                ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
-                : 'bg-red-50 border-red-200 text-red-700'
-            }`}
+                ? { background: 'var(--brand-soft)', borderColor: 'rgba(31,199,119,0.3)', color: 'var(--brand-text)' }
+                : { background: 'var(--danger-soft)', borderColor: 'rgba(230,45,66,0.3)', color: 'var(--danger-text)' }
+            }
           >
             {banner.text}
           </div>
@@ -235,13 +193,7 @@ export function EmployeesManagerContent({
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr
-                className="text-xs uppercase"
-                style={{
-                  background: 'linear-gradient(180deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%)',
-                  color: '#475569',
-                }}
-              >
+              <tr className="table-header-row text-xs uppercase">
                 <th className="px-6 py-4 text-left font-semibold">DNI</th>
                 <th className="px-6 py-4 text-left font-semibold">Apellido</th>
                 <th className="px-6 py-4 text-left font-semibold">Nombre</th>
@@ -250,50 +202,39 @@ export function EmployeesManagerContent({
                 <th className="px-6 py-4 text-left font-semibold">Entrada</th>
                 <th className="px-6 py-4 text-left font-semibold">Salida</th>
                 <th className="px-6 py-4 text-left font-semibold">Perfil</th>
-                {canManage && (
-                  <th className="px-6 py-4 text-right font-semibold">Acciones</th>
-                )}
+                {canManage && <th className="px-6 py-4 text-right font-semibold">Acciones</th>}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody>
               {employees.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan={canManage ? 9 : 8}
-                    className="px-6 py-10 text-center text-gray-500"
-                  >
+                  <td colSpan={canManage ? 9 : 8} className="px-6 py-10 text-center" style={{ color: 'var(--text-muted)' }}>
                     No hay empleados registrados todavía.
                   </td>
                 </tr>
               ) : (
                 employees.map((employee) => (
-                  <tr key={employee.id} className="hover:bg-emerald-50/50 transition-colors">
-                    <td className="px-6 py-4 font-medium text-gray-900">{employee.id}</td>
-                    <td className="px-6 py-4 text-gray-700">{employee.apellido}</td>
-                    <td className="px-6 py-4 text-gray-700">{employee.nombre}</td>
-                    <td className="px-6 py-4 text-gray-500">{employee.telefono || '—'}</td>
-                    <td className="px-6 py-4 text-gray-500">{employee.email || '—'}</td>
-                    <td className="px-6 py-4 text-gray-500">{employee.entryTime || '—'}</td>
-                    <td className="px-6 py-4 text-gray-500">{employee.exitTime || '—'}</td>
-                    <td className="px-6 py-4 text-gray-500">
-                      {employee.scheduleProfile?.name || '—'}
-                    </td>
+                  <tr key={employee.id} className="transition-colors border-t" style={{ borderColor: 'var(--border)' }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--row-hover)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = '')}
+                  >
+                    <td className="px-6 py-4 font-medium" style={{ color: 'var(--text-primary)' }}>{employee.id}</td>
+                    <td className="px-6 py-4" style={{ color: 'var(--text-secondary)' }}>{employee.apellido}</td>
+                    <td className="px-6 py-4" style={{ color: 'var(--text-secondary)' }}>{employee.nombre}</td>
+                    <td className="px-6 py-4" style={{ color: 'var(--text-muted)' }}>{employee.telefono || '—'}</td>
+                    <td className="px-6 py-4" style={{ color: 'var(--text-muted)' }}>{employee.email || '—'}</td>
+                    <td className="px-6 py-4" style={{ color: 'var(--text-muted)' }}>{employee.entryTime || '—'}</td>
+                    <td className="px-6 py-4" style={{ color: 'var(--text-muted)' }}>{employee.exitTime || '—'}</td>
+                    <td className="px-6 py-4" style={{ color: 'var(--text-muted)' }}>{employee.scheduleProfile?.name || '—'}</td>
                     {canManage && (
                       <td className="px-6 py-4">
                         <div className="flex justify-end gap-2">
-                          <button
-                            type="button"
-                            onClick={() => openEdit(employee)}
-                            className="text-emerald-600 hover:text-emerald-700 font-medium transition-colors"
-                          >
+                          <button type="button" onClick={() => openEdit(employee)}
+                            className="font-medium transition-colors" style={{ color: 'var(--brand-text)' }}>
                             Editar
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(employee)}
-                            disabled={isPending}
-                            className="text-red-500 hover:text-red-600 font-medium transition-colors disabled:opacity-60"
-                          >
+                          <button type="button" onClick={() => handleDelete(employee)} disabled={isPending}
+                            className="font-medium transition-colors disabled:opacity-60" style={{ color: 'var(--danger-text)' }}>
                             Eliminar
                           </button>
                         </div>
@@ -308,70 +249,56 @@ export function EmployeesManagerContent({
       </div>
 
       {canManage && isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/45 px-4">
-          <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-xl border border-gray-100">
-            <div className="px-6 py-4 border-b border-gray-100">
-              <h3 className="text-lg font-semibold text-gray-900">
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: 'rgba(0,0,0,0.5)' }}>
+          <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl" style={{ background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: '0 24px 48px rgba(0,0,0,0.4)' }}>
+            <div className="px-6 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
+              <h3 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
                 {mode === 'create' ? 'Agregar empleado' : 'Editar empleado'}
               </h3>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
                 El DNI debe coincidir con el `user_id` que llega desde el reloj.
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
               {formError && (
-                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                <div className="rounded-lg border px-4 py-3 text-sm" style={{ background: 'var(--danger-soft)', borderColor: 'rgba(230,45,66,0.3)', color: 'var(--danger-text)' }}>
                   {formError}
                 </div>
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">DNI</label>
+                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>DNI</label>
                 <input
-                  name="id"
-                  value={form.id}
-                  onChange={handleChange}
-                  required
-                  disabled={mode === 'edit'}
-                  inputMode="numeric"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm disabled:bg-gray-100 disabled:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  name="id" value={form.id} onChange={handleChange} required
+                  disabled={mode === 'edit'} inputMode="numeric"
+                  className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-60"
+                  style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Apellido</label>
-                  <input
-                    name="apellido"
-                    value={form.apellido}
-                    onChange={handleChange}
-                    required
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Apellido</label>
+                  <input name="apellido" value={form.apellido} onChange={handleChange} required
+                    className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
                   />
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
-                  <input
-                    name="nombre"
-                    value={form.nombre}
-                    onChange={handleChange}
-                    required
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Nombre</label>
+                  <input name="nombre" value={form.nombre} onChange={handleChange} required
+                    className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Perfil horario
-                </label>
-                <select
-                  name="scheduleProfileId"
-                  value={form.scheduleProfileId}
-                  onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Perfil horario</label>
+                <select name="scheduleProfileId" value={form.scheduleProfileId} onChange={handleChange}
+                  className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
                 >
                   <option value="">Sin perfil asignado</option>
                   {scheduleProfiles.map((profile) => (
@@ -380,75 +307,53 @@ export function EmployeesManagerContent({
                     </option>
                   ))}
                 </select>
-                <p className="mt-1 text-xs text-gray-500">
+                <p className="mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
                   Los horarios propios de abajo pisan al perfil. Dejalos vacíos para usar verano/invierno del perfil.
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
-                <input
-                  name="telefono"
-                  value={form.telefono}
-                  onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Teléfono</label>
+                <input name="telefono" value={form.telefono} onChange={handleChange}
+                  className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                <input
-                  name="email"
-                  type="email"
-                  value={form.email}
-                  onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Email</label>
+                <input name="email" type="email" value={form.email} onChange={handleChange}
+                  className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Horario de entrada
-                  </label>
-                  <input
-                    name="entryTime"
-                    type="time"
-                    value={form.entryTime}
-                    onChange={handleChange}
-                    step={60}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Horario de entrada</label>
+                  <input name="entryTime" type="time" value={form.entryTime} onChange={handleChange} step={60}
+                    className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
                   />
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Horario de salida
-                  </label>
-                  <input
-                    name="exitTime"
-                    type="time"
-                    value={form.exitTime}
-                    onChange={handleChange}
-                    step={60}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Horario de salida</label>
+                  <input name="exitTime" type="time" value={form.exitTime} onChange={handleChange} step={60}
+                    className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
                   />
                 </div>
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  disabled={isPending}
-                  className="px-4 py-2 rounded-lg border border-gray-300 text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-60"
+                <button type="button" onClick={closeModal} disabled={isPending}
+                  className="px-4 py-2 rounded-lg text-sm transition-colors disabled:opacity-60"
+                  style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)', background: 'transparent' }}
                 >
                   Cancelar
                 </button>
-                <button
-                  type="submit"
-                  disabled={isPending}
-                  className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-60"
+                <button type="submit" disabled={isPending}
+                  className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium disabled:opacity-60 transition-colors"
                 >
                   {isPending ? 'Guardando...' : mode === 'create' ? 'Crear empleado' : 'Guardar cambios'}
                 </button>

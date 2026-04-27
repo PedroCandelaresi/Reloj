@@ -79,7 +79,7 @@ export default function LoginPage() {
   }, []);
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#020b05] px-6 py-10 text-white">
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-6 py-10 text-white" style={{ background: '#0d1410' }}>
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute inset-0 conflunet-matrix-bg" />
         <div className="absolute inset-0 conflunet-scanlines opacity-70" />
