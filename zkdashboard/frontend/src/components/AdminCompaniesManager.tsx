@@ -20,6 +20,8 @@ type FormValues = {
   isActive: boolean;
   defaultEntryTime: string;
   defaultExitTime: string;
+  email: string;
+  phone: string;
 };
 
 type BannerState =
@@ -34,6 +36,8 @@ const EMPTY_FORM: FormValues = {
   isActive: true,
   defaultEntryTime: '',
   defaultExitTime: '',
+  email: '',
+  phone: '',
 };
 
 function toFormValues(company: CompanySummary): FormValues {
@@ -44,6 +48,8 @@ function toFormValues(company: CompanySummary): FormValues {
     isActive: company.isActive,
     defaultEntryTime: company.defaultEntryTime ?? '',
     defaultExitTime: company.defaultExitTime ?? '',
+    email: company.email ?? '',
+    phone: company.phone ?? '',
   };
 }
 
@@ -123,6 +129,8 @@ export function AdminCompaniesManager({ companies }: { companies: CompanySummary
       isActive: form.isActive,
       defaultEntryTime: form.defaultEntryTime.trim() || null,
       defaultExitTime: form.defaultExitTime.trim() || null,
+      email: form.email.trim() || null,
+      phone: form.phone.trim() || null,
     };
 
     if (!payload.cuit || !payload.razonSocial) {
@@ -363,28 +371,60 @@ export function AdminCompaniesManager({ companies }: { companies: CompanySummary
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Entrada global
+                    Entrada global <span className="text-gray-400 font-normal">(HH:MM)</span>
                   </label>
                   <input
                     name="defaultEntryTime"
-                    type="time"
+                    type="text"
+                    inputMode="numeric"
                     value={form.defaultEntryTime}
                     onChange={handleChange}
-                    step={60}
+                    placeholder="08:00"
+                    pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$"
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Salida global
+                    Salida global <span className="text-gray-400 font-normal">(HH:MM)</span>
                   </label>
                   <input
                     name="defaultExitTime"
-                    type="time"
+                    type="text"
+                    inputMode="numeric"
                     value={form.defaultExitTime}
                     onChange={handleChange}
-                    step={60}
+                    placeholder="17:00"
+                    pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Email de contacto
+                  </label>
+                  <input
+                    name="email"
+                    type="email"
+                    value={form.email}
+                    onChange={handleChange}
+                    placeholder="contacto@empresa.com"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Teléfono
+                  </label>
+                  <input
+                    name="phone"
+                    type="tel"
+                    value={form.phone}
+                    onChange={handleChange}
+                    placeholder="+54 299 000-0000"
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>

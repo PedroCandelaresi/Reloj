@@ -251,12 +251,17 @@ export class DevicesService {
     return { device, command, duplicate: false as const };
   }
 
-  async assignCompany(deviceId: number, companyId: string, alias?: string | null) {
+  async assignCompany(
+    deviceId: number,
+    companyId: string,
+    alias?: string | null,
+    address?: string | null,
+    email?: string | null,
+    phone?: string | null,
+  ) {
     const device = await this.repo.findOne({
       where: { id: deviceId },
-      relations: {
-        company: true,
-      },
+      relations: { company: true },
     });
     if (!device) {
       throw new NotFoundException('Dispositivo no encontrado.');
@@ -270,14 +275,21 @@ export class DevicesService {
       throw new ConflictException('La empresa seleccionada está inactiva.');
     }
 
-    const normalizedAlias = this.normalizeNullable(alias);
-
     device.companyId = company.id;
     device.company = company;
     device.assignedAt = new Date();
-    if (normalizedAlias !== undefined) {
-      device.alias = normalizedAlias;
-    }
+
+    const normalizedAlias = this.normalizeNullable(alias);
+    if (normalizedAlias !== undefined) device.alias = normalizedAlias;
+
+    const normalizedAddress = this.normalizeNullable(address);
+    if (normalizedAddress !== undefined) device.address = normalizedAddress;
+
+    const normalizedEmail = this.normalizeNullable(email);
+    if (normalizedEmail !== undefined) device.email = normalizedEmail;
+
+    const normalizedPhone = this.normalizeNullable(phone);
+    if (normalizedPhone !== undefined) device.phone = normalizedPhone;
 
     const saved = await this.repo.save(device);
     return this.serializeOperationalDevice({ ...saved, company });

@@ -38,7 +38,7 @@ export class AdminDevicesController {
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: AssignDeviceCompanyDto,
   ) {
-    return this.devices.assignCompany(id, dto.companyId, dto.alias);
+    return this.devices.assignCompany(id, dto.companyId, dto.alias, dto.address, dto.email, dto.phone);
   }
 
   @Delete(':id/company')

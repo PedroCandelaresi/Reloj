@@ -35,6 +35,12 @@ export class Company {
   @Column({ name: 'default_exit_time', type: 'varchar', length: 5, nullable: true })
   defaultExitTime: string | null;
 
+  @Column({ length: 200, nullable: true })
+  email: string | null;
+
+  @Column({ length: 50, nullable: true })
+  phone: string | null;
+
   @OneToMany(() => Employee, (employee) => employee.company)
   employees?: Employee[];
 
