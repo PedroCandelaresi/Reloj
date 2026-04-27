@@ -479,6 +479,50 @@ export function deleteAdminCompany(id: string) {
   });
 }
 
+export function getAdminCompanyEmployees(companyId: string) {
+  return apiFetch<Employee[]>(`/admin/companies/${companyId}/employees`);
+}
+
+export function getAdminCompanyEligibleEmployees(companyId: string) {
+  return apiFetch<Employee[]>(`/admin/companies/${companyId}/eligible-employees`);
+}
+
+export function assignAdminCompanyEmployee(companyId: string, employeeId: string) {
+  return apiFetch<void>(`/admin/companies/${companyId}/employees/${employeeId}`, {
+    method: 'PUT',
+  });
+}
+
+export function removeAdminCompanyEmployee(companyId: string, employeeId: string) {
+  return apiFetch<void>(`/admin/companies/${companyId}/employees/${employeeId}`, {
+    method: 'DELETE',
+  });
+}
+
+export function getAdminCompanyUsers(companyId: string) {
+  return apiFetch<CompanyUser[]>(`/admin/companies/${companyId}/users`);
+}
+
+export function createAdminCompanyUser(companyId: string, input: CompanyUserInput) {
+  return apiFetch<CompanyUser>(`/admin/companies/${companyId}/users`, {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export function updateAdminCompanyUser(companyId: string, userId: number, input: CompanyUserUpdateInput) {
+  return apiFetch<CompanyUser>(`/admin/companies/${companyId}/users/${userId}`, {
+    method: 'PUT',
+    body: JSON.stringify(input),
+  });
+}
+
+export function removeAdminCompanyUser(companyId: string, userId: number) {
+  return apiFetch<void>(`/admin/companies/${companyId}/users/${userId}`, {
+    method: 'DELETE',
+  });
+}
+
 export function getAdminDevices() {
   return apiFetch<AdminDevice[]>('/admin/devices');
 }

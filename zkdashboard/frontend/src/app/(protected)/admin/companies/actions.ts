@@ -5,8 +5,13 @@ import {
   createAdminCompany,
   deleteAdminCompany,
   updateAdminCompany,
+  assignAdminCompanyEmployee,
+  removeAdminCompanyEmployee,
+  createAdminCompanyUser,
+  updateAdminCompanyUser,
+  removeAdminCompanyUser,
 } from '@/lib/api';
-import type { CompanyInput, CompanyUpdateInput } from '@/lib/api';
+import type { CompanyInput, CompanyUpdateInput, CompanyUserInput, CompanyUserUpdateInput } from '@/lib/api';
 
 export interface CompanyActionResult {
   ok?: true;
@@ -99,5 +104,71 @@ export async function deleteCompanyAction(id: string): Promise<CompanyActionResu
     return { ok: true };
   } catch (error) {
     return { error: getErrorMessage(error, 'No se pudo eliminar la empresa.') };
+  }
+}
+
+export async function assignCompanyEmployeeAction(
+  companyId: string,
+  employeeId: string,
+): Promise<CompanyActionResult> {
+  try {
+    await assignAdminCompanyEmployee(companyId, employeeId);
+    revalidateAdminViews();
+    return { ok: true };
+  } catch (error) {
+    return { error: getErrorMessage(error, 'No se pudo asignar el empleado.') };
+  }
+}
+
+export async function removeCompanyEmployeeAction(
+  companyId: string,
+  employeeId: string,
+): Promise<CompanyActionResult> {
+  try {
+    await removeAdminCompanyEmployee(companyId, employeeId);
+    revalidateAdminViews();
+    return { ok: true };
+  } catch (error) {
+    return { error: getErrorMessage(error, 'No se pudo quitar el empleado.') };
+  }
+}
+
+export async function createCompanyUserAction(
+  companyId: string,
+  input: CompanyUserInput,
+): Promise<CompanyActionResult> {
+  try {
+    await createAdminCompanyUser(companyId, input);
+    revalidateAdminViews();
+    return { ok: true };
+  } catch (error) {
+    return { error: getErrorMessage(error, 'No se pudo crear el usuario.') };
+  }
+}
+
+export async function updateCompanyUserAction(
+  companyId: string,
+  userId: number,
+  input: CompanyUserUpdateInput,
+): Promise<CompanyActionResult> {
+  try {
+    await updateAdminCompanyUser(companyId, userId, input);
+    revalidateAdminViews();
+    return { ok: true };
+  } catch (error) {
+    return { error: getErrorMessage(error, 'No se pudo actualizar el usuario.') };
+  }
+}
+
+export async function removeCompanyUserAction(
+  companyId: string,
+  userId: number,
+): Promise<CompanyActionResult> {
+  try {
+    await removeAdminCompanyUser(companyId, userId);
+    revalidateAdminViews();
+    return { ok: true };
+  } catch (error) {
+    return { error: getErrorMessage(error, 'No se pudo eliminar el usuario.') };
   }
 }

@@ -1,11 +1,32 @@
 import { Navbar } from '@/components/Navbar';
 import { AdminCompaniesManager } from '@/components/AdminCompaniesManager';
-import { getAdminCompanies } from '@/lib/api';
+import { AdminCompanyDetailPanel } from '@/components/AdminCompanyDetailPanel';
+import {
+  getAdminCompanies,
+  getAdminCompanyEmployees,
+  getAdminCompanyEligibleEmployees,
+  getAdminCompanyUsers,
+} from '@/lib/api';
 import { requireSuperAdminSession } from '@/lib/session';
 
-export default async function AdminCompaniesPage() {
+export default async function AdminCompaniesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ company?: string }>;
+}) {
   const user = await requireSuperAdminSession();
+  const sp = await searchParams;
   const companies = await getAdminCompanies();
+  const selectedId = sp.company ?? null;
+  const selectedCompany = selectedId ? (companies.find((c) => c.id === selectedId) ?? null) : null;
+
+  const [employees, eligibleEmployees, users] = selectedCompany
+    ? await Promise.all([
+        getAdminCompanyEmployees(selectedCompany.id),
+        getAdminCompanyEligibleEmployees(selectedCompany.id),
+        getAdminCompanyUsers(selectedCompany.id),
+      ])
+    : [[], [], []];
 
   return (
     <>
@@ -18,7 +39,16 @@ export default async function AdminCompaniesPage() {
           </p>
         </div>
 
-        <AdminCompaniesManager companies={companies} />
+        <AdminCompaniesManager companies={companies} selectedCompanyId={selectedId} />
+
+        {selectedCompany && (
+          <AdminCompanyDetailPanel
+            company={selectedCompany}
+            employees={employees}
+            eligibleEmployees={eligibleEmployees}
+            users={users}
+          />
+        )}
       </main>
     </>
   );
