@@ -42,12 +42,12 @@ export function BrandLogo({
         src="/brand/conflunet-isotipo.svg"
         alt=""
         aria-hidden="true"
-        className={layout === 'stacked' ? `w-24 ${iconClassName}` : `w-12 ${iconClassName}`}
+        className={layout === 'stacked' ? `w-28 ${iconClassName}` : `w-14 ${iconClassName}`}
       />
       <img
         src={wordmark}
         alt="CONFLUNET"
-        className={layout === 'stacked' ? `w-72 max-w-full mx-auto ${wordmarkClassName}` : `w-44 max-w-[60vw] ${wordmarkClassName}`}
+        className={layout === 'stacked' ? `w-72 max-w-full mx-auto ${wordmarkClassName}` : `w-52 max-w-[60vw] ${wordmarkClassName}`}
       />
     </div>
   );

@@ -4,9 +4,12 @@ import { requireSuperAdminSession } from '@/lib/session';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
+const TZ = 'America/Argentina/Buenos_Aires';
+
 function formatDate(iso?: string | null) {
   if (!iso) return '—';
   return new Date(iso).toLocaleString('es-AR', {
+    timeZone: TZ,
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',

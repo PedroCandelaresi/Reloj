@@ -172,7 +172,10 @@ export class AdmsService {
 
       try {
         const [userId, rawTimestamp, rawStatus, rawVerify, workCode] = parts;
-        const timestamp = new Date(rawTimestamp.replace(' ', 'T'));
+        // El reloj manda hora local Argentina (UTC-3) sin offset. Se agrega
+        // explícitamente para que Date lo interprete como hora Argentina y lo
+        // almacene en UTC correctamente.
+        const timestamp = new Date(rawTimestamp.trim().replace(' ', 'T') + '-03:00');
         if (isNaN(timestamp.getTime())) continue;
 
         records.push({
