@@ -35,7 +35,7 @@ export class AttendanceRecord {
   @Column()
   status: number;
 
-  // 0=Contraseña, 1=Huella, 4=Cara, 15=Tarjeta
+  // BioTime/ZKTeco: 0=Contraseña, 1=Huella, 4=Tarjeta RFID, 15=Rostro.
   @Column({ name: 'verify_type' })
   verifyType: number;
 

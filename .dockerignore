@@ -28,6 +28,7 @@
 **/.DS_Store
 
 # Docker / docs
+biotime
 infra/docker/.env
 infra/docker/*.md
 README.md

@@ -113,8 +113,9 @@ export function NavbarClient({ user }: { user?: CurrentUserProfile | null }) {
           <BrandLogo
             variant="steel"
             layout="horizontal"
-            iconClassName="w-14"
-            wordmarkClassName="w-44 sm:w-56"
+            className="min-h-14"
+            iconClassName="h-14 w-14 -my-2"
+            wordmarkClassName="h-11 w-44 sm:w-56"
           />
         </Link>
       </div>

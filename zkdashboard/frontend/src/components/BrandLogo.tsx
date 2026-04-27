@@ -27,7 +27,7 @@ export function BrandLogo({
       <img
         src={wordmark}
         alt="CONFLUNET"
-        className={`${glow} ${className}`}
+        className={`object-contain ${glow} ${className}`}
       />
     );
   }
@@ -42,12 +42,12 @@ export function BrandLogo({
         src="/brand/conflunet-isotipo.svg"
         alt=""
         aria-hidden="true"
-        className={layout === 'stacked' ? `w-28 ${iconClassName}` : `w-14 ${iconClassName}`}
+        className={layout === 'stacked' ? `w-28 object-contain ${iconClassName}` : `w-14 object-contain ${iconClassName}`}
       />
       <img
         src={wordmark}
         alt="CONFLUNET"
-        className={layout === 'stacked' ? `w-72 max-w-full mx-auto ${wordmarkClassName}` : `w-52 max-w-[60vw] ${wordmarkClassName}`}
+        className={layout === 'stacked' ? `w-72 max-w-full mx-auto object-contain ${wordmarkClassName}` : `w-52 max-w-[60vw] object-contain ${wordmarkClassName}`}
       />
     </div>
   );

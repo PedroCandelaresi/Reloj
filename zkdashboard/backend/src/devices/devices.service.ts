@@ -15,6 +15,7 @@ import {
   DEVICE_COMMAND_STATUSES,
   DEVICE_COMMAND_TYPES,
   DeviceCommand,
+  DeviceCommandType,
 } from './device-command.entity';
 
 const FORCE_SYNC_COMMAND = 'DATA QUERY ATTLOG';
@@ -296,6 +297,52 @@ export class DevicesService {
 
     const saved = await this.repo.save(device);
     return this.serializeOperationalDevice({ ...saved, company });
+  }
+
+  async enqueueCommand(
+    deviceId: number,
+    commandType: string,
+    requestedBy?: string,
+  ) {
+    const device = await this.repo.findOne({
+      where: { id: deviceId },
+      relations: { company: true },
+    });
+    if (!device) throw new NotFoundException('Dispositivo no encontrado.');
+    if (!device.isActive) throw new ConflictException('El dispositivo está inactivo.');
+
+    let commandStr: string;
+    if (commandType === DEVICE_COMMAND_TYPES.ATTENDANCE_SYNC) {
+      return this.enqueueAttendanceSync(deviceId, requestedBy);
+    } else if (commandType === DEVICE_COMMAND_TYPES.SET_TIME) {
+      const now = new Date();
+      const pad = (n: number) => String(n).padStart(2, '0');
+      const date = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+      const time = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+      commandStr = `SET OPTIONS DateTime=${date} ${time}`;
+    } else if (commandType === DEVICE_COMMAND_TYPES.REBOOT) {
+      commandStr = 'REBOOT';
+    } else if (commandType === DEVICE_COMMAND_TYPES.CHECK) {
+      commandStr = 'CHECK TIME';
+    } else if (commandType === DEVICE_COMMAND_TYPES.CLEAR_ATTLOG) {
+      commandStr = 'DATA CLEAR ATTLOG';
+    } else {
+      throw new ConflictException(`Tipo de comando desconocido: ${commandType}`);
+    }
+
+    const command = await this.commandsRepo.save(
+      this.commandsRepo.create({
+        deviceId: device.id,
+        commandType: commandType as DeviceCommandType,
+        command: commandStr,
+        companyId: device.companyId,
+        status: DEVICE_COMMAND_STATUSES.PENDING,
+        requestedBy: requestedBy ?? null,
+      }),
+    );
+
+    this.logger.log(`Comando encolado para dispositivo ${device.serialNumber}: ${commandStr}`);
+    return { command, device };
   }
 
   async unassignCompany(deviceId: number) {
