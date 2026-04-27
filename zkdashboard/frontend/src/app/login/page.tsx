@@ -121,12 +121,13 @@ export default function LoginPage() {
           }}
         >
           <div className="flex flex-col items-center">
-            <div className="relative grid h-52 w-full place-items-center sm:h-60">
+            <div className="relative flex w-full flex-col items-center gap-5 py-6">
               <BrandLogo
                 variant="emerald"
                 layout="stacked"
-                iconClassName="w-28 sm:w-32"
-                wordmarkClassName="w-80 sm:w-96"
+                className="w-full"
+                iconClassName="w-36 sm:w-44"
+                wordmarkClassName="w-full max-w-xs sm:max-w-sm mx-auto"
               />
             </div>
 

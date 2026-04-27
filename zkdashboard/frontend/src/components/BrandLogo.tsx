@@ -47,7 +47,7 @@ export function BrandLogo({
       <img
         src={wordmark}
         alt="CONFLUNET"
-        className={layout === 'stacked' ? `w-72 max-w-full ${wordmarkClassName}` : `w-44 max-w-[60vw] ${wordmarkClassName}`}
+        className={layout === 'stacked' ? `w-72 max-w-full mx-auto ${wordmarkClassName}` : `w-44 max-w-[60vw] ${wordmarkClassName}`}
       />
     </div>
   );
