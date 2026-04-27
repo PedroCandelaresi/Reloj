@@ -19,6 +19,8 @@ type FormValues = {
   apellido: string;
   telefono: string;
   email: string;
+  entryTime: string;
+  exitTime: string;
 };
 
 type BannerState =
@@ -32,6 +34,8 @@ const EMPTY_FORM: FormValues = {
   apellido: '',
   telefono: '',
   email: '',
+  entryTime: '',
+  exitTime: '',
 };
 
 function toFormValues(employee: Employee): FormValues {
@@ -41,6 +45,8 @@ function toFormValues(employee: Employee): FormValues {
     apellido: employee.apellido,
     telefono: employee.telefono ?? '',
     email: employee.email ?? '',
+    entryTime: employee.entryTime ?? '',
+    exitTime: employee.exitTime ?? '',
   };
 }
 
@@ -99,6 +105,8 @@ export function EmployeesManagerContent({
     const apellido = form.apellido.trim();
     const telefono = form.telefono.trim();
     const email = form.email.trim();
+    const entryTime = form.entryTime.trim();
+    const exitTime = form.exitTime.trim();
 
     if (!id || !nombre || !apellido) {
       setFormError('Completá DNI, nombre y apellido.');
@@ -114,12 +122,16 @@ export function EmployeesManagerContent({
               apellido,
               telefono: telefono || null,
               email: email || null,
+              entryTime: entryTime || null,
+              exitTime: exitTime || null,
             })
           : updateEmployeeAction(id, {
               nombre,
               apellido,
               telefono: telefono || null,
               email: email || null,
+              entryTime: entryTime || null,
+              exitTime: exitTime || null,
             });
 
       void request
@@ -227,6 +239,8 @@ export function EmployeesManagerContent({
                 <th className="px-6 py-4 text-left font-semibold">Nombre</th>
                 <th className="px-6 py-4 text-left font-semibold">Teléfono</th>
                 <th className="px-6 py-4 text-left font-semibold">Email</th>
+                <th className="px-6 py-4 text-left font-semibold">Entrada</th>
+                <th className="px-6 py-4 text-left font-semibold">Salida</th>
                 {canManage && (
                   <th className="px-6 py-4 text-right font-semibold">Acciones</th>
                 )}
@@ -236,7 +250,7 @@ export function EmployeesManagerContent({
               {employees.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={canManage ? 6 : 5}
+                    colSpan={canManage ? 8 : 7}
                     className="px-6 py-10 text-center text-gray-500"
                   >
                     No hay empleados registrados todavía.
@@ -250,6 +264,8 @@ export function EmployeesManagerContent({
                     <td className="px-6 py-4 text-gray-700">{employee.nombre}</td>
                     <td className="px-6 py-4 text-gray-500">{employee.telefono || '—'}</td>
                     <td className="px-6 py-4 text-gray-500">{employee.email || '—'}</td>
+                    <td className="px-6 py-4 text-gray-500">{employee.entryTime || '—'}</td>
+                    <td className="px-6 py-4 text-gray-500">{employee.exitTime || '—'}</td>
                     {canManage && (
                       <td className="px-6 py-4">
                         <div className="flex justify-end gap-2">
@@ -354,6 +370,36 @@ export function EmployeesManagerContent({
                   onChange={handleChange}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Horario de entrada
+                  </label>
+                  <input
+                    name="entryTime"
+                    type="time"
+                    value={form.entryTime}
+                    onChange={handleChange}
+                    step={60}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Horario de salida
+                  </label>
+                  <input
+                    name="exitTime"
+                    type="time"
+                    value={form.exitTime}
+                    onChange={handleChange}
+                    step={60}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-2">

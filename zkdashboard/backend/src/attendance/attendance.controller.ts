@@ -52,6 +52,7 @@ export class AttendanceController {
   @Get('export')
   async export(
     @Query('format') format: 'excel' | 'pdf' = 'excel',
+    @Query('report') report: 'records' | 'hours' = 'records',
     @Query('userId') userId: string | undefined,
     @Query('dateFrom') dateFrom: string | undefined,
     @Query('dateTo') dateTo: string | undefined,
@@ -59,21 +60,28 @@ export class AttendanceController {
     @Res() res: Response,
   ) {
     const opts = { userId, dateFrom, dateTo };
+    const filename = report === 'hours' ? 'horas-trabajadas' : 'asistencia';
 
     if (format === 'pdf') {
-      const buffer = await this.exports.exportPdf(opts, user);
+      const buffer =
+        report === 'hours'
+          ? await this.exports.exportHoursPdf(opts, user)
+          : await this.exports.exportPdf(opts, user);
       res.set({
         'Content-Type': 'application/pdf',
-        'Content-Disposition': 'attachment; filename="asistencia.pdf"',
+        'Content-Disposition': `attachment; filename="${filename}.pdf"`,
         'Content-Length': buffer.length,
       });
       res.send(buffer);
     } else {
-      const buffer = await this.exports.exportExcel(opts, user);
+      const buffer =
+        report === 'hours'
+          ? await this.exports.exportHoursExcel(opts, user)
+          : await this.exports.exportExcel(opts, user);
       res.set({
         'Content-Type':
           'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'Content-Disposition': 'attachment; filename="asistencia.xlsx"',
+        'Content-Disposition': `attachment; filename="${filename}.xlsx"`,
         'Content-Length': buffer.length,
       });
       res.send(buffer);

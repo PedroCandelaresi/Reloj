@@ -19,6 +19,7 @@ export async function GET(req: NextRequest) {
   }
 
   const format = sp.get('format') ?? 'excel';
+  const report = sp.get('report') ?? 'records';
 
   const upstream = await fetch(`${API}/attendance/export?${qs.toString()}`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -34,7 +35,8 @@ export async function GET(req: NextRequest) {
   const contentType = isExcel
     ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     : 'application/pdf';
-  const filename = isExcel ? 'asistencia.xlsx' : 'asistencia.pdf';
+  const filenamePrefix = report === 'hours' ? 'horas-trabajadas' : 'asistencia';
+  const filename = isExcel ? `${filenamePrefix}.xlsx` : `${filenamePrefix}.pdf`;
 
   return new NextResponse(buffer, {
     headers: {

@@ -28,6 +28,12 @@ export class Employee {
   @Column({ nullable: true })
   email: string | null;
 
+  @Column({ name: 'entry_time', type: 'varchar', length: 5, nullable: true })
+  entryTime: string | null;
+
+  @Column({ name: 'exit_time', type: 'varchar', length: 5, nullable: true })
+  exitTime: string | null;
+
   @Index('IDX_employees_company_id')
   @Column({ name: 'company_id', type: 'uuid', nullable: true })
   companyId: string | null;

@@ -14,6 +14,7 @@ import { JwtAuthGuard } from '../auth/auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { CompanyAdminGuard } from '../auth/guards/company-admin.guard';
 import { AssignCompanyUserDto } from './dto/assign-company-user.dto';
+import { UpdateCompanySettingsDto } from './dto/update-company-settings.dto';
 import { UpdateCompanyUserDto } from './dto/update-company-user.dto';
 import { CompaniesService } from './companies.service';
 
@@ -30,6 +31,19 @@ export class CompanyUsersController {
   @Get('eligible-employees')
   listEligibleEmployees(@CurrentUser() user: AuthenticatedUser) {
     return this.companies.listScopedEligibleEmployees(user);
+  }
+
+  @Get('settings')
+  getSettings(@CurrentUser() user: AuthenticatedUser) {
+    return this.companies.getScopedSettings(user);
+  }
+
+  @Put('settings')
+  updateSettings(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: UpdateCompanySettingsDto,
+  ) {
+    return this.companies.updateScopedSettings(user, dto);
   }
 
   @Post('users')

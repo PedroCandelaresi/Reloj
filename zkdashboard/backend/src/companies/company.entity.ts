@@ -28,6 +28,12 @@ export class Company {
   @Column({ name: 'is_active', default: true })
   isActive: boolean;
 
+  @Column({ name: 'default_entry_time', type: 'varchar', length: 5, nullable: true })
+  defaultEntryTime: string | null;
+
+  @Column({ name: 'default_exit_time', type: 'varchar', length: 5, nullable: true })
+  defaultExitTime: string | null;
+
   @OneToMany(() => Employee, (employee) => employee.company)
   employees?: Employee[];
 

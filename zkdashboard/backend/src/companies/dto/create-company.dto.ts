@@ -1,11 +1,13 @@
 import { Transform } from 'class-transformer';
-import { IsBoolean, IsNotEmpty, IsOptional, IsString, Length, MaxLength } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsOptional, IsString, Length, Matches, MaxLength } from 'class-validator';
 import { IsCuit } from '../validation/cuit.validator';
 import { normalizeCuit } from '../validation/cuit.util';
 
 function trimValue({ value }: { value: unknown }) {
   return typeof value === 'string' ? value.trim() : value;
 }
+
+const TIME_24H_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 function trimNullableValue({ value }: { value: unknown }) {
   if (typeof value !== 'string') return value;
@@ -35,4 +37,20 @@ export class CreateCompanyDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @Transform(trimNullableValue)
+  @IsOptional()
+  @IsString()
+  @Matches(TIME_24H_PATTERN, {
+    message: 'El horario global de entrada debe tener formato HH:mm en 24 horas.',
+  })
+  defaultEntryTime?: string | null;
+
+  @Transform(trimNullableValue)
+  @IsOptional()
+  @IsString()
+  @Matches(TIME_24H_PATTERN, {
+    message: 'El horario global de salida debe tener formato HH:mm en 24 horas.',
+  })
+  defaultExitTime?: string | null;
 }

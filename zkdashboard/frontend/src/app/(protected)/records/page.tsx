@@ -25,6 +25,7 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleString('es-AR', {
     day: '2-digit', month: '2-digit', year: 'numeric',
     hour: '2-digit', minute: '2-digit', second: '2-digit',
+    hour12: false,
   });
 }
 
@@ -86,6 +87,20 @@ export default async function RecordsPage({ searchParams }: PageProps) {
             >
               <PdfIcon />
               Exportar PDF
+            </a>
+            <a
+              href={`/api/export?format=excel&report=hours${exportFilter}`}
+              className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            >
+              <ExcelIcon />
+              Horas Excel
+            </a>
+            <a
+              href={`/api/export?format=pdf&report=hours${exportFilter}`}
+              className="inline-flex items-center gap-2 bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            >
+              <PdfIcon />
+              Horas PDF
             </a>
           </div>
         </div>

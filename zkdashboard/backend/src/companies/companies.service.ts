@@ -13,6 +13,7 @@ import { AuthenticatedUser } from '../auth/authenticated-user.interface';
 import { getCompanyScope } from '../auth/company-scope.util';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
+import { UpdateCompanySettingsDto } from './dto/update-company-settings.dto';
 import { AssignCompanyUserDto } from './dto/assign-company-user.dto';
 import { UpdateCompanyUserDto } from './dto/update-company-user.dto';
 import { CompanyMembership } from './company-membership.entity';
@@ -52,6 +53,8 @@ export class CompaniesService {
       razonSocial: company.razonSocial,
       nombreFantasia: company.nombreFantasia,
       isActive: company.isActive,
+      defaultEntryTime: company.defaultEntryTime,
+      defaultExitTime: company.defaultExitTime,
       createdAt: company.createdAt,
       updatedAt: company.updatedAt,
     };
@@ -204,6 +207,8 @@ export class CompaniesService {
       razonSocial,
       nombreFantasia: nombreFantasia ?? null,
       isActive: dto.isActive ?? true,
+      defaultEntryTime: dto.defaultEntryTime ?? null,
+      defaultExitTime: dto.defaultExitTime ?? null,
     });
 
     return this.toCompany(await this.companiesRepo.save(company));
@@ -228,6 +233,30 @@ export class CompaniesService {
 
     if (dto.isActive !== undefined) {
       company.isActive = dto.isActive;
+    }
+    if (dto.defaultEntryTime !== undefined) {
+      company.defaultEntryTime = dto.defaultEntryTime;
+    }
+    if (dto.defaultExitTime !== undefined) {
+      company.defaultExitTime = dto.defaultExitTime;
+    }
+
+    return this.toCompany(await this.companiesRepo.save(company));
+  }
+
+  async getScopedSettings(user: AuthenticatedUser) {
+    const company = await this.findCompanyEntity(this.getScopedCompanyId(user));
+    return this.toCompany(company);
+  }
+
+  async updateScopedSettings(user: AuthenticatedUser, dto: UpdateCompanySettingsDto) {
+    const company = await this.ensureCompanyIsActive(this.getScopedCompanyId(user));
+
+    if (dto.defaultEntryTime !== undefined) {
+      company.defaultEntryTime = dto.defaultEntryTime;
+    }
+    if (dto.defaultExitTime !== undefined) {
+      company.defaultExitTime = dto.defaultExitTime;
     }
 
     return this.toCompany(await this.companiesRepo.save(company));

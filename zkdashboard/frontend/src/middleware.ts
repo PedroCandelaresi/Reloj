@@ -12,6 +12,7 @@ export function middleware(req: NextRequest) {
     pathname.startsWith('/employees') ||
     pathname.startsWith('/records') ||
     pathname.startsWith('/users') ||
+    pathname.startsWith('/settings') ||
     pathname.startsWith('/profile') ||
     pathname.startsWith('/admin');
 
@@ -25,6 +26,10 @@ export function middleware(req: NextRequest) {
 
   if (isProtectedPath && !token) {
     return NextResponse.redirect(new URL('/login', req.url));
+  }
+
+  if (pathname.startsWith('/dashboard') && payload?.isSuperAdmin) {
+    return NextResponse.redirect(new URL('/admin/dashboard', req.url));
   }
 
   if (isAdminPath) {
@@ -47,6 +52,7 @@ export const config = {
     '/employees/:path*',
     '/records/:path*',
     '/users/:path*',
+    '/settings/:path*',
     '/profile/:path*',
     '/admin/:path*',
   ],

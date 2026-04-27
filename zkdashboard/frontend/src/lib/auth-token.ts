@@ -56,5 +56,5 @@ export function decodeJwtPayload(token?: string | null): FrontendJwtPayload | nu
 }
 
 export function getDefaultAppPath(payload?: Pick<FrontendJwtPayload, 'isSuperAdmin'> | null) {
-  return payload?.isSuperAdmin ? '/admin/companies' : '/dashboard';
+  return payload?.isSuperAdmin ? '/admin/dashboard' : '/dashboard';
 }

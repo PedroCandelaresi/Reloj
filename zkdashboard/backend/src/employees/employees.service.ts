@@ -55,6 +55,8 @@ export class EmployeesService {
       apellido: dto.apellido,
       telefono: dto.telefono ?? null,
       email: dto.email ?? null,
+      entryTime: dto.entryTime ?? null,
+      exitTime: dto.exitTime ?? null,
       companyId: resolvedCompanyId,
     });
 
@@ -73,6 +75,8 @@ export class EmployeesService {
     if (dto.apellido !== undefined) employee.apellido = dto.apellido;
     if (dto.telefono !== undefined) employee.telefono = dto.telefono;
     if (dto.email !== undefined) employee.email = dto.email;
+    if (dto.entryTime !== undefined) employee.entryTime = dto.entryTime;
+    if (dto.exitTime !== undefined) employee.exitTime = dto.exitTime;
     if (dto.companyId !== undefined || (!user.isSuperAdmin && employee.companyId !== resolvedCompanyId)) {
       employee.companyId = resolvedCompanyId;
     }
