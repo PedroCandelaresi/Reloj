@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="700" height="520" viewBox="0 0 700 520" fill="none">
+  <defs>
+    <linearGradient id="blueMain" x1="80" y1="90" x2="475" y2="230" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0D5EF5"/>
+      <stop offset="0.45" stop-color="#1E80FF"/>
+      <stop offset="1" stop-color="#0A4FD8"/>
+    </linearGradient>
+    <linearGradient id="blueHi" x1="84" y1="80" x2="482" y2="215" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#BFE6FF"/>
+      <stop offset="0.22" stop-color="#5FAFFF"/>
+      <stop offset="0.6" stop-color="#D7F1FF"/>
+      <stop offset="1" stop-color="#4B9CFF"/>
+    </linearGradient>
+    <linearGradient id="cyanMain" x1="78" y1="300" x2="478" y2="225" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1AB8FF"/>
+      <stop offset="0.42" stop-color="#43DEFF"/>
+      <stop offset="1" stop-color="#1790F0"/>
+    </linearGradient>
+    <linearGradient id="cyanHi" x1="80" y1="290" x2="482" y2="218" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#D6FFFF"/>
+      <stop offset="0.25" stop-color="#7EF4FF"/>
+      <stop offset="0.62" stop-color="#DBFFFF"/>
+      <stop offset="1" stop-color="#73DBFF"/>
+    </linearGradient>
+
+    <radialGradient id="nodeBlue" cx="35%" cy="22%" r="78%">
+      <stop offset="0" stop-color="#75BCFF"/>
+      <stop offset="0.56" stop-color="#1D79FF"/>
+      <stop offset="1" stop-color="#0A4DD3"/>
+    </radialGradient>
+    <radialGradient id="nodeCyan" cx="35%" cy="22%" r="78%">
+      <stop offset="0" stop-color="#83F1FF"/>
+      <stop offset="0.56" stop-color="#25C8FF"/>
+      <stop offset="1" stop-color="#1698E8"/>
+    </radialGradient>
+
+    <filter id="iconGlow" x="-35%" y="-35%" width="170%" height="170%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0  0 1 0 0 0.58  0 0 1 0 1  0 0 0 0.42 0" result="glow"/>
+      <feMerge>
+        <feMergeNode in="glow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="softShadow" x="-20%" y="-30%" width="140%" height="170%">
+      <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#001022" flood-opacity="0.26"/>
+    </filter>
+  </defs>
+
+  <g id="isotype" transform="translate(40 20)" filter="url(#softShadow)">
+    <g filter="url(#iconGlow)">
+      <path d="M133 152H294L416 258L491 320" stroke="url(#blueMain)" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M133 145H294L416 251L491 313" stroke="url(#blueHi)" stroke-width="9.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.98"/>
+      <path d="M134 402L290 343C326 329 360 354 393 348C426 342 459 332 491 320" stroke="url(#cyanMain)" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M134 395L289 336C324 323 359 346 391 340C424 334 457 325 491 313" stroke="url(#cyanHi)" stroke-width="9.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.98"/>
+    </g>
+
+    <g filter="url(#iconGlow)">
+      <g transform="translate(133 152)">
+        <circle r="30" fill="url(#nodeBlue)"/>
+        <circle r="24.5" fill="none" stroke="#B7E0FF" stroke-width="2.2" opacity="0.94"/>
+        <circle r="17.5" fill="#F7FAFD"/>
+      </g>
+      <g transform="translate(294 152)">
+        <circle r="30" fill="url(#nodeBlue)"/>
+        <circle r="24.5" fill="none" stroke="#C2E5FF" stroke-width="2.2" opacity="0.94"/>
+        <circle r="17.5" fill="#F7FAFD"/>
+      </g>
+      <g transform="translate(416 258)">
+        <circle r="30" fill="url(#nodeBlue)"/>
+        <circle r="24.5" fill="none" stroke="#C2E5FF" stroke-width="2.2" opacity="0.94"/>
+        <circle r="17.5" fill="#F7FAFD"/>
+      </g>
+      <g transform="translate(491 320)">
+        <circle r="30" fill="url(#nodeBlue)"/>
+        <circle r="24.5" fill="none" stroke="#C2E5FF" stroke-width="2.2" opacity="0.94"/>
+        <circle r="17.5" fill="#F7FAFD"/>
+      </g>
+      <g transform="translate(134 402)">
+        <circle r="30" fill="url(#nodeCyan)"/>
+        <circle r="24.5" fill="none" stroke="#D8FFFF" stroke-width="2.2" opacity="0.95"/>
+        <circle r="17.5" fill="#F7FAFD"/>
+      </g>
+      <g transform="translate(290 343)">
+        <circle r="30" fill="url(#nodeCyan)"/>
+        <circle r="24.5" fill="none" stroke="#D8FFFF" stroke-width="2.2" opacity="0.95"/>
+        <circle r="17.5" fill="#F7FAFD"/>
+      </g>
+    </g>
+  </g>
+</svg>

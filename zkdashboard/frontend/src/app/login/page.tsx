@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { useFormState, useFormStatus } from 'react-dom';
 import { login } from '@/lib/actions';
-import Starnet3DFromSVG from '@/components/Starnet3DFromSVG';
+import { BrandLogo } from '@/components/BrandLogo';
 
 function EyeIcon({ open }: { open: boolean }) {
   if (open) {
@@ -79,45 +79,16 @@ export default function LoginPage() {
   }, []);
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#02120b] px-6 py-10 text-white">
-      {/* Fondo animado oscuro / sumergido */}
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#020b05] px-6 py-10 text-white">
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_#0a6b3d_0%,_#064525_20%,_#032415_55%,_#010d07_100%)]" />
-
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(22,163,74,0.10),transparent_18%),radial-gradient(circle_at_80%_20%,rgba(110,231,183,0.06),transparent_18%),radial-gradient(circle_at_30%_75%,rgba(34,197,94,0.08),transparent_24%),radial-gradient(circle_at_75%_85%,rgba(16,185,129,0.06),transparent_20%)] animate-drift-slow" />
-
-        <div className="absolute -left-32 top-12 h-80 w-80 rounded-full bg-emerald-400/10 blur-3xl animate-blob1" />
-        <div className="absolute right-[-6rem] top-24 h-96 w-96 rounded-full bg-green-300/8 blur-3xl animate-blob2" />
-        <div className="absolute bottom-[-5rem] left-[12%] h-96 w-96 rounded-full bg-emerald-500/10 blur-3xl animate-blob3" />
-        <div className="absolute bottom-[8%] right-[15%] h-80 w-80 rounded-full bg-lime-200/5 blur-3xl animate-blob4" />
-
-        <div className="absolute inset-0 opacity-[0.12] mix-blend-screen animate-water">
-          <div className="h-full w-full bg-[repeating-linear-gradient(115deg,rgba(255,255,255,0.06)_0px,rgba(255,255,255,0.02)_2px,transparent_6px,transparent_18px)] blur-[2px]" />
-        </div>
-
-        <div className="absolute inset-0 opacity-[0.08] mix-blend-screen animate-water-reverse">
-          <div className="h-full w-full bg-[repeating-linear-gradient(65deg,rgba(255,255,255,0.06)_0px,rgba(255,255,255,0.02)_2px,transparent_6px,transparent_16px)] blur-[3px]" />
-        </div>
-
-        <div className="absolute inset-[-25%] opacity-[0.08] mix-blend-screen blur-[1px] animate-caustics">
-          <div
-            className="h-full w-full"
-            style={{
-              background:
-                'radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15), transparent 10%), radial-gradient(circle at 70% 20%, rgba(255,255,255,0.10), transparent 8%), radial-gradient(circle at 40% 70%, rgba(255,255,255,0.12), transparent 12%), radial-gradient(circle at 80% 75%, rgba(255,255,255,0.10), transparent 10%)',
-            }}
-          />
-        </div>
-
-        <div className="absolute -left-16 top-[18%] h-80 w-80 rounded-full border border-white/15 animate-ring1" />
-        <div className="absolute right-[8%] top-[10%] h-32 w-32 rounded-full border border-white/15 animate-ring2" />
-        <div className="absolute left-[20%] bottom-[12%] h-56 w-56 rounded-full border border-white/15 animate-ring3" />
-        <div className="absolute right-[-6%] bottom-[8%] h-96 w-96 rounded-full border border-white/15 animate-ring4" />
+        <div className="absolute inset-0 conflunet-matrix-bg" />
+        <div className="absolute inset-0 conflunet-scanlines opacity-70" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_34%,rgba(0,0,0,0.38)_100%)]" />
 
         {particles.map((p) => (
           <span
             key={p.id}
-            className="absolute rounded-full bg-white shadow-[0_0_12px_rgba(255,255,255,0.45)] animate-float-particle"
+            className="absolute rounded-full bg-emerald-200 shadow-[0_0_14px_rgba(35,255,153,0.55)] animate-float-particle"
             style={{
               left: p.left,
               top: p.top,
@@ -130,54 +101,34 @@ export default function LoginPage() {
           />
         ))}
 
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_35%,rgba(0,0,0,0.28)_100%)]" />
+        <div className="absolute left-1/2 top-1/2 h-[44rem] w-[44rem] -translate-x-1/2 -translate-y-1/2 rounded-full border border-emerald-300/10" />
       </div>
 
-      {/* Marco metálico más grueso */}
       <div
-        className="relative z-10 w-full max-w-md rounded-[42px] p-[6px] shadow-[0_30px_100px_rgba(0,0,0,0.55)]"
+        className="relative z-10 w-full max-w-md rounded-[34px] p-[5px] shadow-[0_30px_100px_rgba(0,0,0,0.62)]"
         style={{
           background:
             'linear-gradient(145deg, #f5f5f5 0%, #bfc4cc 10%, #7f8791 20%, #e6ebef 32%, #7f8791 44%, #c5ccd3 58%, #6b737c 72%, #e8edf2 86%, #9aa2ab 100%)',
         }}
       >
         <div
-          className="rounded-[36px] px-7 py-8 sm:px-8 sm:py-10"
+          className="rounded-[29px] px-7 py-8 sm:px-8 sm:py-10"
           style={{
             background:
-              'linear-gradient(180deg, rgba(3,42,23,0.85) 0%, rgba(2,28,16,0.88) 100%)',
+              'linear-gradient(180deg, rgba(3,20,10,0.92) 0%, rgba(1,8,5,0.94) 100%)',
             boxShadow:
               'inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -1px 0 rgba(0,0,0,0.35), inset 0 0 0 1px rgba(255,255,255,0.05)',
           }}
         >
           <div className="flex flex-col items-center">
-            <div className="relative grid h-72 w-72 place-items-center sm:h-80 sm:w-80">
-              <div className="h-full w-full">
-                <Starnet3DFromSVG
-                  className="h-full w-full"
-                  autoRotate
-                  speed={1}
-                  ribs={32}
-                  ribRadius={0.028}
-                />
-              </div>
+            <div className="relative grid h-52 w-full place-items-center sm:h-60">
+              <BrandLogo
+                variant="emerald"
+                layout="stacked"
+                iconClassName="w-28 sm:w-32"
+                wordmarkClassName="w-80 sm:w-96"
+              />
             </div>
-
-            <p
-              className="mt-1 text-center text-4xl font-bold tracking-[0.24em] sm:text-5xl"
-              style={{
-                background:
-                  'linear-gradient(180deg, #ffffff 0%, #f5f5f5 15%, #d4d4d8 35%, #ffffff 50%, #9ca3af 70%, #f8fafc 85%, #a1a1aa 100%)',
-                WebkitBackgroundClip: 'text',
-                backgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                textShadow:
-                  '0 1px 0 rgba(255,255,255,0.15), 0 8px 18px rgba(255,255,255,0.04)',
-                filter: 'drop-shadow(0 1px 2px rgba(255,255,255,0.12))',
-              }}
-            >
-              STARNET
-            </p>
 
             <p className="mt-3 text-center text-sm text-emerald-100/75">
               Ingresá con tus credenciales

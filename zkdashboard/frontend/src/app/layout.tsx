@@ -13,8 +13,11 @@ const displayFont = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: 'STARNET | Control de Asistencia',
-  description: 'Plataforma de control de asistencia y fichadas de STARNET',
+  title: 'CONFLUNET | Control de Asistencia',
+  description: 'Plataforma de control de asistencia y fichadas de CONFLUNET',
+  icons: {
+    icon: '/brand/conflunet-isotipo.svg',
+  },
 };
 
 export default function RootLayout({

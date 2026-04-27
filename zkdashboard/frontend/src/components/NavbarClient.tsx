@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { logout } from '@/lib/actions';
 import type { CurrentUserProfile } from '@/lib/api';
 import type { CompanyRole } from '@/lib/auth-token';
+import { BrandLogo } from './BrandLogo';
 
 function MenuIcon() {
   return (
@@ -96,44 +97,27 @@ export function NavbarClient({ user }: { user?: CurrentUserProfile | null }) {
   const navigationItems = getNavigationItems(user);
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 text-white px-4 py-5 flex items-center justify-between shadow-md">
+    <nav className="fixed top-0 left-0 right-0 z-50 text-white px-4 py-4 flex items-center justify-between shadow-[0_12px_34px_rgba(0,0,0,0.36)]">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_#0a6b3d_0%,_#064525_20%,_#032415_55%,_#010d07_100%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(22,163,74,0.10),transparent_18%),radial-gradient(circle_at_80%_20%,rgba(110,231,183,0.05),transparent_18%),radial-gradient(circle_at_30%_75%,rgba(34,197,94,0.06),transparent_24%),radial-gradient(circle_at_75%_85%,rgba(16,185,129,0.05),transparent_20%)] animate-drift-slow" />
-        <div className="absolute -left-32 top-12 h-80 w-80 rounded-full bg-emerald-400/8 blur-3xl animate-blob1" />
-        <div className="absolute right-[-6rem] top-24 h-96 w-96 rounded-full bg-green-300/6 blur-3xl animate-blob2" />
-        <div className="absolute bottom-[-5rem] left-[12%] h-96 w-96 rounded-full bg-emerald-500/8 blur-3xl animate-blob3" />
-        <div className="absolute inset-0 opacity-[0.06] mix-blend-screen animate-water">
-          <div className="h-full w-full bg-[repeating-linear-gradient(115deg,rgba(255,255,255,0.04)_0px,rgba(255,255,255,0.01)_2px,transparent_6px,transparent_18px)] blur-[1px]" />
-        </div>
-        <div className="absolute inset-0 opacity-[0.04] mix-blend-screen animate-water-reverse">
-          <div className="h-full w-full bg-[repeating-linear-gradient(65deg,rgba(255,255,255,0.04)_0px,rgba(255,255,255,0.01)_2px,transparent_6px,transparent_16px)] blur-[2px]" />
-        </div>
+        <div className="absolute inset-0 conflunet-steel-bg" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_0%,rgba(35,255,153,0.13),transparent_24%),linear-gradient(180deg,rgba(0,0,0,0.22),rgba(0,0,0,0.46))]" />
+        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-emerald-300/35 to-transparent" />
       </div>
       <div className="relative flex items-center gap-2">
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="lg:hidden p-2 hover:bg-emerald-800/50 rounded-md transition-colors"
+          className="lg:hidden p-2 hover:bg-white/10 rounded-md transition-colors"
           aria-label={isOpen ? 'Cerrar menú' : 'Abrir menú'}
         >
           {isOpen ? <CloseIcon /> : <MenuIcon />}
         </button>
         <Link href={user?.isSuperAdmin ? '/admin/dashboard' : '/dashboard'} className="flex items-center gap-2">
-          <span
-            className="font-bold text-xl tracking-wide"
-            style={{
-              background:
-                'linear-gradient(180deg, #ffffff 0%, #f5f5f5 15%, #d4d4d8 35%, #ffffff 50%, #9ca3af 70%, #f8fafc 85%, #a1a1aa 100%)',
-              WebkitBackgroundClip: 'text',
-              backgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              textShadow:
-                '0 1px 0 rgba(255,255,255,0.15), 0 8px 18px rgba(255,255,255,0.04)',
-              filter: 'drop-shadow(0 1px 2px rgba(255,255,255,0.12))',
-            }}
-          >
-            STARNET
-          </span>
+          <BrandLogo
+            variant="steel"
+            layout="horizontal"
+            iconClassName="w-9"
+            wordmarkClassName="w-40 sm:w-48"
+          />
         </Link>
       </div>
 
@@ -142,7 +126,7 @@ export function NavbarClient({ user }: { user?: CurrentUserProfile | null }) {
           <Link
             key={item.href}
             href={item.href}
-            className="text-emerald-100 hover:text-white text-sm transition-colors"
+            className="text-slate-200 hover:text-white text-sm transition-colors"
           >
             {item.label}
           </Link>
@@ -151,8 +135,8 @@ export function NavbarClient({ user }: { user?: CurrentUserProfile | null }) {
 
       <div className="relative hidden lg:flex items-center gap-3">
         <div className="text-right">
-          <span className="block text-emerald-100/90 text-sm">{displayName}</span>
-          <span className="block text-[11px] text-emerald-100/65">
+          <span className="block text-slate-100/95 text-sm">{displayName}</span>
+          <span className="block text-[11px] text-emerald-100/70">
             {roleLabel}
             {activeCompanyName ? ` · ${activeCompanyName}` : ''}
           </span>
@@ -160,7 +144,7 @@ export function NavbarClient({ user }: { user?: CurrentUserProfile | null }) {
         <button
           type="button"
           onClick={() => setIsProfileMenuOpen((current) => !current)}
-          className="h-10 w-10 rounded-full border border-emerald-200/30 bg-white/10 hover:bg-white/15 transition-colors flex items-center justify-center"
+          className="h-10 w-10 rounded-full border border-slate-200/25 bg-white/10 hover:bg-white/15 transition-colors flex items-center justify-center"
           aria-label="Abrir menú de perfil"
         >
           <UserIcon />
@@ -205,7 +189,7 @@ export function NavbarClient({ user }: { user?: CurrentUserProfile | null }) {
       </div>
 
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 shadow-lg lg:hidden z-50" style={{ background: 'linear-gradient(180deg, #032415 0%, #02120b 100%)' }}>
+        <div className="absolute top-full left-0 right-0 shadow-lg lg:hidden z-50" style={{ background: 'linear-gradient(180deg, #15191f 0%, #050708 100%)' }}>
           <div className="flex flex-col p-4 gap-4">
             {navigationItems.map((item) => (
               <Link

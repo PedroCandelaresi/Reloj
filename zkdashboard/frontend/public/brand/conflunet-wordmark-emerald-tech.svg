@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="340" viewBox="0 0 1280 340" fill="none">
+
+  <defs>
+    <linearGradient id="main" x1="0" y1="40" x2="0" y2="210" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#E8FFF6"/>
+      <stop offset="0.15" stop-color="#9EF2C9"/>
+      <stop offset="0.38" stop-color="#2FD587"/>
+      <stop offset="0.62" stop-color="#168C59"/>
+      <stop offset="0.82" stop-color="#74E8B1"/>
+      <stop offset="1" stop-color="#CFFFF0"/>
+    </linearGradient>
+    <linearGradient id="low" x1="0" y1="40" x2="0" y2="210" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F3FFF9" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#053821" stop-opacity="0.55"/>
+    </linearGradient>
+    <linearGradient id="hi" x1="0" y1="40" x2="0" y2="110" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F7FFF9" stop-opacity="0.92"/>
+      <stop offset="1" stop-color="#D9FFE9" stop-opacity="0.14"/>
+    </linearGradient>
+    <filter id="shadow" x="-5%" y="-25%" width="110%" height="160%">
+      <feDropShadow dx="0" dy="7" stdDeviation="4" flood-color="#02150D" flood-opacity="0.28"/>
+      <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#23FF99" flood-opacity="0.20"/>
+    </filter>
+  </defs>
+  <g id="wordmark" transform="translate(20 0)" fill="none" stroke-linecap="round" stroke-linejoin="round" filter="url(#shadow)">
+    <g stroke="url(#low)" stroke-width="18" opacity="0.95">
+
+      <path d="M83 51H33C19 51 10 60 10 74V146C10 160 19 169 33 169H83"/>
+      <rect x="125" y="51" width="76" height="118" rx="22"/>
+      <path d="M247 169V51L333 169V51"/>
+      <path d="M382 169V51H463M382 107H452"/>
+      <path d="M508 51V169H588"/>
+      <path d="M632 51V138C632 158 645 169 665 169H709C729 169 742 158 742 138V51"/>
+      <path d="M790 169V51L876 169V51"/>
+      <path d="M928 51H1012"/>
+      <path d="M928 110H1008"/>
+      <path d="M928 169H1012"/>
+      <path d="M1052 51H1142M1097 51V169"/>
+    </g>
+    <g stroke="url(#main)" stroke-width="14.5" opacity="0.96">
+
+      <path d="M83 51H33C19 51 10 60 10 74V146C10 160 19 169 33 169H83"/>
+      <rect x="125" y="51" width="76" height="118" rx="22"/>
+      <path d="M247 169V51L333 169V51"/>
+      <path d="M382 169V51H463M382 107H452"/>
+      <path d="M508 51V169H588"/>
+      <path d="M632 51V138C632 158 645 169 665 169H709C729 169 742 158 742 138V51"/>
+      <path d="M790 169V51L876 169V51"/>
+      <path d="M928 51H1012"/>
+      <path d="M928 110H1008"/>
+      <path d="M928 169H1012"/>
+      <path d="M1052 51H1142M1097 51V169"/>
+    </g>
+    <g stroke="url(#hi)" stroke-width="4.4" opacity="0.9">
+
+      <path d="M78 58H35C27 58 21 63 18 71"/>
+      <path d="M136 58H190"/>
+      <path d="M256 58L322 149V58"/>
+      <path d="M390 58H458M390 107H447"/>
+      <path d="M516 58V161H584"/>
+      <path d="M640 58V137C640 151 649 161 664 161H710C725 161 734 151 734 137V58"/>
+      <path d="M798 58L864 149V58"/>
+      <path d="M935 51H1004"/>
+      <path d="M935 110H1000"/>
+      <path d="M935 169H1004"/>
+      <path d="M1060 58H1137"/>
+      <path d="M1097 58V161"/>
+    </g>
+  </g>
+</svg>

@@ -1,7 +1,7 @@
 'use client';
 
 import { ReactNode, useMemo } from 'react';
-import Starnet3DFromSVG from './Starnet3DFromSVG';
+import { BrandLogo } from './BrandLogo';
 
 export function DashboardLayout({ children }: { children: ReactNode }) {
   const particles = useMemo(
@@ -21,39 +21,14 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen relative">
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_#0a6b3d_0%,_#064525_20%,_#032415_55%,_#010d07_100%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(22,163,74,0.10),transparent_18%),radial-gradient(circle_at_80%_20%,rgba(110,231,183,0.06),transparent_18%),radial-gradient(circle_at_30%_75%,rgba(34,197,94,0.08),transparent_24%),radial-gradient(circle_at_75%_85%,rgba(16,185,129,0.06),transparent_20%)] animate-drift-slow" />
-        <div className="absolute -left-32 top-12 h-80 w-80 rounded-full bg-emerald-400/10 blur-3xl animate-blob1" />
-        <div className="absolute right-[-6rem] top-24 h-96 w-96 rounded-full bg-green-300/8 blur-3xl animate-blob2" />
-        <div className="absolute bottom-[-5rem] left-[12%] h-96 w-96 rounded-full bg-emerald-500/10 blur-3xl animate-blob3" />
-        <div className="absolute bottom-[8%] right-[15%] h-80 w-80 rounded-full bg-lime-200/5 blur-3xl animate-blob4" />
-
-        <div className="absolute inset-0 opacity-[0.12] mix-blend-screen animate-water">
-          <div className="h-full w-full bg-[repeating-linear-gradient(115deg,rgba(255,255,255,0.06)_0px,rgba(255,255,255,0.02)_2px,transparent_6px,transparent_18px)] blur-[2px]" />
-        </div>
-
-        <div className="absolute inset-0 opacity-[0.08] mix-blend-screen animate-water-reverse">
-          <div className="h-full w-full bg-[repeating-linear-gradient(65deg,rgba(255,255,255,0.06)_0px,rgba(255,255,255,0.02)_2px,transparent_6px,transparent_16px)] blur-[3px]" />
-        </div>
-
-        <div className="absolute inset-[-25%] opacity-[0.08] mix-blend-screen blur-[1px] animate-caustics">
-          <div
-            className="h-full w-full"
-            style={{
-              background: 'radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15), transparent 10%), radial-gradient(circle at 70% 20%, rgba(255,255,255,0.10), transparent 8%), radial-gradient(circle at 40% 70%, rgba(255,255,255,0.12), transparent 12%), radial-gradient(circle at 80% 75%, rgba(255,255,255,0.10), transparent 50%)',
-            }}
-          />
-        </div>
-
-        <div className="absolute -left-16 top-[18%] h-80 w-80 rounded-full border border-white/15 animate-ring1" />
-        <div className="absolute right-[8%] top-[10%] h-32 w-32 rounded-full border border-white/15 animate-ring2" />
-        <div className="absolute left-[20%] bottom-[12%] h-56 w-56 rounded-full border border-white/15 animate-ring3" />
-        <div className="absolute right-[-6%] bottom-[8%] h-96 w-96 rounded-full border border-white/15 animate-ring4" />
+        <div className="absolute inset-0 conflunet-matrix-bg" />
+        <div className="absolute inset-0 conflunet-scanlines opacity-45" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(154,164,175,0.12),transparent_30%),linear-gradient(180deg,rgba(0,0,0,0.08),rgba(0,0,0,0.28))]" />
 
         {particles.map((p) => (
           <span
             key={p.id}
-            className="absolute rounded-full bg-white shadow-[0_0_12px_rgba(255,255,255,0.45)] animate-float-particle"
+            className="absolute rounded-full bg-emerald-200 shadow-[0_0_12px_rgba(35,255,153,0.45)] animate-float-particle"
             style={{
               left: p.left,
               top: p.top,
@@ -66,16 +41,8 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
           />
         ))}
 
-        <div className="absolute top-0 left-0 w-[450px] h-[450px] -translate-x-6 translate-y-24">
-          <div className="w-full h-full blur-[0.9px] opacity-80">
-            <Starnet3DFromSVG
-              className="w-full h-full"
-              autoRotate={true}
-              speed={1.5}
-              ribs={32}
-              ribRadius={0.028}
-            />
-          </div>
+        <div className="absolute left-[-7rem] top-28 w-[30rem] opacity-[0.12] blur-[0.4px]">
+          <BrandLogo variant="emerald" layout="stacked" iconClassName="w-48" wordmarkClassName="w-[28rem]" />
         </div>
       </div>
 

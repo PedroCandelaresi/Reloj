@@ -9,9 +9,11 @@
   --surface-soft: #eef3f8;
   --ink-strong: #222833;
   --ink-soft: #667085;
-  --brand: #0c6a38;
-  --brand-strong: #032c15;
-  --brand-soft: #e6f3ea;
+  --brand: #1fc777;
+  --brand-strong: #03140a;
+  --brand-soft: #e4f8ed;
+  --steel: #9aa4af;
+  --steel-strong: #20262c;
 }
 
 html,
@@ -25,6 +27,34 @@ body {
 }
 
 ::selection {
-  background: rgba(255, 122, 40, 0.22);
+  background: rgba(35, 255, 153, 0.22);
   color: var(--ink-strong);
+}
+
+.conflunet-matrix-bg {
+  background:
+    linear-gradient(rgba(0, 255, 110, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 110, 0.04) 1px, transparent 1px),
+    radial-gradient(circle at 50% 12%, rgba(0, 255, 130, 0.14), transparent 34%),
+    radial-gradient(circle at 15% 18%, rgba(40, 255, 166, 0.10), transparent 22%),
+    linear-gradient(180deg, #020b05 0%, #03140a 48%, #050708 100%);
+  background-size: 26px 26px, 26px 26px, auto, auto, auto;
+}
+
+.conflunet-steel-bg {
+  background:
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.08), transparent 28%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.01) 32%, rgba(0, 0, 0, 0.25) 100%),
+    repeating-linear-gradient(-45deg, #15191f 0px, #15191f 14px, #20262c 14px, #20262c 28px);
+}
+
+.conflunet-scanlines {
+  background:
+    repeating-linear-gradient(
+      180deg,
+      rgba(0, 255, 100, 0) 0px,
+      rgba(0, 255, 100, 0) 10px,
+      rgba(0, 255, 100, 0.055) 11px,
+      rgba(0, 255, 100, 0) 12px
+    );
 }
