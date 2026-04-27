@@ -92,6 +92,9 @@ export function AdminDevicesManager({
       [deviceId]: {
         companyId: current[deviceId]?.companyId ?? '',
         alias: current[deviceId]?.alias ?? '',
+        address: current[deviceId]?.address ?? '',
+        email: current[deviceId]?.email ?? '',
+        phone: current[deviceId]?.phone ?? '',
         [field]: value,
       },
     }));
