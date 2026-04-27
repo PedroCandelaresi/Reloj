@@ -68,7 +68,13 @@ function formatDate(iso?: string) {
   });
 }
 
-export function AdminCompaniesManager({ companies }: { companies: CompanySummary[] }) {
+export function AdminCompaniesManager({
+  companies,
+  selectedCompanyId,
+}: {
+  companies: CompanySummary[];
+  selectedCompanyId?: string | null;
+}) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [mode, setMode] = useState<FormMode>('create');
@@ -274,6 +280,16 @@ export function AdminCompaniesManager({ companies }: { companies: CompanySummary
                     <td className="px-6 py-4 text-gray-500">{formatDate(company.updatedAt)}</td>
                     <td className="px-6 py-4">
                       <div className="flex justify-end gap-3">
+                        <a
+                          href={`/admin/companies?company=${company.id}`}
+                          className={`font-medium transition-colors ${
+                            selectedCompanyId === company.id
+                              ? 'text-blue-700 underline'
+                              : 'text-blue-500 hover:text-blue-700'
+                          }`}
+                        >
+                          {selectedCompanyId === company.id ? 'Abierta ↓' : 'Detalle'}
+                        </a>
                         <button
                           type="button"
                           onClick={() => openEdit(company)}

@@ -98,10 +98,8 @@ export function NavbarClient({ user }: { user?: CurrentUserProfile | null }) {
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 text-white px-4 py-4 flex items-center justify-between shadow-[0_12px_34px_rgba(0,0,0,0.36)]">
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute inset-0 conflunet-steel-bg" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_0%,rgba(35,255,153,0.13),transparent_24%),linear-gradient(180deg,rgba(0,0,0,0.22),rgba(0,0,0,0.46))]" />
-        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-emerald-300/35 to-transparent" />
+      <div className="absolute inset-0 pointer-events-none" style={{ background: '#13181e' }}>
+        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-emerald-400/25 to-transparent" />
       </div>
       <div className="relative flex items-center gap-2">
         <button

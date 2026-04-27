@@ -29,6 +29,9 @@ export interface AdminDeviceView {
   ipAddress: string | null;
   isActive: boolean;
   alias: string | null;
+  address: string | null;
+  email: string | null;
+  phone: string | null;
   companyId: string | null;
   assignedAt: Date | null;
   firstSeen: Date;
@@ -451,6 +454,9 @@ export class DevicesService {
       ipAddress: device.ipAddress,
       isActive: device.isActive,
       alias: device.alias,
+      address: device.address ?? null,
+      email: device.email ?? null,
+      phone: device.phone ?? null,
       companyId: device.companyId,
       assignedAt: device.assignedAt,
       firstSeen: device.firstSeen,
