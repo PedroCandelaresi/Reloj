@@ -161,10 +161,7 @@ export default async function RecordsPage({ searchParams }: PageProps) {
                   </tr>
                 ) : (
                   result.data.map((r) => (
-                    <tr key={r.id} className="transition-colors border-t" style={{ borderColor: 'var(--border)' }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--row-hover)')}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = '')}
-                    >
+                    <tr key={r.id} className="table-row">
                       <td className="px-6 py-4">
                         <div className="font-medium" style={{ color: 'var(--text-primary)' }}>{formatAttendanceUser(r)}</div>
                         {r.employee && <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{r.userId}</div>}

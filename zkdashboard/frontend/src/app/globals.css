@@ -96,6 +96,14 @@ body {
 }
 
 /* ── Reusable semantic classes ───────────────────────────────────── */
+.table-row {
+  border-top: 1px solid var(--border);
+  transition: background 150ms;
+}
+.table-row:hover {
+  background: var(--row-hover);
+}
+
 .card {
   background-color: var(--surface);
   border: 1px solid var(--border);
