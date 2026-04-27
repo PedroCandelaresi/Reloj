@@ -70,7 +70,7 @@ function formatDate(iso?: string) {
 
 export function AdminCompaniesManager({
   companies,
-  selectedCompanyId,
+  selectedCompanyId: activeCompanyId,
 }: {
   companies: CompanySummary[];
   selectedCompanyId?: string | null;
@@ -78,7 +78,7 @@ export function AdminCompaniesManager({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [mode, setMode] = useState<FormMode>('create');
-  const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
+  const [editingCompanyId, setEditingCompanyId] = useState<string | null>(null);
   const [form, setForm] = useState<FormValues>(EMPTY_FORM);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -86,7 +86,7 @@ export function AdminCompaniesManager({
 
   const openCreate = () => {
     setMode('create');
-    setSelectedCompanyId(null);
+    setEditingCompanyId(null);
     setForm(EMPTY_FORM);
     setFormError(null);
     setIsModalOpen(true);
@@ -94,7 +94,7 @@ export function AdminCompaniesManager({
 
   const openEdit = (company: CompanySummary) => {
     setMode('edit');
-    setSelectedCompanyId(company.id);
+    setEditingCompanyId(company.id);
     setForm(toFormValues(company));
     setFormError(null);
     setIsModalOpen(true);
@@ -103,7 +103,7 @@ export function AdminCompaniesManager({
   const closeModal = () => {
     if (isPending) return;
     setIsModalOpen(false);
-    setSelectedCompanyId(null);
+    setEditingCompanyId(null);
     setForm(EMPTY_FORM);
     setFormError(null);
   };
@@ -148,7 +148,7 @@ export function AdminCompaniesManager({
       const request =
         mode === 'create'
           ? createCompanyAction(payload)
-          : updateCompanyAction(selectedCompanyId ?? '', payload);
+          : updateCompanyAction(editingCompanyId ?? '', payload);
 
       void request
         .then((result: CompanyActionResult) => {
@@ -158,7 +158,7 @@ export function AdminCompaniesManager({
           }
 
           setIsModalOpen(false);
-          setSelectedCompanyId(null);
+          setEditingCompanyId(null);
           setForm(EMPTY_FORM);
           setFormError(null);
           setBanner({
@@ -191,7 +191,7 @@ export function AdminCompaniesManager({
             return;
           }
 
-          if (selectedCompanyId === company.id) {
+          if (editingCompanyId === company.id) {
             closeModal();
           }
 
@@ -283,12 +283,12 @@ export function AdminCompaniesManager({
                         <a
                           href={`/admin/companies?company=${company.id}`}
                           className={`font-medium transition-colors ${
-                            selectedCompanyId === company.id
+                            activeCompanyId === company.id
                               ? 'text-blue-700 underline'
                               : 'text-blue-500 hover:text-blue-700'
                           }`}
                         >
-                          {selectedCompanyId === company.id ? 'Abierta ↓' : 'Detalle'}
+                          {activeCompanyId === company.id ? 'Abierta ↓' : 'Detalle'}
                         </a>
                         <button
                           type="button"
