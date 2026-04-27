@@ -1,4 +1,4 @@
-# STARNET — orquestación completa (db + backend + frontend)
+# CONFLUNET — orquestación completa (db + backend + frontend)
 #
 # Uso:
 #   cd infra/docker
@@ -15,7 +15,7 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: starnet-postgres
+    container_name: reloj-conflunet-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${DB_USERNAME}
@@ -31,14 +31,14 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - starnet
+      - conflunet
 
   backend:
     build:
       context: ../..
       dockerfile: infra/docker/backend.Dockerfile
-    image: starnet-backend:latest
-    container_name: starnet-backend
+    image: reloj-conflunet-backend:latest
+    container_name: reloj-conflunet-backend
     restart: unless-stopped
     depends_on:
       postgres:
@@ -76,14 +76,14 @@ services:
       retries: 10
       start_period: 10s
     networks:
-      - starnet
+      - conflunet
 
   frontend:
     build:
       context: ../..
       dockerfile: infra/docker/frontend.Dockerfile
-    image: starnet-frontend:latest
-    container_name: starnet-frontend
+    image: reloj-conflunet-frontend:latest
+    container_name: reloj-conflunet-frontend
     restart: unless-stopped
     depends_on:
       backend:
@@ -106,12 +106,12 @@ services:
       retries: 10
       start_period: 10s
     networks:
-      - starnet
+      - conflunet
 
 volumes:
   postgres_data:
   backend_logs:
 
 networks:
-  starnet:
+  conflunet:
     driver: bridge

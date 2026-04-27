@@ -80,7 +80,7 @@ jobs:
 
       - name: Esperar Postgres healthy
         run: |
-          until [ "$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{end}}' starnet-postgres 2>/dev/null)" = "healthy" ]; do
+          until [ "$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{end}}' reloj-conflunet-postgres 2>/dev/null)" = "healthy" ]; do
             echo "Esperando a Postgres..."
             sleep 2
           done
