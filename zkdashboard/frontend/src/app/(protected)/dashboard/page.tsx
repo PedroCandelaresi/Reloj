@@ -11,8 +11,11 @@ import { requireCurrentSession } from '@/lib/session';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
+const TZ = 'America/Argentina/Buenos_Aires';
+
 function formatDate(iso: string) {
   return new Date(iso).toLocaleString('es-AR', {
+    timeZone: TZ,
     day: '2-digit', month: '2-digit', year: 'numeric',
     hour: '2-digit', minute: '2-digit', second: '2-digit',
     hour12: false,
@@ -21,6 +24,7 @@ function formatDate(iso: string) {
 
 function formatLastSeen(iso: string) {
   return new Date(iso).toLocaleString('es-AR', {
+    timeZone: TZ,
     day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
     hour12: false,
   });

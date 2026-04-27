@@ -26,8 +26,11 @@ const VERIFY_LABELS: Record<number, string> = {
   15: 'Tarjeta',
 };
 
+const TZ = 'America/Argentina/Buenos_Aires';
+
 function fmtDate(date: Date | string): string {
   return new Date(date).toLocaleString('es-AR', {
+    timeZone: TZ,
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -40,6 +43,7 @@ function fmtDate(date: Date | string): string {
 
 function fmtDateOnly(date: string): string {
   return new Date(date).toLocaleDateString('es-AR', {
+    timeZone: TZ,
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -116,6 +120,7 @@ export class ExportService {
   private fmtTime(date: Date | string | null): string {
     if (!date) return '—';
     return new Date(date).toLocaleTimeString('es-AR', {
+      timeZone: TZ,
       hour: '2-digit',
       minute: '2-digit',
       hour12: false,

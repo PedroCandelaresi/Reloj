@@ -19,8 +19,11 @@ type DeviceDraft = {
   alias: string;
 };
 
+const TZ = 'America/Argentina/Buenos_Aires';
+
 function formatDate(iso: string) {
   return new Date(iso).toLocaleString('es-AR', {
+    timeZone: TZ,
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',

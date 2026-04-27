@@ -47,12 +47,12 @@ function toFormValues(company: CompanySummary): FormValues {
   };
 }
 
-function formatDate(iso?: string) {
-  if (!iso) {
-    return '—';
-  }
+const TZ = 'America/Argentina/Buenos_Aires';
 
+function formatDate(iso?: string) {
+  if (!iso) return '—';
   return new Date(iso).toLocaleString('es-AR', {
+    timeZone: TZ,
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',

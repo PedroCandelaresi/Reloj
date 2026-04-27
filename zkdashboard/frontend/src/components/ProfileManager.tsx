@@ -126,6 +126,7 @@ export function ProfileManager({ profile }: { profile: CurrentUserProfile }) {
         <InfoItem
           label="Alta"
           value={new Date(profile.createdAt).toLocaleString('es-AR', {
+            timeZone: 'America/Argentina/Buenos_Aires',
             day: '2-digit',
             month: '2-digit',
             year: 'numeric',
