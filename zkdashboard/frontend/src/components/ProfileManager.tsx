@@ -123,7 +123,17 @@ export function ProfileManager({ profile }: { profile: CurrentUserProfile }) {
 
       <div className="px-6 py-6 grid grid-cols-1 md:grid-cols-5 gap-4 border-b border-gray-100 bg-gray-50/60">
         <InfoItem label="Usuario" value={profile.username} />
-        <InfoItem label="Alta" value={new Date(profile.createdAt).toLocaleString('es-AR')} />
+        <InfoItem
+          label="Alta"
+          value={new Date(profile.createdAt).toLocaleString('es-AR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+          })}
+        />
         <InfoItem label="Rol" value={formatRole(profile)} />
         <InfoItem label="Empresa activa" value={getActiveCompanyName(profile)} />
         <InfoItem label="DNI actual" value={profile.dni || '—'} />

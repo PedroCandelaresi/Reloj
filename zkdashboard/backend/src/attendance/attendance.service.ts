@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { ForbiddenException, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository, SelectQueryBuilder } from 'typeorm';
 import { AttendanceRecord } from './attendance.entity';
@@ -6,10 +6,32 @@ import { Employee } from '../employees/employee.entity';
 import { AuthenticatedUser } from '../auth/authenticated-user.interface';
 import { getCompanyScope } from '../auth/company-scope.util';
 import { DevicesService } from '../devices/devices.service';
+import { InboundRequest } from '../adms/inbound-request.entity';
 
 export interface AttendanceUserOption {
   userId: string;
   employee: Pick<Employee, 'id' | 'nombre' | 'apellido'> | null;
+}
+
+export interface CompanyDashboardSummary {
+  recordsToday: number;
+  presentToday: number;
+  recentRecords: AttendanceRecord[];
+  devices: Awaited<ReturnType<DevicesService['findAllForUser']>>;
+  devicesOnline: number;
+  devicesOffline: number;
+  lastSyncAt: Date | null;
+  pendingCommands: number;
+  recentDeviceErrorCount: number;
+  recentDeviceErrors: Array<{
+    id: string;
+    serialNumber: string | null;
+    path: string;
+    responseStatus: number | null;
+    parseError: string | null;
+    receivedAt: Date;
+  }>;
+  technicalNews: string[];
 }
 
 @Injectable()
@@ -21,6 +43,8 @@ export class AttendanceService {
     private readonly repo: Repository<AttendanceRecord>,
     @InjectRepository(Employee)
     private readonly employeesRepo: Repository<Employee>,
+    @InjectRepository(InboundRequest)
+    private readonly inboundRequestsRepo: Repository<InboundRequest>,
     private readonly devices: DevicesService,
   ) {}
 
@@ -118,7 +142,9 @@ export class AttendanceService {
     return { totalToday, totalWeek, totalAll };
   }
 
-  async getDashboardSummary(user: AuthenticatedUser) {
+  async getDashboardSummary(user: AuthenticatedUser): Promise<CompanyDashboardSummary> {
+    this.requireCompanyDashboardScope(user);
+
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const recordsTodayQb = this.repo.createQueryBuilder('r');
@@ -143,14 +169,33 @@ export class AttendanceService {
       presentTodayQb.getRawOne<{ count: string }>(),
       this.devices.getDashboardMetrics(user),
     ]);
+    const [recentRecords, devices, recentDeviceErrors] = await Promise.all([
+      this.getRecent(user, 10),
+      this.devices.findAllForUser(user),
+      this.getRecentDeviceErrors(user),
+    ]);
+    const pendingCommands = devices.reduce(
+      (total, device) => total + device.pendingCommandsCount,
+      0,
+    );
+    const technicalNews = [...deviceMetrics.technicalNews];
+
+    if (recentDeviceErrors.length > 0) {
+      technicalNews.push(`${recentDeviceErrors.length} request(s) ADMS recientes con error.`);
+    }
 
     return {
       presentToday: Number.parseInt(presentRow?.count || '0', 10),
       recordsToday,
+      recentRecords,
+      devices,
       devicesOnline: deviceMetrics.onlineCount,
       devicesOffline: deviceMetrics.offlineCount,
       lastSyncAt: deviceMetrics.lastSyncAt,
-      technicalNews: deviceMetrics.technicalNews,
+      pendingCommands,
+      recentDeviceErrorCount: recentDeviceErrors.length,
+      recentDeviceErrors,
+      technicalNews,
     };
   }
 
@@ -241,6 +286,41 @@ export class AttendanceService {
     if (companyId) {
       qb.andWhere('r.company_id = :companyId', { companyId });
     }
+  }
+
+  private requireCompanyDashboardScope(user: AuthenticatedUser): string {
+    if (!user.companyId) {
+      throw new ForbiddenException(
+        'El dashboard de empresa requiere una empresa activa asignada.',
+      );
+    }
+
+    return user.companyId;
+  }
+
+  private async getRecentDeviceErrors(user: AuthenticatedUser): Promise<CompanyDashboardSummary['recentDeviceErrors']> {
+    const companyId = this.requireCompanyDashboardScope(user);
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+    const requests = await this.inboundRequestsRepo
+      .createQueryBuilder('request')
+      .where('request.company_id = :companyId', { companyId })
+      .andWhere('request.received_at >= :since', { since })
+      .andWhere(
+        '(request.processed_ok = false OR request.response_status >= 400 OR request.parse_error IS NOT NULL)',
+      )
+      .orderBy('request.received_at', 'DESC')
+      .take(5)
+      .getMany();
+
+    return requests.map((request) => ({
+      id: request.id,
+      serialNumber: request.serialNumber,
+      path: request.path,
+      responseStatus: request.responseStatus,
+      parseError: request.parseError,
+      receivedAt: request.receivedAt,
+    }));
   }
 
   private getScopedCount(

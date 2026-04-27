@@ -65,21 +65,25 @@ function getActiveCompanyName(user?: CurrentUserProfile | null) {
 
 function getNavigationItems(user?: CurrentUserProfile | null) {
   const commonItems = [
-    { href: '/dashboard', label: 'Inicio' },
+    { href: '/dashboard', label: 'Dashboard' },
+    { href: '/records', label: 'Fichadas' },
     { href: '/employees', label: 'Empleados' },
-    { href: '/records', label: 'Registros' },
   ];
 
   if (!user?.isSuperAdmin) {
     return user?.companyRole === 'company_admin'
-      ? [...commonItems, { href: '/users', label: 'Usuarios' }]
+      ? [
+          ...commonItems,
+          { href: '/users', label: 'Usuarios' },
+          { href: '/settings', label: 'Configuración' },
+        ]
       : commonItems;
   }
 
   return [
+    { href: '/admin/dashboard', label: 'Panel global' },
     { href: '/admin/companies', label: 'Empresas' },
     { href: '/admin/devices', label: 'Dispositivos' },
-    ...commonItems,
   ];
 }
 
@@ -114,7 +118,7 @@ export function NavbarClient({ user }: { user?: CurrentUserProfile | null }) {
         >
           {isOpen ? <CloseIcon /> : <MenuIcon />}
         </button>
-        <Link href="/dashboard" className="flex items-center gap-2">
+        <Link href={user?.isSuperAdmin ? '/admin/dashboard' : '/dashboard'} className="flex items-center gap-2">
           <span
             className="font-bold text-xl tracking-wide"
             style={{

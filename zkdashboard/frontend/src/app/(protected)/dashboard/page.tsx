@@ -3,25 +3,26 @@ import { DeviceStatusPanel } from '@/components/DeviceStatusPanel';
 import { StatusBadge } from '@/components/StatusBadge';
 import {
   formatAttendanceUser,
-  getDashboardSummary,
-  getDevices,
-  getRecent,
+  getAttendanceDashboard,
   getStats,
   VERIFY_LABELS,
 } from '@/lib/api';
 import { requireCurrentSession } from '@/lib/session';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleString('es-AR', {
     day: '2-digit', month: '2-digit', year: 'numeric',
     hour: '2-digit', minute: '2-digit', second: '2-digit',
+    hour12: false,
   });
 }
 
 function formatLastSeen(iso: string) {
   return new Date(iso).toLocaleString('es-AR', {
     day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
+    hour12: false,
   });
 }
 
@@ -32,12 +33,16 @@ function formatOptionalDate(iso?: string | null) {
 
 export default async function DashboardPage() {
   const user = await requireCurrentSession();
-  const [stats, summary, recent, devices] = await Promise.all([
+  if (user.isSuperAdmin) {
+    redirect('/admin/dashboard');
+  }
+
+  const [stats, summary] = await Promise.all([
     getStats(),
-    getDashboardSummary(),
-    getRecent(),
-    getDevices(),
+    getAttendanceDashboard(),
   ]);
+  const recent = summary.recentRecords;
+  const devices = summary.devices;
   const activeCompany =
     user.memberships.find((membership) => membership.companyId === user.companyId)?.company;
   const activeCompanyName =
@@ -48,42 +53,18 @@ export default async function DashboardPage() {
         <Navbar user={user} />
       <main className="max-w-7xl mx-auto px-4 py-8 pt-32">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-white drop-shadow-md">Panel de Control</h1>
+          <h1 className="text-2xl font-bold text-white drop-shadow-md">Panel de la empresa</h1>
           <p className="text-emerald-200/70 text-sm mt-1">
-            {user.isSuperAdmin
-              ? 'Vista global del sistema y accesos administrativos básicos.'
-              : `Resumen de asistencia de ${activeCompanyName}.`}
+            Resumen operativo de asistencia de {activeCompanyName}.
           </p>
         </div>
-
-        {user.isSuperAdmin && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-            <Link
-              href="/admin/companies"
-              className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg p-5 border border-gray-200 hover:border-emerald-300 transition-colors"
-            >
-              <p className="text-sm font-semibold text-gray-900">Gestión de empresas</p>
-              <p className="text-sm text-gray-500 mt-2">
-                Alta, edición y estado general de las empresas registradas.
-              </p>
-            </Link>
-            <Link
-              href="/admin/devices"
-              className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg p-5 border border-gray-200 hover:border-emerald-300 transition-colors"
-            >
-              <p className="text-sm font-semibold text-gray-900">Dispositivos globales</p>
-              <p className="text-sm text-gray-500 mt-2">
-                Revisá relojes detectados, no asignados y su vínculo con cada empresa.
-              </p>
-            </Link>
-          </div>
-        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-5 mb-8">
           <StatCard label="Presentes hoy" value={summary.presentToday} color="text-emerald-600" />
           <StatCard label="Fichadas hoy" value={summary.recordsToday} color="text-blue-600" />
           <StatCard label="Online" value={summary.devicesOnline} color="text-green-600" />
           <StatCard label="Offline" value={summary.devicesOffline} color="text-slate-600" />
+          <StatCard label="Comandos pendientes" value={summary.pendingCommands} color="text-amber-600" />
           <InfoCard label="Última sync" value={formatOptionalDate(summary.lastSyncAt)} />
           <div className="bg-white rounded-xl shadow-lg p-5 border border-gray-200">
             <p className="text-sm text-gray-500 mb-2">Novedades técnicas</p>
@@ -122,7 +103,7 @@ export default async function DashboardPage() {
 
         <div className="bg-white rounded-xl shadow-lg border border-gray-200">
           <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-            <h2 className="font-semibold text-gray-900">Últimos 20 Registros</h2>
+            <h2 className="font-semibold text-gray-900">Actividad reciente</h2>
             <Link href="/records" className="text-blue-600 text-sm hover:underline">
               Ver todos →
             </Link>

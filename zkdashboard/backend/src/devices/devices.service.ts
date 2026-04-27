@@ -19,7 +19,7 @@ import {
 
 const FORCE_SYNC_COMMAND = 'DATA QUERY ATTLOG';
 const FORCE_SYNC_DUPLICATE_WINDOW_MS = 5 * 60 * 1000;
-const DEFAULT_ONLINE_THRESHOLD_MS = 5 * 60 * 1000;
+const DEFAULT_ONLINE_THRESHOLD_MS = 300_000;
 const ACTIVE_SENT_REPLACEMENT_REASON =
   'Sin confirmación del dispositivo. Reemplazado por una nueva solicitud manual.';
 
@@ -473,7 +473,11 @@ export class DevicesService {
     };
   }
 
-  private isOnline(lastSeen: Date): boolean {
+  private isOnline(lastSeen?: Date | null): boolean {
+    if (!lastSeen) {
+      return false;
+    }
+
     const rawThreshold = Number.parseInt(process.env.DEVICE_ONLINE_THRESHOLD_MS || '', 10);
     const thresholdMs =
       Number.isFinite(rawThreshold) && rawThreshold > 0

@@ -35,7 +35,7 @@ export class AttendanceRecord {
   @Column()
   status: number;
 
-  // 0=Contraseña, 1=Huella, 4=Rostro, 15=Tarjeta
+  // 0=Contraseña, 1=Huella, 4=Cara, 15=Tarjeta
   @Column({ name: 'verify_type' })
   verifyType: number;
 

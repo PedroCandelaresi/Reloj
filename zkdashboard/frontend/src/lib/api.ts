@@ -57,6 +57,8 @@ export interface EmployeeSummary {
 export interface Employee extends EmployeeSummary {
   telefono: string | null;
   email: string | null;
+  entryTime: string | null;
+  exitTime: string | null;
   companyId: string | null;
   createdAt: string;
 }
@@ -67,6 +69,8 @@ export interface EmployeeInput {
   apellido: string;
   telefono?: string | null;
   email?: string | null;
+  entryTime?: string | null;
+  exitTime?: string | null;
   companyId?: string | null;
 }
 
@@ -75,6 +79,8 @@ export interface EmployeeUpdateInput {
   apellido?: string;
   telefono?: string | null;
   email?: string | null;
+  entryTime?: string | null;
+  exitTime?: string | null;
   companyId?: string | null;
 }
 
@@ -84,6 +90,8 @@ export interface CompanySummary {
   razonSocial: string;
   nombreFantasia: string | null;
   isActive: boolean;
+  defaultEntryTime?: string | null;
+  defaultExitTime?: string | null;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -194,10 +202,77 @@ export interface Stats {
 export interface DashboardSummary {
   presentToday: number;
   recordsToday: number;
+  recentRecords: AttendanceRecord[];
+  devices: Device[];
   devicesOnline: number;
   devicesOffline: number;
   lastSyncAt: string | null;
+  pendingCommands: number;
+  recentDeviceErrorCount: number;
+  recentDeviceErrors: Array<{
+    id: string;
+    serialNumber: string | null;
+    path: string;
+    responseStatus: number | null;
+    parseError: string | null;
+    receivedAt: string;
+  }>;
   technicalNews: string[];
+}
+
+export interface AdminDashboardSummary {
+  summary: {
+    totalCompanies: number;
+    activeCompanies: number;
+    totalUsers: number;
+    totalEmployees: number;
+    totalDevices: number;
+    devicesOnline: number;
+    devicesOffline: number;
+    unassignedDevices: number;
+    totalAttendanceToday: number;
+    attendanceLast7Days: Array<{ date: string; count: number }>;
+    attendanceCompanyNull: number;
+    pendingCommands: number;
+  };
+  latestDevices: Array<{
+    id: number;
+    name: string;
+    serialNumber: string;
+    companyId: string | null;
+    companyName: string | null;
+    lastSeen: string | null;
+    online: boolean;
+  }>;
+  latestCompanies: Array<{
+    id: string;
+    cuit: string;
+    razonSocial: string;
+    nombreFantasia: string | null;
+    isActive: boolean;
+    createdAt: string;
+  }>;
+  latestAdmsErrors: Array<{
+    id: string;
+    serialNumber: string | null;
+    companyId: string | null;
+    sourceIp: string | null;
+    path: string;
+    responseStatus: number | null;
+    parseError: string | null;
+    receivedAt: string;
+  }>;
+  companiesWithOfflineDevices: Array<{
+    companyId: string | null;
+    companyName: string;
+    offlineDevices: number;
+  }>;
+  topCompaniesToday: Array<{
+    companyId: string;
+    companyName: string;
+    count: number;
+  }>;
+  technicalAlerts: string[];
 }
 
 export interface CompanyInput {
@@ -205,6 +280,8 @@ export interface CompanyInput {
   razonSocial: string;
   nombreFantasia?: string | null;
   isActive?: boolean;
+  defaultEntryTime?: string | null;
+  defaultExitTime?: string | null;
 }
 
 export interface CompanyUpdateInput {
@@ -212,6 +289,13 @@ export interface CompanyUpdateInput {
   razonSocial?: string;
   nombreFantasia?: string | null;
   isActive?: boolean;
+  defaultEntryTime?: string | null;
+  defaultExitTime?: string | null;
+}
+
+export interface CompanySettingsInput {
+  defaultEntryTime?: string | null;
+  defaultExitTime?: string | null;
 }
 
 export interface AssignAdminDeviceCompanyInput {
@@ -271,7 +355,7 @@ export const STATUS_LABELS: Record<number, string> = {
 export const VERIFY_LABELS: Record<number, string> = {
   0: 'Contraseña',
   1: 'Huella',
-  4: 'Rostro',
+  4: 'Cara',
   15: 'Tarjeta',
 };
 
@@ -305,8 +389,14 @@ export function getStats() {
   return apiFetch<Stats>('/attendance/stats');
 }
 
-export function getDashboardSummary() {
+export function getAttendanceDashboard() {
   return apiFetch<DashboardSummary>('/attendance/dashboard');
+}
+
+export const getDashboardSummary = getAttendanceDashboard;
+
+export function getAdminDashboard() {
+  return apiFetch<AdminDashboardSummary>('/admin/dashboard');
 }
 
 export function getRecent() {
@@ -373,6 +463,17 @@ export function requestDeviceForceSync(deviceId: number) {
 
 export function getCompanyUsers() {
   return apiFetch<CompanyUser[]>('/company/users');
+}
+
+export function getCompanySettings() {
+  return apiFetch<CompanySummary>('/company/settings');
+}
+
+export function updateCompanySettings(input: CompanySettingsInput) {
+  return apiFetch<CompanySummary>('/company/settings', {
+    method: 'PUT',
+    body: JSON.stringify(input),
+  });
 }
 
 export function getCompanyEligibleEmployees() {

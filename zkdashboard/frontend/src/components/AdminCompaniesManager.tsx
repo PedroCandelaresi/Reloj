@@ -18,6 +18,8 @@ type FormValues = {
   razonSocial: string;
   nombreFantasia: string;
   isActive: boolean;
+  defaultEntryTime: string;
+  defaultExitTime: string;
 };
 
 type BannerState =
@@ -30,6 +32,8 @@ const EMPTY_FORM: FormValues = {
   razonSocial: '',
   nombreFantasia: '',
   isActive: true,
+  defaultEntryTime: '',
+  defaultExitTime: '',
 };
 
 function toFormValues(company: CompanySummary): FormValues {
@@ -38,6 +42,8 @@ function toFormValues(company: CompanySummary): FormValues {
     razonSocial: company.razonSocial,
     nombreFantasia: company.nombreFantasia ?? '',
     isActive: company.isActive,
+    defaultEntryTime: company.defaultEntryTime ?? '',
+    defaultExitTime: company.defaultExitTime ?? '',
   };
 }
 
@@ -52,6 +58,7 @@ function formatDate(iso?: string) {
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
+    hour12: false,
   });
 }
 
@@ -114,6 +121,8 @@ export function AdminCompaniesManager({ companies }: { companies: CompanySummary
       razonSocial: form.razonSocial.trim(),
       nombreFantasia: form.nombreFantasia.trim() || null,
       isActive: form.isActive,
+      defaultEntryTime: form.defaultEntryTime.trim() || null,
+      defaultExitTime: form.defaultExitTime.trim() || null,
     };
 
     if (!payload.cuit || !payload.razonSocial) {
@@ -349,6 +358,36 @@ export function AdminCompaniesManager({ companies }: { companies: CompanySummary
                   onChange={handleChange}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Entrada global
+                  </label>
+                  <input
+                    name="defaultEntryTime"
+                    type="time"
+                    value={form.defaultEntryTime}
+                    onChange={handleChange}
+                    step={60}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Salida global
+                  </label>
+                  <input
+                    name="defaultExitTime"
+                    type="time"
+                    value={form.defaultExitTime}
+                    onChange={handleChange}
+                    step={60}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-2">
