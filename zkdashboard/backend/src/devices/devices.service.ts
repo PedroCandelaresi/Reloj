@@ -12,6 +12,11 @@ import { AuthenticatedUser } from '../auth/authenticated-user.interface';
 import { getCompanyScope } from '../auth/company-scope.util';
 import { CompanyRole } from '../companies/company-role.enum';
 import { Company } from '../companies/company.entity';
+import {
+  isSensitiveAdmsTable,
+  logSecurity,
+  redactSensitiveAdmsPayload,
+} from '../logging/file-log.util';
 import { Device } from './device.entity';
 import {
   DEVICE_COMMAND_STATUSES,
@@ -91,6 +96,13 @@ export interface DeviceDashboardMetrics {
   offlineCount: number;
   lastSyncAt: Date | null;
   technicalNews: string[];
+}
+
+export interface DeviceEmployeeSyncRecord {
+  id: string;
+  nombre: string;
+  apellido: string;
+  companyId?: string | null;
 }
 
 @Injectable()
@@ -277,6 +289,9 @@ export class DevicesService {
         companyId: device.companyId ?? null,
         status: DEVICE_COMMAND_STATUSES.PENDING,
         requestedBy: requestedBy?.trim() || null,
+        createdByUserId: user?.id ?? null,
+        attempts: 0,
+        maxAttempts: 5,
       }),
     );
 
@@ -377,6 +392,91 @@ export class DevicesService {
 
     this.logger.log(`Comando encolado para dispositivo ${device.serialNumber}: ${commandStr}`);
     return { command, device };
+  }
+
+  async enqueueEmployeeImportCommands(
+    deviceId: number,
+    requestedBy: string | undefined,
+    user: AuthenticatedUser,
+  ): Promise<{ device: Device; commands: DeviceCommand[] }> {
+    this.assertCanSendCommand(DEVICE_COMMAND_TYPES.QUERY_USERINFO, user);
+    const device = await this.findDeviceForOperation(deviceId, user);
+    if (!device) throw new NotFoundException('Dispositivo no encontrado.');
+    if (!device.isActive) throw new ConflictException('El dispositivo está inactivo.');
+    if (!device.companyId) {
+      throw new BadRequestException('El reloj debe estar asignado a una empresa.');
+    }
+
+    const commandSpecs: Array<{ type: DeviceCommandType; command: string; payload: Record<string, unknown> }> = [
+      {
+        type: DEVICE_COMMAND_TYPES.QUERY_USERINFO,
+        command: 'DATA QUERY USERINFO',
+        payload: { importsEmployees: true },
+      },
+    ];
+
+    const commands = await this.commandsRepo.save(
+      commandSpecs.map((spec) =>
+        this.commandsRepo.create({
+          deviceId: device.id,
+          commandType: spec.type,
+          command: spec.command,
+          companyId: device.companyId,
+          status: DEVICE_COMMAND_STATUSES.PENDING,
+          requestedBy: requestedBy ?? null,
+          createdByUserId: user.id,
+          payload: spec.payload,
+          attempts: 0,
+          maxAttempts: 5,
+        }),
+      ),
+    );
+
+    return { device, commands };
+  }
+
+  async enqueueEmployeeExportCommands(
+    deviceId: number,
+    employees: DeviceEmployeeSyncRecord[],
+    requestedBy: string | undefined,
+    user: AuthenticatedUser,
+  ): Promise<{ device: Device; commands: DeviceCommand[] }> {
+    this.assertCanSendCommand(DEVICE_COMMAND_TYPES.UPDATE_USERINFO, user);
+    const device = await this.findDeviceForOperation(deviceId, user);
+    if (!device) throw new NotFoundException('Dispositivo no encontrado.');
+    if (!device.isActive) throw new ConflictException('El dispositivo está inactivo.');
+    if (!device.companyId) {
+      throw new BadRequestException('El reloj debe estar asignado a una empresa.');
+    }
+    if (employees.some((employee) => employee.companyId !== device.companyId)) {
+      throw new ForbiddenException('El empleado no pertenece a la empresa del reloj.');
+    }
+    if (employees.length === 0) {
+      throw new ConflictException('No hay empleados para enviar al reloj.');
+    }
+
+    const commands = await this.commandsRepo.save(
+      employees.map((employee) =>
+        this.commandsRepo.create({
+          deviceId: device.id,
+          commandType: DEVICE_COMMAND_TYPES.UPDATE_USERINFO,
+          command: this.buildUpdateUserInfoCommand(employee),
+          companyId: device.companyId,
+          status: DEVICE_COMMAND_STATUSES.PENDING,
+          requestedBy: requestedBy ?? null,
+          createdByUserId: user.id,
+          payload: {
+            employeeId: employee.id,
+            nombre: employee.nombre,
+            apellido: employee.apellido,
+          },
+          attempts: 0,
+          maxAttempts: 5,
+        }),
+      ),
+    );
+
+    return { device, commands };
   }
 
   async findCommandsForDevice(
@@ -528,6 +628,40 @@ export class DevicesService {
     );
   }
 
+  async markDeviceDataQueryFromPush(
+    serialNumber: string,
+    table: string,
+    rawPayload: string,
+  ): Promise<void> {
+    const commandType = this.getDataQueryCommandTypeForTable(table);
+    if (!commandType) {
+      return;
+    }
+
+    const command = await this.findLatestSentCommandForSerialNumberAndType(
+      serialNumber,
+      commandType,
+    );
+    if (!command) {
+      return;
+    }
+
+    command.status = DEVICE_COMMAND_STATUSES.ACKNOWLEDGED;
+    command.acknowledgedAt = new Date();
+    command.error = null;
+    command.errorMessage = null;
+    command.resultRaw = isSensitiveAdmsTable(table)
+      ? redactSensitiveAdmsPayload({
+          table,
+          serialNumber,
+          body: rawPayload,
+        })
+      : rawPayload.trim() || `${table} recibido sin payload`;
+    command.responsePayload = command.resultRaw;
+    await this.commandsRepo.save(command);
+  }
+
+
   async markCommandResult(
     serialNumber: string | undefined,
     rawPayload: string,
@@ -543,14 +677,14 @@ export class DevicesService {
       undefined;
 
     const command = commandId
-      ? await this.commandsRepo.findOneBy({ id: commandId })
+      ? await this.findCommandForDeviceResult(commandId, resolvedSerialNumber)
       : resolvedSerialNumber
         ? await this.findLatestSentCommandForSerialNumber(resolvedSerialNumber)
         : null;
 
     if (!command) {
       this.logger.warn(
-        `Respuesta devicecmd sin comando asociado. sn=${resolvedSerialNumber || '-'} payload="${rawPayload.trim() || '(vacío)'}"`,
+        `Respuesta devicecmd sin comando asociado. sn=${resolvedSerialNumber || '-'} commandId=${commandId || '-'}`,
       );
       return;
     }
@@ -579,7 +713,13 @@ export class DevicesService {
     command.acknowledgedAt = isSuccess ? resultAt : command.acknowledgedAt;
     command.failedAt = isSuccess ? null : resultAt;
     command.resultCode = resultCode || null;
-    command.resultRaw = rawPayload.trim() || JSON.stringify(payload);
+    command.resultRaw = command.commandType === DEVICE_COMMAND_TYPES.QUERY_BIOMETRICS
+      ? redactSensitiveAdmsPayload({
+          table: command.command,
+          serialNumber: resolvedSerialNumber,
+          body: rawPayload,
+        })
+      : rawPayload.trim() || JSON.stringify(payload);
     command.responsePayload = command.resultRaw;
     command.errorMessage = isSuccess
       ? null
@@ -1013,6 +1153,83 @@ export class DevicesService {
       .getOne();
   }
 
+  private async findCommandForDeviceResult(
+    commandId: number,
+    serialNumber: string | undefined,
+  ): Promise<DeviceCommand | null> {
+    const command = await this.commandsRepo.findOne({
+      where: { id: commandId },
+      relations: { device: true },
+    });
+    const normalizedSerialNumber = this.normalizeSerialNumber(serialNumber);
+
+    if (!command) {
+      logSecurity({
+        event: 'adms_devicecmd_unknown_command',
+        message: `devicecmd recibido para comando inexistente id=${commandId}`,
+        serialNumber: normalizedSerialNumber,
+      });
+      return null;
+    }
+
+    if (!normalizedSerialNumber) {
+      logSecurity({
+        event: 'adms_devicecmd_missing_sn',
+        message: `devicecmd recibido para comando ${commandId} sin SN verificable`,
+        serialNumber: null,
+      });
+      return null;
+    }
+
+    if (command.device?.serialNumber !== normalizedSerialNumber) {
+      logSecurity({
+        event: 'adms_devicecmd_sn_mismatch',
+        message:
+          `devicecmd rechazado para comando ${commandId}: ` +
+          `sn=${normalizedSerialNumber} device_sn=${command.device?.serialNumber || '-'}`,
+        serialNumber: normalizedSerialNumber,
+      });
+      return null;
+    }
+
+    return command;
+  }
+
+  private async findLatestSentCommandForSerialNumberAndType(
+    serialNumber: string,
+    commandType: DeviceCommandType,
+  ): Promise<DeviceCommand | null> {
+    return this.commandsRepo
+      .createQueryBuilder('command')
+      .innerJoin('command.device', 'device')
+      .where('device.serial_number = :serialNumber', { serialNumber })
+      .andWhere('command.status = :status', {
+        status: DEVICE_COMMAND_STATUSES.SENT,
+      })
+      .andWhere('command.command_type = :commandType', { commandType })
+      .orderBy('command.sent_at', 'DESC')
+      .addOrderBy('command.requested_at', 'DESC')
+      .getOne();
+  }
+
+  private getDataQueryCommandTypeForTable(table: string): DeviceCommandType | null {
+    const normalizedTable = table?.trim().toUpperCase();
+    if (normalizedTable === 'USERINFO') {
+      return DEVICE_COMMAND_TYPES.QUERY_USERINFO;
+    }
+
+    if (
+      normalizedTable === 'FINGERTMP' ||
+      normalizedTable === 'FACE' ||
+      normalizedTable === 'USERPIC' ||
+      normalizedTable === 'BIODATA'
+    ) {
+      return DEVICE_COMMAND_TYPES.QUERY_BIOMETRICS;
+    }
+
+    return null;
+  }
+
   private parseDevicePayload(
     rawPayload: string,
     query: Record<string, unknown>,
@@ -1164,6 +1381,24 @@ export class DevicesService {
     }
 
     return FORCE_SYNC_COMMAND;
+  }
+
+  private buildUpdateUserInfoCommand(employee: DeviceEmployeeSyncRecord): string {
+    const pin = this.sanitizeAdmsValue(employee.id, 24);
+    const name = this.sanitizeAdmsValue(
+      `${employee.apellido} ${employee.nombre}`.trim() || employee.id,
+      48,
+    );
+
+    return `DATA UPDATE USERINFO PIN=${pin}\tName=${name}\tPri=0\tPasswd=\tCard=\tGrp=1\tTZ=0000000000000000`;
+  }
+
+  private sanitizeAdmsValue(value: string, maxLength: number): string {
+    return value
+      .replace(/[\r\n\t=]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, maxLength);
   }
 
   private normalizePayloadDateTime(value: unknown): string | null {

@@ -1,7 +1,11 @@
 import { Controller, Get, HttpException, Post, Query, Req, Res } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { AdmsProcessResult, AdmsService } from './adms.service';
-import { getClientIp } from '../logging/file-log.util';
+import {
+  getClientIp,
+  isSensitiveAdmsTable,
+  redactSensitiveAdmsPayload,
+} from '../logging/file-log.util';
 
 // Todas las rutas ADMS que usa el MB360
 @Controller('iclock')
@@ -54,13 +58,21 @@ export class AdmsController {
     handler: () => Promise<AdmsProcessResult>,
   ) {
     const rawBody = typeof req.body === 'string' ? req.body : '';
+    const table = typeof req.query.table === 'string' ? req.query.table : null;
+    const auditBody = isSensitiveAdmsTable(table)
+      ? redactSensitiveAdmsPayload({
+          table,
+          serialNumber: this.getSerialNumber(req.query.SN),
+          body: rawBody,
+        })
+      : rawBody;
     const inboundRequest = await this.adms.startInboundRequest({
       serialNumber: this.getSerialNumber(req.query.SN),
       sourceIp: getClientIp(req),
       method: req.method,
       path: this.getPath(req),
       queryRaw: this.getQueryRaw(req),
-      bodyRaw: rawBody || null,
+      bodyRaw: auditBody || null,
     });
 
     try {

@@ -12,6 +12,7 @@ import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
 import { AuthenticatedUser } from '../auth/authenticated-user.interface';
 import { getCompanyScope } from '../auth/company-scope.util';
+import { DevicesService } from '../devices/devices.service';
 
 @Injectable()
 export class EmployeesService {
@@ -20,6 +21,7 @@ export class EmployeesService {
     private readonly repo: Repository<Employee>,
     @InjectRepository(ScheduleProfile)
     private readonly scheduleProfilesRepo: Repository<ScheduleProfile>,
+    private readonly devices: DevicesService,
   ) {}
 
   findAll(user: AuthenticatedUser): Promise<Employee[]> {
@@ -131,6 +133,114 @@ export class EmployeesService {
     return { success: true as const };
   }
 
+  async requestImportFromDevice(deviceId: number, user: AuthenticatedUser) {
+    const result = await this.devices.enqueueEmployeeImportCommands(
+      deviceId,
+      user.username,
+      user,
+    );
+
+    return {
+      ok: true as const,
+      device: {
+        id: result.device.id,
+        serialNumber: result.device.serialNumber,
+      },
+      commands: result.commands.map((command) => ({
+        id: command.id,
+        commandType: command.commandType,
+        command: command.command,
+        status: command.status,
+      })),
+      message:
+        'Importación solicitada. El reloj enviará USERINFO en el próximo heartbeat.',
+    };
+  }
+
+  async requestExportEmployeeToDevice(
+    deviceId: number,
+    employeeId: string,
+    user: AuthenticatedUser,
+  ) {
+    const employee = await this.findOne(employeeId, user);
+
+    const result = await this.devices.enqueueEmployeeExportCommands(
+      deviceId,
+      [
+        {
+          id: employee.id,
+          nombre: employee.nombre,
+          apellido: employee.apellido,
+          companyId: employee.companyId,
+        },
+      ],
+      user.username,
+      user,
+    );
+
+    const command = result.commands[0];
+
+    return {
+      ok: true as const,
+      device: {
+        id: result.device.id,
+        serialNumber: result.device.serialNumber,
+      },
+      command: {
+        id: command.id,
+        status: command.status,
+      },
+      message: `Empleado ${employee.id} encolado para enviar al reloj.`,
+    };
+  }
+
+  async importUserInfoFromDevice(
+    companyId: string,
+    rawBody: string,
+  ): Promise<{ created: number; updated: number; skipped: number }> {
+    const rows = this.parseUserInfoRows(rawBody);
+    let created = 0;
+    let updated = 0;
+    let skipped = 0;
+
+    for (const row of rows) {
+      const employeeId = this.getFirstValue(row, ['PIN', 'USERID', 'UID', 'ID']);
+      if (!employeeId) {
+        skipped += 1;
+        continue;
+      }
+
+      const fullName =
+        this.getFirstValue(row, ['NAME', 'NOMBRE', 'USERNAME']) ||
+        `Usuario ${employeeId}`;
+      const parsedName = this.splitDeviceName(fullName);
+      const existing = await this.repo.findOneBy({ id: employeeId });
+      if (existing && existing.companyId !== companyId) {
+        skipped += 1;
+        continue;
+      }
+
+      if (existing) {
+        existing.nombre = parsedName.nombre;
+        existing.apellido = parsedName.apellido;
+        await this.repo.save(existing);
+        updated += 1;
+      } else {
+        await this.repo.save(
+          this.repo.create({
+            id: employeeId,
+            nombre: parsedName.nombre,
+            apellido: parsedName.apellido,
+            companyId,
+          }),
+        );
+        created += 1;
+      }
+    }
+
+    return { created, updated, skipped };
+  }
+
   private async findScopedEmployee(
     id: string,
     user: AuthenticatedUser,
@@ -150,6 +260,70 @@ export class EmployeesService {
         scheduleProfile: true,
       },
     });
+  }
+
+  private parseUserInfoRows(rawBody: string): Array<Record<string, string>> {
+    return rawBody
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) => {
+        const row: Record<string, string> = {};
+        for (const part of line.split(/\t|&/)) {
+          const separatorIndex = part.indexOf('=');
+          if (separatorIndex <= 0) continue;
+          const key = part.slice(0, separatorIndex).trim().toUpperCase();
+          const value = part.slice(separatorIndex + 1).trim();
+          if (key) row[key] = value;
+        }
+
+        if (Object.keys(row).length > 0) {
+          return row;
+        }
+
+        const fields = line.split(/\s+/).filter(Boolean);
+        if (fields.length >= 2) {
+          row.PIN = fields[0];
+          row.NAME = fields.slice(1).join(' ');
+        }
+
+        return row;
+      })
+      .filter((row) => Object.keys(row).length > 0);
+  }
+
+  private getFirstValue(row: Record<string, string>, keys: string[]): string | null {
+    for (const key of keys) {
+      const value = row[key]?.trim();
+      if (value) return value;
+    }
+
+    return null;
+  }
+
+  private splitDeviceName(fullName: string): { nombre: string; apellido: string } {
+    const normalized = fullName.replace(/\s+/g, ' ').trim();
+    if (!normalized) {
+      return { nombre: 'Sin nombre', apellido: 'Sin apellido' };
+    }
+
+    if (normalized.includes(',')) {
+      const [apellido, nombre] = normalized.split(',', 2).map((part) => part.trim());
+      return {
+        nombre: nombre || apellido || 'Sin nombre',
+        apellido: apellido || 'Sin apellido',
+      };
+    }
+
+    const parts = normalized.split(' ');
+    if (parts.length === 1) {
+      return { nombre: parts[0], apellido: 'Sin apellido' };
+    }
+
+    return {
+      nombre: parts.slice(1).join(' '),
+      apellido: parts[0],
+    };
   }
 
   private resolveWritableCompanyId(

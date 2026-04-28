@@ -3,11 +3,13 @@
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
-import type { Employee, ScheduleProfile } from '@/lib/api';
+import type { Device, Employee, ScheduleProfile } from '@/lib/api';
 import type { ActionResult } from '@/app/(protected)/employees/actions';
 import {
   createEmployeeAction,
   deleteEmployeeAction,
+  exportEmployeeToDeviceAction,
+  importEmployeesFromDeviceAction,
   updateEmployeeAction,
 } from '@/app/(protected)/employees/actions';
 
@@ -54,16 +56,18 @@ function toFormValues(employee: Employee): FormValues {
 }
 
 export function EmployeesManager({ employees }: { employees: Employee[] }) {
-  return <EmployeesManagerContent employees={employees} scheduleProfiles={[]} canManage />;
+  return <EmployeesManagerContent employees={employees} scheduleProfiles={[]} devices={[]} canManage />;
 }
 
 export function EmployeesManagerContent({
   employees,
   scheduleProfiles,
+  devices,
   canManage,
 }: {
   employees: Employee[];
   scheduleProfiles: ScheduleProfile[];
+  devices: Device[];
   canManage: boolean;
 }) {
   const router = useRouter();
@@ -73,6 +77,7 @@ export function EmployeesManagerContent({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [banner, setBanner] = useState<BannerState>(null);
+  const [syncDeviceId, setSyncDeviceId] = useState(devices[0]?.id ? String(devices[0].id) : '');
 
   const openCreate = () => {
     setMode('create');
@@ -154,6 +159,45 @@ export function EmployeesManagerContent({
     });
   };
 
+  const selectedDeviceId = Number.parseInt(syncDeviceId, 10);
+
+  const handleImportFromDevice = () => {
+    setBanner(null);
+    if (!Number.isInteger(selectedDeviceId) || selectedDeviceId <= 0) {
+      setBanner({ type: 'error', text: 'Seleccioná un reloj.' });
+      return;
+    }
+
+    startTransition(() => {
+      void importEmployeesFromDeviceAction(selectedDeviceId)
+        .then((result: ActionResult) => {
+          if (result.error) { setBanner({ type: 'error', text: result.error }); return; }
+          setBanner({ type: 'success', text: result.message || 'Importación solicitada al reloj.' });
+          router.refresh();
+        })
+        .catch(() => { setBanner({ type: 'error', text: 'No se pudo solicitar la importación.' }); });
+    });
+  };
+
+  const handleExportToDevice = (employee: Employee) => {
+    setBanner(null);
+    if (!Number.isInteger(selectedDeviceId) || selectedDeviceId <= 0) {
+      setBanner({ type: 'error', text: 'Seleccioná un reloj.' });
+      return;
+    }
+    if (!window.confirm(`¿Enviar a ${employee.apellido}, ${employee.nombre} al reloj seleccionado?`)) return;
+
+    startTransition(() => {
+      void exportEmployeeToDeviceAction(selectedDeviceId, employee.id)
+        .then((result: ActionResult) => {
+          if (result.error) { setBanner({ type: 'error', text: result.error }); return; }
+          setBanner({ type: 'success', text: result.message || 'Empleado encolado para enviar al reloj.' });
+          router.refresh();
+        })
+        .catch(() => { setBanner({ type: 'error', text: 'No se pudo enviar el empleado al reloj.' }); });
+    });
+  };
+
   return (
     <>
       <div className="card rounded-xl">
@@ -187,6 +231,46 @@ export function EmployeesManagerContent({
             }
           >
             {banner.text}
+          </div>
+        )}
+
+        {canManage && (
+          <div className="mx-6 mt-6 rounded-xl p-4" style={{ border: '1px solid var(--border)', background: 'var(--surface-raised)' }}>
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+              <div className="min-w-0">
+                <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Usuarios del reloj</p>
+                <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+                  Importa USERINFO a la maestra. El envío al reloj se hace por empleado.
+                </p>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <select
+                  value={syncDeviceId}
+                  onChange={(event) => setSyncDeviceId(event.target.value)}
+                  disabled={isPending || devices.length === 0}
+                  className="min-w-[220px] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-60"
+                  style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
+                >
+                  {devices.length === 0 ? (
+                    <option value="">Sin relojes asignados</option>
+                  ) : (
+                    devices.map((device) => (
+                      <option key={device.id} value={device.id}>
+                        {device.name || device.serialNumber}
+                      </option>
+                    ))
+                  )}
+                </select>
+                <button
+                  type="button"
+                  onClick={handleImportFromDevice}
+                  disabled={isPending || devices.length === 0}
+                  className="rounded-lg bg-emerald-600 hover:bg-emerald-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-60 transition-colors"
+                >
+                  Importar usuarios del reloj
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
@@ -232,6 +316,10 @@ export function EmployeesManagerContent({
                           <button type="button" onClick={() => openEdit(employee)}
                             className="font-medium transition-colors" style={{ color: 'var(--brand-text)' }}>
                             Editar
+                          </button>
+                          <button type="button" onClick={() => handleExportToDevice(employee)} disabled={isPending || devices.length === 0}
+                            className="font-medium transition-colors disabled:opacity-60" style={{ color: 'var(--brand-text)' }}>
+                            Enviar al reloj
                           </button>
                           <button type="button" onClick={() => handleDelete(employee)} disabled={isPending}
                             className="font-medium transition-colors disabled:opacity-60" style={{ color: 'var(--danger-text)' }}>

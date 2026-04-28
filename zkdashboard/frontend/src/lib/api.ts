@@ -246,6 +246,34 @@ export interface DeviceForceSyncResult {
   command: DeviceCommand;
 }
 
+export interface EmployeeDeviceImportResult {
+  ok: true;
+  message: string;
+  device: {
+    id: number;
+    serialNumber: string;
+  };
+  commands: Array<{
+    id: number;
+    commandType: string;
+    command: string;
+    status: string;
+  }>;
+}
+
+export interface EmployeeDeviceExportResult {
+  ok: true;
+  message: string;
+  device: {
+    id: number;
+    serialNumber: string;
+  };
+  command: {
+    id: number;
+    status: string;
+  };
+}
+
 export interface Stats {
   totalToday: number;
   totalWeek: number;
@@ -989,6 +1017,19 @@ export function deleteEmployee(id: string) {
   return apiFetch<{ success: true }>(`/employees/${id}`, {
     method: 'DELETE',
   });
+}
+
+export function requestEmployeeImportFromDevice(deviceId: number) {
+  return apiFetch<EmployeeDeviceImportResult>(`/employees/device-sync/${deviceId}/import`, {
+    method: 'POST',
+  });
+}
+
+export function requestEmployeeExportToDevice(deviceId: number, employeeId: string) {
+  return apiFetch<EmployeeDeviceExportResult>(
+    `/employees/device-sync/${deviceId}/export/${encodeURIComponent(employeeId)}`,
+    { method: 'POST' },
+  );
 }
 
 export function getRecords(params: {

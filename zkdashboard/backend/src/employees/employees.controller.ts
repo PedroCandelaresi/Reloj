@@ -1,4 +1,15 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Post,
+  Put,
+  UseGuards,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/auth.guard';
 import { CompanyAdminGuard } from '../auth/guards/company-admin.guard';
 import { EmployeesService } from './employees.service';
@@ -26,6 +37,33 @@ export class EmployeesController {
   @UseGuards(CompanyAdminGuard)
   create(@Body() dto: CreateEmployeeDto, @CurrentUser() user: AuthenticatedUser) {
     return this.employees.create(dto, user);
+  }
+
+  @Post('device-sync/:deviceId/import')
+  @UseGuards(CompanyAdminGuard)
+  importFromDevice(
+    @Param('deviceId', ParseIntPipe) deviceId: number,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.employees.requestImportFromDevice(deviceId, user);
+  }
+
+  @Post('device-sync/:deviceId/export')
+  @UseGuards(CompanyAdminGuard)
+  exportAllToDevice() {
+    throw new BadRequestException(
+      'La sincronización masiva está deshabilitada. Enviá empleados individuales al reloj.',
+    );
+  }
+
+  @Post('device-sync/:deviceId/export/:employeeId')
+  @UseGuards(CompanyAdminGuard)
+  exportEmployeeToDevice(
+    @Param('deviceId', ParseIntPipe) deviceId: number,
+    @Param('employeeId') employeeId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.employees.requestExportEmployeeToDevice(deviceId, employeeId, user);
   }
 
   @Put(':id')

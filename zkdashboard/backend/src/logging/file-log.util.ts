@@ -3,6 +3,45 @@ import { join } from 'path';
 import { Request } from 'express';
 
 const LOG_DIR = process.env.LOG_DIR || '/home/reloj/log';
+const SENSITIVE_ADMS_PAYLOAD = '[REDACTED_SENSITIVE_ADMS_PAYLOAD]';
+
+export function isSensitiveAdmsTable(table: string | null | undefined): boolean {
+  const normalized = table?.trim().toUpperCase() || '';
+  if (!normalized) {
+    return false;
+  }
+
+  return (
+    normalized === 'FINGERTMP' ||
+    normalized === 'FACE' ||
+    normalized === 'USERPIC' ||
+    normalized === 'BIODATA' ||
+    normalized === 'BIOPHOTO' ||
+    normalized === 'FP' ||
+    normalized.includes('BIO') ||
+    normalized.includes('FACE') ||
+    normalized.includes('FINGER') ||
+    normalized.includes('PHOTO') ||
+    normalized.includes('PIC')
+  );
+}
+
+export function redactSensitiveAdmsPayload(details: {
+  table: string | null | undefined;
+  serialNumber: string | null | undefined;
+  body: string | null | undefined;
+  timestamp?: Date;
+}): string {
+  const timestamp = details.timestamp ?? new Date();
+  const body = details.body ?? '';
+  return (
+    `${SENSITIVE_ADMS_PAYLOAD} ` +
+    `bytes=${Buffer.byteLength(body, 'utf8')} ` +
+    `table=${details.table || '-'} ` +
+    `sn=${details.serialNumber || '-'} ` +
+    `timestamp=${timestamp.toISOString()}`
+  );
+}
 
 function ensureLogDir() {
   mkdirSync(LOG_DIR, { recursive: true });
@@ -61,7 +100,9 @@ export function logAttendance(details: {
     `[${new Date().toISOString()}] ` +
     `ip=${details.ipAddress} sn=${details.serialNumber || '-'} ` +
     `table=${details.table || '-'} method=${details.method} path="${details.path}"`;
-  const payload = details.body?.trim() || '(sin body)';
+  const payload = isSensitiveAdmsTable(details.table)
+    ? redactSensitiveAdmsPayload(details)
+    : details.body?.trim() || '(sin body)';
 
   writeLog('asistencias_reloj.log', `${header}\n${payload}\n---\n`);
 }

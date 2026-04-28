@@ -1,13 +1,14 @@
 import { EmployeesManagerContent } from '@/components/EmployeesManager';
-import { getEmployees, getScheduleProfiles } from '@/lib/api';
+import { getDevices, getEmployees, getScheduleProfiles } from '@/lib/api';
 import { requireCurrentSession } from '@/lib/session';
 
 export default async function EmployeesPage() {
   const user = await requireCurrentSession();
   const canManage = !user.isSuperAdmin && user.companyRole === 'company_admin';
-  const [employees, scheduleProfiles] = await Promise.all([
+  const [employees, scheduleProfiles, devices] = await Promise.all([
     getEmployees(),
     canManage ? getScheduleProfiles() : Promise.resolve([]),
+    canManage ? getDevices() : Promise.resolve([]),
   ]);
 
   return (
@@ -25,6 +26,7 @@ export default async function EmployeesPage() {
         <EmployeesManagerContent
           employees={employees}
           scheduleProfiles={scheduleProfiles}
+          devices={devices}
           canManage={canManage}
         />
       </main>

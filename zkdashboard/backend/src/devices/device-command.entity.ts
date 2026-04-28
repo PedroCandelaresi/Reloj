@@ -18,6 +18,9 @@ export const DEVICE_COMMAND_TYPES = {
   CHECK:           'check',
   QUERY_ATTLOG:    'query_attlog',
   CLEAR_ATTLOG:    'clear_attlog',
+  QUERY_USERINFO:  'query_userinfo',
+  QUERY_BIOMETRICS:'query_biometrics',
+  UPDATE_USERINFO: 'update_userinfo',
   CUSTOM:          'custom',
 } as const;
 
