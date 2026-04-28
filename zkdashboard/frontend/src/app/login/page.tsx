@@ -55,13 +55,13 @@ export default function LoginPage() {
   return (
     <main
       className="relative flex min-h-screen items-center justify-center overflow-hidden px-6 py-10 text-white"
-      style={{ background: '#0a1b13' }}
+      style={{ background: '#0d2519' }}
     >
       {/* Background: always-dark matrix texture */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute inset-0 matrix-dark" />
         <div className="absolute inset-0 scanlines-dark opacity-50" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(15,70,44,0.16)_0%,transparent_42%,rgba(0,0,0,0.42)_100%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(24,105,65,0.24)_0%,transparent_46%,rgba(0,0,0,0.32)_100%)]" />
 
         {/* Particles */}
         {particles.map((p) => (
@@ -85,9 +85,9 @@ export default function LoginPage() {
       <div
         className="login-glass-card relative isolate z-10 w-full max-w-sm overflow-hidden rounded-2xl px-8 py-9"
         style={{
-          background: 'linear-gradient(145deg, rgba(33,40,46,0.68), rgba(11,16,20,0.76))',
+          background: 'linear-gradient(145deg, rgba(24,29,34,0.74), rgba(7,11,14,0.82))',
           border: '1px solid rgba(240,248,252,0.22)',
-          backdropFilter: 'blur(24px) saturate(1.2)',
+          backdropFilter: 'blur(26px) saturate(1.18)',
           boxShadow: '0 26px 70px rgba(0,0,0,0.42), inset 0 1px 0 rgba(255,255,255,0.30), inset 0 -1px 0 rgba(0,0,0,0.38), inset 1px 0 0 rgba(255,255,255,0.12), inset -1px 0 0 rgba(255,255,255,0.05)',
         }}
       >
