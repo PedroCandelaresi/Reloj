@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
-import { Navbar } from '@/components/Navbar';
 import { ReportFilters } from '@/components/reports/ReportFilters';
 import {
   formatEmployeeName,
@@ -62,7 +61,6 @@ export default async function DaySummariesPage({ searchParams }: PageProps) {
 
   return (
     <>
-      <Navbar user={user} />
       <main className="mx-auto max-w-7xl px-4 py-8 pt-32">
         <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
           <div>

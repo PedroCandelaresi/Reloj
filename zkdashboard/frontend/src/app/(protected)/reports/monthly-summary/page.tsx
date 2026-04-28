@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { Navbar } from '@/components/Navbar';
 import { ExportButtons } from '@/components/reports/ExportButtons';
 import { MonthlySummaryTable } from '@/components/reports/MonthlySummaryTable';
 import { ReportFilters } from '@/components/reports/ReportFilters';
@@ -9,7 +8,6 @@ import {
   getMonthlySummaryReport,
 } from '@/lib/api';
 import { currentArgentinaPeriod } from '@/lib/argentina-date';
-import { requireCurrentSession } from '@/lib/session';
 
 interface PageProps {
   searchParams: Promise<{
@@ -20,7 +18,6 @@ interface PageProps {
 }
 
 export default async function MonthlySummaryPage({ searchParams }: PageProps) {
-  const user = await requireCurrentSession();
   const sp = await searchParams;
   const fallback = currentArgentinaPeriod();
   const year = sp.year || fallback.year;
@@ -38,7 +35,6 @@ export default async function MonthlySummaryPage({ searchParams }: PageProps) {
 
   return (
     <>
-      <Navbar user={user} />
       <main className="mx-auto max-w-7xl px-4 py-8 pt-32">
         <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
           <div>

@@ -172,9 +172,15 @@ body {
   background-size: 26px 26px, 26px 26px, auto, auto, auto;
 }
 
-/* Light mode: no matrix, clean paper-like bg */
+/* Light mode: same matrix language, softened for contrast */
 .conflunet-matrix-bg {
-  background: linear-gradient(160deg, #f5f2ec 0%, #ece8e0 40%, #e8e4dc 100%);
+  background:
+    linear-gradient(rgba(23, 168, 95, 0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(23, 168, 95, 0.09) 1px, transparent 1px),
+    radial-gradient(circle at 50% 12%, rgba(31, 199, 119, 0.16), transparent 34%),
+    radial-gradient(circle at 15% 18%, rgba(31, 199, 119, 0.12), transparent 22%),
+    linear-gradient(180deg, #f6f3ed 0%, #ece9e1 48%, #e6e2da 100%);
+  background-size: 26px 26px, 26px 26px, auto, auto, auto;
 }
 
 .dark .conflunet-steel-bg {
@@ -200,5 +206,12 @@ body {
 }
 
 .conflunet-scanlines {
-  display: none;
+  background:
+    repeating-linear-gradient(
+      180deg,
+      rgba(23, 168, 95, 0) 0px,
+      rgba(23, 168, 95, 0) 10px,
+      rgba(23, 168, 95, 0.035) 11px,
+      rgba(23, 168, 95, 0) 12px
+    );
 }

@@ -1,4 +1,3 @@
-import { Navbar } from '@/components/Navbar';
 import { AdminCompaniesManager } from '@/components/AdminCompaniesManager';
 import { AdminCompanyDetailPanel } from '@/components/AdminCompanyDetailPanel';
 import {
@@ -14,7 +13,7 @@ export default async function AdminCompaniesPage({
 }: {
   searchParams: Promise<{ company?: string }>;
 }) {
-  const user = await requireSuperAdminSession();
+  await requireSuperAdminSession();
   const sp = await searchParams;
   const companies = await getAdminCompanies();
   const selectedId = sp.company ?? null;
@@ -30,7 +29,6 @@ export default async function AdminCompaniesPage({
 
   return (
     <>
-      <Navbar user={user} />
       <main className="max-w-7xl mx-auto px-4 py-8 pt-32">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-white drop-shadow-md">Empresas</h1>

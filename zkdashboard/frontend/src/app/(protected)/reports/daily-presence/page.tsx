@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { Navbar } from '@/components/Navbar';
 import { DailyPresenceTable } from '@/components/reports/DailyPresenceTable';
 import { ExportButtons } from '@/components/reports/ExportButtons';
 import { ReportFilters } from '@/components/reports/ReportFilters';
@@ -10,7 +9,6 @@ import {
   getDistinctUsers,
 } from '@/lib/api';
 import { todayArgentinaDateKey } from '@/lib/argentina-date';
-import { requireCurrentSession } from '@/lib/session';
 
 interface PageProps {
   searchParams: Promise<{
@@ -22,7 +20,6 @@ interface PageProps {
 }
 
 export default async function DailyPresencePage({ searchParams }: PageProps) {
-  const user = await requireCurrentSession();
   const sp = await searchParams;
   const dateFrom = sp.dateFrom || todayArgentinaDateKey();
   const dateTo = sp.dateTo || dateFrom;
@@ -37,7 +34,6 @@ export default async function DailyPresencePage({ searchParams }: PageProps) {
 
   return (
     <>
-      <Navbar user={user} />
       <main className="mx-auto max-w-7xl px-4 py-8 pt-32">
         <Header
           title="Presencia diaria"

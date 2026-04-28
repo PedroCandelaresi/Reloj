@@ -1,4 +1,3 @@
-import { Navbar } from '@/components/Navbar';
 import { EmployeesManagerContent } from '@/components/EmployeesManager';
 import { getEmployees, getScheduleProfiles } from '@/lib/api';
 import { requireCurrentSession } from '@/lib/session';
@@ -13,7 +12,6 @@ export default async function EmployeesPage() {
 
   return (
     <>
-      <Navbar user={user} />
       <main className="max-w-7xl mx-auto px-4 py-8 pt-32">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-white drop-shadow-md">Empleados</h1>

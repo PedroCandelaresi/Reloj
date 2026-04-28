@@ -1,5 +1,4 @@
 import { AttendanceRequestsManager } from '@/components/AttendanceRequestsManager';
-import { Navbar } from '@/components/Navbar';
 import {
   getAttendanceAuditLog,
   getAttendanceRequests,
@@ -45,7 +44,6 @@ export default async function AttendanceRequestsPage({ searchParams }: PageProps
 
   return (
     <>
-      <Navbar user={user} />
       <main className="mx-auto max-w-7xl px-4 py-8 pt-32">
         <div className="mb-6">
           <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>

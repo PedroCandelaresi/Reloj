@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { logout } from '@/lib/actions';
 import type { CurrentUserProfile } from '@/lib/api';
 import type { CompanyRole } from '@/lib/auth-token';
@@ -89,6 +90,7 @@ function getNavigationItems(user?: CurrentUserProfile | null) {
 export function NavbarClient({ user }: { user?: CurrentUserProfile | null }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const pathname = usePathname();
   const displayName = formatUserName(user);
   const roleLabel = formatRoleLabel(user?.companyRole, user?.isSuperAdmin);
   const activeCompanyName = getActiveCompanyName(user);
@@ -122,15 +124,23 @@ export function NavbarClient({ user }: { user?: CurrentUserProfile | null }) {
 
       {/* Desktop nav links */}
       <div className="hidden lg:flex items-center gap-6">
-        {navigationItems.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className="text-slate-300 hover:text-white text-sm transition-colors"
-          >
-            {item.label}
-          </Link>
-        ))}
+        {navigationItems.map((item) => {
+          const active = isActivePath(pathname, item.href);
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              aria-current={active ? 'page' : undefined}
+              className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
+                active
+                  ? 'border-white/14 bg-white/12 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]'
+                  : 'border-transparent text-slate-300 hover:bg-white/8 hover:text-white'
+              }`}
+            >
+              {item.label}
+            </Link>
+          );
+        })}
       </div>
 
       {/* Desktop right: theme toggle + user */}
@@ -200,7 +210,12 @@ export function NavbarClient({ user }: { user?: CurrentUserProfile | null }) {
               <Link
                 key={item.href}
                 href={item.href}
-                className="text-slate-300 hover:text-white text-sm py-2 px-2 rounded-md hover:bg-white/8 transition-colors"
+                aria-current={isActivePath(pathname, item.href) ? 'page' : undefined}
+                className={`rounded-md px-2 py-2 text-sm transition-colors ${
+                  isActivePath(pathname, item.href)
+                    ? 'bg-white/12 text-white'
+                    : 'text-slate-300 hover:bg-white/8 hover:text-white'
+                }`}
                 onClick={() => setIsOpen(false)}
               >
                 {item.label}
@@ -239,4 +254,16 @@ export function NavbarClient({ user }: { user?: CurrentUserProfile | null }) {
       )}
     </nav>
   );
+}
+
+function isActivePath(pathname: string, href: string) {
+  if (pathname === href) {
+    return true;
+  }
+
+  if (href === '/dashboard' || href === '/admin/dashboard' || href === '/settings') {
+    return false;
+  }
+
+  return pathname.startsWith(`${href}/`);
 }

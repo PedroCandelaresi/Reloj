@@ -1,5 +1,4 @@
 import { CompanyUsersManager } from '@/components/CompanyUsersManager';
-import { Navbar } from '@/components/Navbar';
 import { getCompanyEligibleEmployees, getCompanyUsers } from '@/lib/api';
 import { requireCurrentSession } from '@/lib/session';
 import { redirect } from 'next/navigation';
@@ -22,7 +21,6 @@ export default async function CompanyUsersPage() {
 
   return (
     <>
-      <Navbar user={user} />
       <main className="max-w-7xl mx-auto px-4 py-8 pt-32">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-white drop-shadow-md">Usuarios</h1>

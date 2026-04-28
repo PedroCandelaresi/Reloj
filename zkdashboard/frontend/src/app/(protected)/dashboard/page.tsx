@@ -1,4 +1,3 @@
-import { Navbar } from '@/components/Navbar';
 import { DeviceStatusPanel } from '@/components/DeviceStatusPanel';
 import { StatusBadge } from '@/components/StatusBadge';
 import {
@@ -54,7 +53,6 @@ export default async function DashboardPage() {
 
   return (
     <>
-      <Navbar user={user} />
       <main className="max-w-7xl mx-auto px-4 py-8 pt-32">
         <div className="mb-8">
           <h1 className="text-2xl font-bold dark:text-white text-gray-900 drop-shadow-sm">Panel de la empresa</h1>

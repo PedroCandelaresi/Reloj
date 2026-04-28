@@ -1,5 +1,4 @@
 import { CompanySettingsManager } from '@/components/CompanySettingsManager';
-import { Navbar } from '@/components/Navbar';
 import { ScheduleProfilesManager } from '@/components/ScheduleProfilesManager';
 import { getCompanySettings, getScheduleProfiles } from '@/lib/api';
 import { requireCurrentSession } from '@/lib/session';
@@ -23,7 +22,6 @@ export default async function SettingsPage() {
 
   return (
     <>
-      <Navbar user={user} />
       <main className="max-w-7xl mx-auto px-4 py-8 pt-32">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-white drop-shadow-md">Configuración</h1>

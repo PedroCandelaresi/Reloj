@@ -1,4 +1,3 @@
-import { Navbar } from '@/components/Navbar';
 import { ProfileManager } from '@/components/ProfileManager';
 import { getCurrentUserProfile } from '@/lib/api';
 
@@ -7,7 +6,6 @@ export default async function ProfilePage() {
 
   return (
     <>
-      <Navbar user={profile} />
       <main className="max-w-5xl mx-auto px-4 py-8 pt-32">
         <ProfileManager profile={profile} />
       </main>

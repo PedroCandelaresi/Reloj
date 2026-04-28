@@ -1,4 +1,3 @@
-import { Navbar } from '@/components/Navbar';
 import { getAdminDashboard } from '@/lib/api';
 import { requireSuperAdminSession } from '@/lib/session';
 import Link from 'next/link';
@@ -17,13 +16,12 @@ function formatDate(iso?: string | null) {
 }
 
 export default async function AdminDashboardPage() {
-  const user = await requireSuperAdminSession();
+  await requireSuperAdminSession();
   const dashboard = await getAdminDashboard();
   const { summary } = dashboard;
 
   return (
     <>
-      <Navbar user={user} />
       <main className="max-w-7xl mx-auto px-4 py-8 pt-32">
         <div className="mb-8">
           <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--brand-text)' }}>

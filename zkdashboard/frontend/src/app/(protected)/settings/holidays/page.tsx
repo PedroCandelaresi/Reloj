@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import { HolidaysManager } from '@/components/HolidaysManager';
-import { Navbar } from '@/components/Navbar';
 import { getHolidays } from '@/lib/api';
 import { currentArgentinaPeriod } from '@/lib/argentina-date';
 import { requireCurrentSession } from '@/lib/session';
@@ -23,7 +22,6 @@ export default async function HolidaysPage({ searchParams }: PageProps) {
 
   return (
     <>
-      <Navbar user={user} />
       <main className="mx-auto max-w-7xl px-4 py-8 pt-32">
         <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
           <div>

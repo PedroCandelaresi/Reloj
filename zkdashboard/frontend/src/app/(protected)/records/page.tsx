@@ -1,4 +1,3 @@
-import { Navbar } from '@/components/Navbar';
 import { RecordsSyncControls } from '@/components/RecordsSyncControls';
 import { StatusBadge } from '@/components/StatusBadge';
 import {
@@ -65,7 +64,6 @@ export default async function RecordsPage({ searchParams }: PageProps) {
 
   return (
     <>
-      <Navbar user={user} />
       <main className="max-w-7xl mx-auto px-4 py-8 pt-32">
 
         <div className="flex items-start justify-between mb-6">

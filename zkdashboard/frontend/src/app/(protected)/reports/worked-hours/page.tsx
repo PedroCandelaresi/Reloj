@@ -1,16 +1,13 @@
 import Link from 'next/link';
-import { Navbar } from '@/components/Navbar';
 import { ExportButtons } from '@/components/reports/ExportButtons';
 import { Phase2ReportTable } from '@/components/reports/Phase2ReportTable';
 import { ReportFilters } from '@/components/reports/ReportFilters';
 import { exportWorkedHoursReport, getDistinctUsers, getWorkedHoursReport } from '@/lib/api';
 import { todayArgentinaDateKey } from '@/lib/argentina-date';
-import { requireCurrentSession } from '@/lib/session';
 
 interface PageProps { searchParams: Promise<{ dateFrom?: string; dateTo?: string; employeeId?: string }> }
 
 export default async function WorkedHoursPage({ searchParams }: PageProps) {
-  const user = await requireCurrentSession();
   const sp = await searchParams;
   const dateFrom = sp.dateFrom || todayArgentinaDateKey();
   const dateTo = sp.dateTo || dateFrom;
@@ -20,7 +17,6 @@ export default async function WorkedHoursPage({ searchParams }: PageProps) {
 
   return (
     <>
-      <Navbar user={user} />
       <main className="mx-auto max-w-7xl px-4 py-8 pt-32">
         <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
           <div>

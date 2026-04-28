@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { Navbar } from '@/components/Navbar';
 import { ExportButtons } from '@/components/reports/ExportButtons';
 import { Phase2ReportTable } from '@/components/reports/Phase2ReportTable';
 import { ReportFilters } from '@/components/reports/ReportFilters';
@@ -22,7 +21,6 @@ export default async function LateArrivalsPage({ searchParams }: PageProps) {
 
   return (
     <>
-      <Navbar user={user} />
       <main className="mx-auto max-w-7xl px-4 py-8 pt-32">
         <ReportHeader title="Tardanzas" subtitle={`${rows.length} registro(s)`} excelHref={exportLateArrivalsReport(params)} />
         <ReportFilters action="/reports/late-arrivals" userOptions={userOptions} dateFrom={dateFrom} dateTo={dateTo} employeeId={employeeId} />
