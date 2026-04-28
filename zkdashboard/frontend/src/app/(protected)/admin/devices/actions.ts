@@ -3,12 +3,20 @@
 import { revalidatePath } from 'next/cache';
 import {
   assignAdminDeviceCompany,
+  getDeviceCommands,
+  retryDeviceCommand,
   unassignAdminDeviceCompany,
   sendAdminDeviceCommand,
 } from '@/lib/api';
+import type { DeviceCommand } from '@/lib/api';
 
 export interface AdminDeviceActionResult {
   ok?: true;
+  error?: string;
+}
+
+export interface DeviceCommandsActionResult {
+  commands?: DeviceCommand[];
   error?: string;
 }
 
@@ -91,5 +99,37 @@ export async function sendDeviceCommandAction(
     return { ok: true };
   } catch (error) {
     return { error: getErrorMessage(error, 'No se pudo enviar el comando.') };
+  }
+}
+
+export async function getDeviceCommandsAction(
+  deviceId: number,
+): Promise<DeviceCommandsActionResult> {
+  if (!Number.isInteger(deviceId) || deviceId <= 0) {
+    return { error: 'Dispositivo inválido.' };
+  }
+
+  try {
+    const commands = await getDeviceCommands(deviceId);
+    return { commands };
+  } catch (error) {
+    return { error: getErrorMessage(error, 'No se pudo consultar el historial.') };
+  }
+}
+
+export async function retryDeviceCommandAction(
+  deviceId: number,
+  commandId: number,
+): Promise<AdminDeviceActionResult> {
+  if (!Number.isInteger(deviceId) || deviceId <= 0 || !Number.isInteger(commandId) || commandId <= 0) {
+    return { error: 'Comando inválido.' };
+  }
+
+  try {
+    await retryDeviceCommand(deviceId, commandId);
+    revalidateAdminViews();
+    return { ok: true };
+  } catch (error) {
+    return { error: getErrorMessage(error, 'No se pudo reintentar el comando.') };
   }
 }

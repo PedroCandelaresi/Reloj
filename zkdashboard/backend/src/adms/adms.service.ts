@@ -216,6 +216,18 @@ export class AdmsService {
     };
   }
 
+  async handlePing(serialNumber: string | undefined, ipAddress: string): Promise<AdmsProcessResult> {
+    const device = serialNumber?.trim()
+      ? await this.devices.upsert(serialNumber, ipAddress)
+      : null;
+
+    return {
+      body: 'OK',
+      device,
+      processedOk: true,
+    };
+  }
+
   async handleCommandResult(
     serialNumber: string | undefined,
     rawPayload: string,

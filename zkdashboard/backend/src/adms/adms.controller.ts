@@ -130,6 +130,17 @@ export class AdmsController {
     );
   }
 
+  @Get('ping')
+  async ping(
+    @Query('SN') sn: string,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    await this.respondWithAudit(req, res, () =>
+      this.adms.handlePing(sn, getClientIp(req)),
+    );
+  }
+
   // El reloj confirma la ejecución de un comando
   @Post('devicecmd')
   async cmdResult(

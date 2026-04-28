@@ -2,12 +2,14 @@
 
 import { useEffect, useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import type { AdminDevice, CompanySummary } from '@/lib/api';
+import type { AdminDevice, CompanySummary, DeviceCommand } from '@/lib/api';
 import type { AdminDeviceActionResult } from '@/app/(protected)/admin/devices/actions';
 import {
   assignDeviceCompanyAction,
   unassignDeviceCompanyAction,
   sendDeviceCommandAction,
+  getDeviceCommandsAction,
+  retryDeviceCommandAction,
 } from '@/app/(protected)/admin/devices/actions';
 
 type BannerState = { type: 'success' | 'error'; text: string } | null;
@@ -40,15 +42,48 @@ const COMMANDS = [
   { type: 'attendance_sync', label: 'Sincronizar fichadas',  description: 'Solicita al reloj que envíe todos los registros de asistencia pendientes.' },
   { type: 'set_time',        label: 'Sincronizar hora',      description: 'Envía la hora actual del servidor al reloj para corregir desfasajes.' },
   { type: 'check',           label: 'Verificar conexión',    description: 'Envía un ping al reloj para confirmar que responde al protocolo ADMS.' },
+  { type: 'query_attlog',    label: 'Consultar ATTLOG',      description: 'Solicita registros de asistencia por comando ADMS DATA QUERY ATTLOG.' },
   { type: 'reboot',          label: 'Reiniciar reloj',       description: 'Ordena al reloj que se reinicie. Puede tardar 1–2 minutos.' },
   { type: 'clear_attlog',    label: 'Borrar registros',      description: 'Elimina TODOS los registros de asistencia almacenados en el reloj. Irreversible.' },
 ];
+
+function stateBadgeClasses(severity?: string) {
+  switch (severity) {
+    case 'success':
+      return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400';
+    case 'warning':
+      return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300';
+    case 'danger':
+      return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300';
+    case 'info':
+      return 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300';
+    default:
+      return 'bg-gray-200 text-gray-600 dark:bg-gray-700/50 dark:text-gray-400';
+  }
+}
 
 function CommandsModal({ device, onClose }: { device: AdminDevice; onClose: () => void }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [result, setResult] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [sentCmd, setSentCmd] = useState<string | null>(null);
+  const [commands, setCommands] = useState<DeviceCommand[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(true);
+
+  const loadHistory = () => {
+    setLoadingHistory(true);
+    void getDeviceCommandsAction(device.id).then((response) => {
+      setCommands(response.commands ?? []);
+      if (response.error) {
+        setResult({ type: 'error', text: response.error });
+      }
+      setLoadingHistory(false);
+    });
+  };
+
+  useEffect(() => {
+    loadHistory();
+  }, [device.id]);
 
   const send = (commandType: string, label: string) => {
     if (commandType === 'clear_attlog') {
@@ -60,6 +95,17 @@ function CommandsModal({ device, onClose }: { device: AdminDevice; onClose: () =
       const r = await sendDeviceCommandAction(device.id, commandType);
       setResult({ type: r.error ? 'error' : 'success', text: r.error ?? `Comando "${label}" encolado. El reloj lo recibirá en el próximo heartbeat.` });
       setSentCmd(null);
+      loadHistory();
+      router.refresh();
+    });
+  };
+
+  const retry = (command: DeviceCommand) => {
+    setResult(null);
+    startTransition(async () => {
+      const r = await retryDeviceCommandAction(device.id, command.id);
+      setResult({ type: r.error ? 'error' : 'success', text: r.error ?? `Comando #${command.id} reencolado.` });
+      loadHistory();
       router.refresh();
     });
   };
@@ -109,6 +155,36 @@ function CommandsModal({ device, onClose }: { device: AdminDevice; onClose: () =
         </div>
 
         <div className="px-6 pb-5">
+          <div className="mt-2 rounded-xl overflow-hidden" style={{ border: '1px solid var(--border)' }}>
+            <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--border)' }}>
+              <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Historial reciente</p>
+            </div>
+            {loadingHistory ? (
+              <p className="px-4 py-4 text-sm" style={{ color: 'var(--text-muted)' }}>Cargando historial...</p>
+            ) : commands.length === 0 ? (
+              <p className="px-4 py-4 text-sm" style={{ color: 'var(--text-muted)' }}>Todavía no hay comandos para este reloj.</p>
+            ) : (
+              <div className="max-h-56 overflow-y-auto">
+                {commands.slice(0, 12).map((command) => (
+                  <div key={command.id} className="flex items-start justify-between gap-3 px-4 py-3 text-xs" style={{ borderBottom: '1px solid var(--border)' }}>
+                    <div className="min-w-0">
+                      <p className="font-medium" style={{ color: 'var(--text-primary)' }}>#{command.id} · {command.commandType}</p>
+                      <p className="truncate mt-0.5" style={{ color: 'var(--text-muted)' }}>{command.command}</p>
+                      <p className="mt-0.5" style={{ color: 'var(--text-muted)' }}>{formatDate(command.requestedAt)} · intento {command.attempts ?? 0}/{command.maxAttempts ?? 5}</p>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <p className="font-medium" style={{ color: 'var(--text-secondary)' }}>{command.status}</p>
+                      {(command.status === 'failed' || command.status === 'expired') && (
+                        <button type="button" onClick={() => retry(command)} className="mt-1 rounded-md px-2 py-1 text-[11px] font-medium" style={{ border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+                          Reintentar
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
             Los comandos se entregan al reloj en su próximo ciclo de heartbeat (cada 30–120 s según configuración del dispositivo).
           </p>
@@ -216,6 +292,7 @@ export function AdminDevicesManager({
               <tr className="table-header-row text-xs uppercase">
                 <th className="px-6 py-4 text-left font-semibold">Serial</th>
                 <th className="px-6 py-4 text-left font-semibold">IP</th>
+                <th className="px-6 py-4 text-left font-semibold">Estado</th>
                 <th className="px-6 py-4 text-left font-semibold">Último contacto</th>
                 <th className="px-6 py-4 text-left font-semibold">Datos de asignación</th>
                 <th className="px-6 py-4 text-left font-semibold">Empresa</th>
@@ -224,7 +301,7 @@ export function AdminDevicesManager({
             </thead>
             <tbody>
               {unassignedDevices.length === 0 ? (
-                <tr><td colSpan={6} className="px-6 py-10 text-center" style={{ color: 'var(--text-muted)' }}>No hay dispositivos pendientes.</td></tr>
+                <tr><td colSpan={7} className="px-6 py-10 text-center" style={{ color: 'var(--text-muted)' }}>No hay dispositivos pendientes.</td></tr>
               ) : (
                 unassignedDevices.map((device) => {
                   const draft = drafts[device.id] ?? { companyId: '', alias: '', address: '', email: '', phone: '' };
@@ -235,6 +312,14 @@ export function AdminDevicesManager({
                     >
                       <td className="px-6 py-4 font-medium" style={{ color: 'var(--text-primary)' }}>{device.serialNumber}</td>
                       <td className="px-6 py-4" style={{ color: 'var(--text-muted)' }}>{device.ipAddress || '—'}</td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${stateBadgeClasses(device.computedState?.severity)}`}>
+                          {device.computedState?.label || device.status}
+                        </span>
+                        <p className="mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
+                          {device.minutesSinceLastSeen ?? device.computedState?.minutesSinceLastSeen ?? '—'} min · sin empresa
+                        </p>
+                      </td>
                       <td className="px-6 py-4" style={{ color: 'var(--text-muted)' }}>{formatDate(device.lastSeen)}</td>
                       <td className="px-6 py-4">
                         <div className="space-y-1.5 min-w-[210px]">
@@ -283,13 +368,14 @@ export function AdminDevicesManager({
                 <th className="px-6 py-4 text-left font-semibold">Alias / Dirección</th>
                 <th className="px-6 py-4 text-left font-semibold">IP</th>
                 <th className="px-6 py-4 text-left font-semibold">Estado</th>
+                <th className="px-6 py-4 text-left font-semibold">Comandos</th>
                 <th className="px-6 py-4 text-left font-semibold">Último contacto</th>
                 <th className="px-6 py-4 text-right font-semibold">Acciones</th>
               </tr>
             </thead>
             <tbody>
               {assignedDevices.length === 0 ? (
-                <tr><td colSpan={7} className="px-6 py-10 text-center" style={{ color: 'var(--text-muted)' }}>No hay dispositivos asignados.</td></tr>
+                <tr><td colSpan={8} className="px-6 py-10 text-center" style={{ color: 'var(--text-muted)' }}>No hay dispositivos asignados.</td></tr>
               ) : (
                 assignedDevices.map((device) => (
                   <tr key={device.id} className="transition-colors border-t" style={{ borderColor: 'var(--border)' }}
@@ -306,13 +392,17 @@ export function AdminDevicesManager({
                     </td>
                     <td className="px-6 py-4" style={{ color: 'var(--text-muted)' }}>{device.ipAddress || '—'}</td>
                     <td className="px-6 py-4">
-                      <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
-                        device.isActive
-                          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                          : 'bg-gray-200 text-gray-600 dark:bg-gray-700/50 dark:text-gray-400'
-                      }`}>
-                        {device.isActive ? 'Activo' : 'Inactivo'}
+                      <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${stateBadgeClasses(device.computedState?.severity)}`}>
+                        {device.computedState?.label || (device.isActive ? 'Activo' : 'Inactivo')}
                       </span>
+                      <p className="mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
+                        companyId: {device.companyId || '—'}
+                      </p>
+                    </td>
+                    <td className="px-6 py-4 text-xs" style={{ color: 'var(--text-muted)' }}>
+                      <p>{device.pendingCommandsCount} pendientes</p>
+                      <p>{device.failedCommandsCount ?? 0} fallidos</p>
+                      <p>último: {device.lastCommandStatus || '—'}</p>
                     </td>
                     <td className="px-6 py-4" style={{ color: 'var(--text-muted)' }}>{formatDate(device.lastSeen)}</td>
                     <td className="px-6 py-4">

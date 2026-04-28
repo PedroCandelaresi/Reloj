@@ -6,6 +6,7 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { Company } from '../companies/company.entity';
 import { Device } from './device.entity';
@@ -15,6 +16,7 @@ export const DEVICE_COMMAND_TYPES = {
   SET_TIME:        'set_time',
   REBOOT:          'reboot',
   CHECK:           'check',
+  QUERY_ATTLOG:    'query_attlog',
   CLEAR_ATTLOG:    'clear_attlog',
   CUSTOM:          'custom',
 } as const;
@@ -27,6 +29,7 @@ export const DEVICE_COMMAND_STATUSES = {
   SENT: 'sent',
   ACKNOWLEDGED: 'acknowledged',
   FAILED: 'failed',
+  EXPIRED: 'expired',
   CANCELLED: 'cancelled',
 } as const;
 
@@ -52,6 +55,9 @@ export class DeviceCommand {
   @Column({ type: 'text' })
   command: string;
 
+  @Column({ type: 'jsonb', nullable: true })
+  payload: Record<string, unknown> | null;
+
   @Index('IDX_device_commands_company_id')
   @Column({ name: 'company_id', type: 'uuid', nullable: true })
   companyId: string | null;
@@ -62,6 +68,15 @@ export class DeviceCommand {
 
   @Column({ length: 30, default: DEVICE_COMMAND_STATUSES.PENDING })
   status: DeviceCommandStatus;
+
+  @Column({ default: 0 })
+  attempts: number;
+
+  @Column({ name: 'max_attempts', default: 5 })
+  maxAttempts: number;
+
+  @Column({ name: 'last_attempt_at', type: 'timestamptz', nullable: true })
+  lastAttemptAt: Date | null;
 
   @Column({ name: 'requested_by', nullable: true, length: 120 })
   requestedBy: string | null;
@@ -75,9 +90,30 @@ export class DeviceCommand {
   @Column({ name: 'acknowledged_at', type: 'timestamptz', nullable: true })
   acknowledgedAt: Date | null;
 
+  @Column({ name: 'failed_at', type: 'timestamptz', nullable: true })
+  failedAt: Date | null;
+
+  @Column({ name: 'expires_at', type: 'timestamptz', nullable: true })
+  expiresAt: Date | null;
+
+  @Column({ name: 'result_code', nullable: true, length: 50 })
+  resultCode: string | null;
+
+  @Column({ name: 'result_raw', type: 'text', nullable: true })
+  resultRaw: string | null;
+
+  @Column({ name: 'error_message', type: 'text', nullable: true })
+  errorMessage: string | null;
+
+  @Column({ name: 'created_by_user_id', nullable: true })
+  createdByUserId: number | null;
+
   @Column({ name: 'response_payload', type: 'text', nullable: true })
   responsePayload: string | null;
 
   @Column({ type: 'text', nullable: true })
   error: string | null;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
 }

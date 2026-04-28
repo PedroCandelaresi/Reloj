@@ -1,14 +1,16 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { AuthenticatedUser } from '../auth/authenticated-user.interface';
 import { getCompanyScope } from '../auth/company-scope.util';
+import { CompanyRole } from '../companies/company-role.enum';
 import { Company } from '../companies/company.entity';
 import { Device } from './device.entity';
 import {
@@ -21,8 +23,32 @@ import {
 const FORCE_SYNC_COMMAND = 'DATA QUERY ATTLOG';
 const FORCE_SYNC_DUPLICATE_WINDOW_MS = 5 * 60 * 1000;
 const DEFAULT_ONLINE_THRESHOLD_MS = 300_000;
+const DEFAULT_IDLE_THRESHOLD_MS = 30 * 60 * 1000;
+const ACTIVE_COMMUNICATION_WINDOW_MS = 2 * 60 * 1000;
+const SENT_RETRY_AFTER_MS = 2 * 60 * 1000;
 const ACTIVE_SENT_REPLACEMENT_REASON =
   'Sin confirmación del dispositivo. Reemplazado por una nueva solicitud manual.';
+
+export type DeviceComputedStateName =
+  | 'disabled'
+  | 'never_seen'
+  | 'online'
+  | 'idle'
+  | 'offline'
+  | 'communicating'
+  | 'pending_commands'
+  | 'error';
+
+export interface DeviceComputedState {
+  state: DeviceComputedStateName;
+  label: string;
+  severity: 'neutral' | 'success' | 'warning' | 'danger' | 'info';
+  lastSeen: Date | null;
+  minutesSinceLastSeen: number | null;
+  pendingCommandsCount: number;
+  failedCommandsCount: number;
+  lastCommandStatus: string | null;
+}
 
 export interface AdminDeviceView {
   id: number;
@@ -49,9 +75,15 @@ export interface AdminDeviceView {
 export interface DeviceOperationalView extends AdminDeviceView {
   name: string;
   online: boolean;
-  status: 'online' | 'offline';
+  isOnline: boolean;
+  status: DeviceComputedStateName;
+  computedState: DeviceComputedState;
   lastSyncAt: Date | null;
   pendingCommandsCount: number;
+  failedCommandsCount: number;
+  lastCommandStatus: string | null;
+  minutesSinceLastSeen: number | null;
+  companyName: string | null;
 }
 
 export interface DeviceDashboardMetrics {
@@ -303,27 +335,25 @@ export class DevicesService {
     deviceId: number,
     commandType: string,
     requestedBy?: string,
+    user?: AuthenticatedUser,
+    payload?: Record<string, unknown> | null,
   ) {
-    const device = await this.repo.findOne({
-      where: { id: deviceId },
-      relations: { company: true },
-    });
+    this.assertCanSendCommand(commandType, user);
+    const device = await this.findDeviceForOperation(deviceId, user);
     if (!device) throw new NotFoundException('Dispositivo no encontrado.');
     if (!device.isActive) throw new ConflictException('El dispositivo está inactivo.');
 
     let commandStr: string;
     if (commandType === DEVICE_COMMAND_TYPES.ATTENDANCE_SYNC) {
-      return this.enqueueAttendanceSync(deviceId, requestedBy);
+      return this.enqueueAttendanceSync(deviceId, requestedBy, user);
     } else if (commandType === DEVICE_COMMAND_TYPES.SET_TIME) {
-      const now = new Date();
-      const pad = (n: number) => String(n).padStart(2, '0');
-      const date = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-      const time = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-      commandStr = `SET OPTIONS DateTime=${date} ${time}`;
+      commandStr = `SET OPTIONS DateTime=${this.formatArgentinaDateTime(new Date())}`;
     } else if (commandType === DEVICE_COMMAND_TYPES.REBOOT) {
       commandStr = 'REBOOT';
     } else if (commandType === DEVICE_COMMAND_TYPES.CHECK) {
       commandStr = 'CHECK TIME';
+    } else if (commandType === DEVICE_COMMAND_TYPES.QUERY_ATTLOG) {
+      commandStr = this.buildQueryAttlogCommand(payload);
     } else if (commandType === DEVICE_COMMAND_TYPES.CLEAR_ATTLOG) {
       commandStr = 'DATA CLEAR ATTLOG';
     } else {
@@ -338,10 +368,73 @@ export class DevicesService {
         companyId: device.companyId,
         status: DEVICE_COMMAND_STATUSES.PENDING,
         requestedBy: requestedBy ?? null,
+        createdByUserId: user?.id ?? null,
+        payload: payload ?? null,
+        attempts: 0,
+        maxAttempts: 5,
       }),
     );
 
     this.logger.log(`Comando encolado para dispositivo ${device.serialNumber}: ${commandStr}`);
+    return { command, device };
+  }
+
+  async findCommandsForDevice(
+    deviceId: number,
+    user: AuthenticatedUser,
+  ): Promise<DeviceCommand[]> {
+    const device = await this.findDeviceForOperation(deviceId, user);
+    if (!device) {
+      throw new NotFoundException('Dispositivo no encontrado.');
+    }
+
+    return this.commandsRepo.find({
+      where: { deviceId: device.id },
+      order: {
+        requestedAt: 'DESC',
+        id: 'DESC',
+      },
+      take: 100,
+    });
+  }
+
+  async retryCommand(
+    deviceId: number,
+    commandId: number,
+    user: AuthenticatedUser,
+  ): Promise<{ command: DeviceCommand; device: Device }> {
+    this.assertCanSendCommand('retry', user);
+    const device = await this.findDeviceForOperation(deviceId, user);
+    if (!device) {
+      throw new NotFoundException('Dispositivo no encontrado.');
+    }
+
+    const command = await this.commandsRepo.findOneBy({
+      id: commandId,
+      deviceId: device.id,
+    });
+
+    if (!command) {
+      throw new NotFoundException('Comando no encontrado.');
+    }
+
+    if (
+      command.status !== DEVICE_COMMAND_STATUSES.FAILED &&
+      command.status !== DEVICE_COMMAND_STATUSES.EXPIRED
+    ) {
+      throw new ConflictException('Solo se pueden reintentar comandos fallidos o expirados.');
+    }
+
+    if (command.attempts >= command.maxAttempts) {
+      command.maxAttempts = command.attempts + 1;
+    }
+
+    command.status = DEVICE_COMMAND_STATUSES.PENDING;
+    command.error = null;
+    command.errorMessage = null;
+    command.failedAt = null;
+    await this.commandsRepo.save(command);
+
     return { command, device };
   }
 
@@ -388,9 +481,21 @@ export class DevicesService {
       return { command: 'OK', device };
     }
 
+    if (pendingCommand.attempts >= pendingCommand.maxAttempts) {
+      pendingCommand.status = DEVICE_COMMAND_STATUSES.EXPIRED;
+      pendingCommand.failedAt = new Date();
+      pendingCommand.error = 'El comando expiró por superar la cantidad máxima de intentos.';
+      pendingCommand.errorMessage = pendingCommand.error;
+      await this.commandsRepo.save(pendingCommand);
+      return { command: 'OK', device };
+    }
+
     pendingCommand.status = DEVICE_COMMAND_STATUSES.SENT;
+    pendingCommand.attempts += 1;
     pendingCommand.sentAt = new Date();
+    pendingCommand.lastAttemptAt = pendingCommand.sentAt;
     pendingCommand.error = null;
+    pendingCommand.errorMessage = null;
     await this.commandsRepo.save(pendingCommand);
 
     this.logger.log(
@@ -413,6 +518,8 @@ export class DevicesService {
     command.status = DEVICE_COMMAND_STATUSES.ACKNOWLEDGED;
     command.acknowledgedAt = new Date();
     command.error = null;
+    command.errorMessage = null;
+    command.resultRaw = this.buildPushSummary(recordCount, rawPayload);
     command.responsePayload = this.buildPushSummary(recordCount, rawPayload);
     await this.commandsRepo.save(command);
 
@@ -451,7 +558,8 @@ export class DevicesService {
     if (
       command.status === DEVICE_COMMAND_STATUSES.ACKNOWLEDGED ||
       command.status === DEVICE_COMMAND_STATUSES.CANCELLED ||
-      command.status === DEVICE_COMMAND_STATUSES.FAILED
+      command.status === DEVICE_COMMAND_STATUSES.FAILED ||
+      command.status === DEVICE_COMMAND_STATUSES.EXPIRED
     ) {
       return;
     }
@@ -467,11 +575,16 @@ export class DevicesService {
     command.status = isSuccess
       ? DEVICE_COMMAND_STATUSES.ACKNOWLEDGED
       : DEVICE_COMMAND_STATUSES.FAILED;
-    command.acknowledgedAt = new Date();
-    command.responsePayload = rawPayload.trim() || JSON.stringify(payload);
-    command.error = isSuccess
+    const resultAt = new Date();
+    command.acknowledgedAt = isSuccess ? resultAt : command.acknowledgedAt;
+    command.failedAt = isSuccess ? null : resultAt;
+    command.resultCode = resultCode || null;
+    command.resultRaw = rawPayload.trim() || JSON.stringify(payload);
+    command.responsePayload = command.resultRaw;
+    command.errorMessage = isSuccess
       ? null
       : `El dispositivo devolvió un estado no exitoso (${resultCode || 'desconocido'}).`;
+    command.error = command.errorMessage;
 
     await this.commandsRepo.save(command);
 
@@ -521,35 +634,199 @@ export class DevicesService {
   }
 
   private async serializeOperationalDevice(device: Device): Promise<DeviceOperationalView> {
-    const [lastSync, pendingCommandsCount] = await Promise.all([
+    const [lastSync, pendingCommandsCount, failedCommandsCount, lastCommand] = await Promise.all([
       this.findLatestAttendanceSync(device.id),
       this.countPendingCommands(device.id),
+      this.countFailedCommands(device.id),
+      this.findLatestCommand(device.id),
     ]);
     const base = this.serializeDevice(device);
-    const online = this.isOnline(device.lastSeen);
+    const computedState = this.getDeviceComputedState(
+      device,
+      pendingCommandsCount,
+      failedCommandsCount,
+      lastCommand,
+    );
+    const online = computedState.state === 'online' ||
+      computedState.state === 'communicating' ||
+      computedState.state === 'pending_commands';
 
     return {
       ...base,
       name: device.alias || device.serialNumber,
       online,
-      status: online ? 'online' : 'offline',
+      isOnline: online,
+      status: computedState.state,
+      computedState,
       lastSyncAt: lastSync?.acknowledgedAt ?? null,
       pendingCommandsCount,
+      failedCommandsCount,
+      lastCommandStatus: lastCommand?.status ?? null,
+      minutesSinceLastSeen: computedState.minutesSinceLastSeen,
+      companyName: device.company
+        ? device.company.nombreFantasia || device.company.razonSocial
+        : null,
     };
   }
 
-  private isOnline(lastSeen?: Date | null): boolean {
-    if (!lastSeen) {
-      return false;
+  private getDeviceComputedState(
+    device: Device,
+    pendingCommandsCount: number,
+    failedCommandsCount: number,
+    lastCommand: DeviceCommand | null,
+  ): DeviceComputedState {
+    const lastSeen = device.lastSeen ?? null;
+    const minutesSinceLastSeen = lastSeen
+      ? Math.max(0, Math.floor((Date.now() - new Date(lastSeen).getTime()) / 60_000))
+      : null;
+
+    if (!device.isActive) {
+      return this.buildComputedState(
+        'disabled',
+        'Deshabilitado',
+        'neutral',
+        lastSeen,
+        minutesSinceLastSeen,
+        pendingCommandsCount,
+        failedCommandsCount,
+        lastCommand?.status ?? null,
+      );
     }
 
-    const rawThreshold = Number.parseInt(process.env.DEVICE_ONLINE_THRESHOLD_MS || '', 10);
-    const thresholdMs =
-      Number.isFinite(rawThreshold) && rawThreshold > 0
-        ? rawThreshold
-        : DEFAULT_ONLINE_THRESHOLD_MS;
+    if (!lastSeen) {
+      return this.buildComputedState(
+        'never_seen',
+        'Sin conexión inicial',
+        'neutral',
+        null,
+        null,
+        pendingCommandsCount,
+        failedCommandsCount,
+        lastCommand?.status ?? null,
+      );
+    }
 
-    return Date.now() - new Date(lastSeen).getTime() <= thresholdMs;
+    if (
+      lastCommand?.status === DEVICE_COMMAND_STATUSES.FAILED ||
+      lastCommand?.status === DEVICE_COMMAND_STATUSES.EXPIRED
+    ) {
+      return this.buildComputedState(
+        'error',
+        'Con errores',
+        'danger',
+        lastSeen,
+        minutesSinceLastSeen,
+        pendingCommandsCount,
+        failedCommandsCount,
+        lastCommand?.status ?? null,
+      );
+    }
+
+    const ageMs = Date.now() - new Date(lastSeen).getTime();
+    const onlineThresholdMs = this.getOnlineThresholdMs();
+    const idleThresholdMs = this.getIdleThresholdMs();
+
+    if (
+      lastCommand?.status === DEVICE_COMMAND_STATUSES.SENT &&
+      ageMs <= ACTIVE_COMMUNICATION_WINDOW_MS
+    ) {
+      return this.buildComputedState(
+        'communicating',
+        'Comunicando',
+        'info',
+        lastSeen,
+        minutesSinceLastSeen,
+        pendingCommandsCount,
+        failedCommandsCount,
+        lastCommand?.status ?? null,
+      );
+    }
+
+    if (pendingCommandsCount > 0 && ageMs <= onlineThresholdMs) {
+      return this.buildComputedState(
+        'pending_commands',
+        'Comandos pendientes',
+        'warning',
+        lastSeen,
+        minutesSinceLastSeen,
+        pendingCommandsCount,
+        failedCommandsCount,
+        lastCommand?.status ?? null,
+      );
+    }
+
+    if (ageMs <= onlineThresholdMs) {
+      return this.buildComputedState(
+        'online',
+        'Online',
+        'success',
+        lastSeen,
+        minutesSinceLastSeen,
+        pendingCommandsCount,
+        failedCommandsCount,
+        lastCommand?.status ?? null,
+      );
+    }
+
+    if (ageMs <= idleThresholdMs) {
+      return this.buildComputedState(
+        'idle',
+        'Inactivo reciente',
+        'warning',
+        lastSeen,
+        minutesSinceLastSeen,
+        pendingCommandsCount,
+        failedCommandsCount,
+        lastCommand?.status ?? null,
+      );
+    }
+
+    return this.buildComputedState(
+      'offline',
+      'Offline',
+      'danger',
+      lastSeen,
+      minutesSinceLastSeen,
+      pendingCommandsCount,
+      failedCommandsCount,
+      lastCommand?.status ?? null,
+    );
+  }
+
+  private buildComputedState(
+    state: DeviceComputedStateName,
+    label: string,
+    severity: DeviceComputedState['severity'],
+    lastSeen: Date | null,
+    minutesSinceLastSeen: number | null,
+    pendingCommandsCount: number,
+    failedCommandsCount: number,
+    lastCommandStatus: string | null,
+  ): DeviceComputedState {
+    return {
+      state,
+      label,
+      severity,
+      lastSeen,
+      minutesSinceLastSeen,
+      pendingCommandsCount,
+      failedCommandsCount,
+      lastCommandStatus,
+    };
+  }
+
+  private getOnlineThresholdMs(): number {
+    const rawThreshold = Number.parseInt(process.env.DEVICE_ONLINE_THRESHOLD_MS || '', 10);
+    return Number.isFinite(rawThreshold) && rawThreshold > 0
+      ? rawThreshold
+      : DEFAULT_ONLINE_THRESHOLD_MS;
+  }
+
+  private getIdleThresholdMs(): number {
+    const rawThreshold = Number.parseInt(process.env.DEVICE_IDLE_THRESHOLD_MS || '', 10);
+    return Number.isFinite(rawThreshold) && rawThreshold > 0
+      ? rawThreshold
+      : DEFAULT_IDLE_THRESHOLD_MS;
   }
 
   private normalizeSerialNumber(value: string | undefined | null): string | null {
@@ -618,6 +895,28 @@ export class DevicesService {
     });
   }
 
+  private countFailedCommands(deviceId: number): Promise<number> {
+    return this.commandsRepo.count({
+      where: {
+        deviceId,
+        status: In([
+          DEVICE_COMMAND_STATUSES.FAILED,
+          DEVICE_COMMAND_STATUSES.EXPIRED,
+        ]),
+      },
+    });
+  }
+
+  private findLatestCommand(deviceId: number): Promise<DeviceCommand | null> {
+    return this.commandsRepo.findOne({
+      where: { deviceId },
+      order: {
+        requestedAt: 'DESC',
+        id: 'DESC',
+      },
+    });
+  }
+
   private findLatestAttendanceSync(deviceId: number): Promise<DeviceCommand | null> {
     return this.commandsRepo.findOne({
       where: {
@@ -638,13 +937,43 @@ export class DevicesService {
     const qb = this.commandsRepo
       .createQueryBuilder('command')
       .where('command.status = :status', { status: DEVICE_COMMAND_STATUSES.FAILED })
-      .andWhere('command.acknowledged_at >= :since', { since });
+      .andWhere('COALESCE(command.failed_at, command.acknowledged_at, command.requested_at) >= :since', { since });
 
     if (companyId) {
       qb.andWhere('command.company_id = :companyId', { companyId });
     }
 
     return qb.getCount();
+  }
+
+  async requeueTimedOutCommands(): Promise<{ requeued: number; expired: number }> {
+    const staleBefore = new Date(Date.now() - SENT_RETRY_AFTER_MS);
+    const staleCommands = await this.commandsRepo
+      .createQueryBuilder('command')
+      .where('command.status = :status', { status: DEVICE_COMMAND_STATUSES.SENT })
+      .andWhere('command.last_attempt_at IS NOT NULL')
+      .andWhere('command.last_attempt_at < :staleBefore', { staleBefore })
+      .getMany();
+
+    let requeued = 0;
+    let expired = 0;
+
+    for (const command of staleCommands) {
+      if (command.attempts >= command.maxAttempts) {
+        command.status = DEVICE_COMMAND_STATUSES.EXPIRED;
+        command.failedAt = new Date();
+        command.error = 'El comando expiró por superar la cantidad máxima de intentos.';
+        command.errorMessage = command.error;
+        expired += 1;
+      } else {
+        command.status = DEVICE_COMMAND_STATUSES.PENDING;
+        requeued += 1;
+      }
+
+      await this.commandsRepo.save(command);
+    }
+
+    return { requeued, expired };
   }
 
   private async cancelStaleAttendanceSyncs(deviceId: number): Promise<void> {
@@ -656,6 +985,7 @@ export class DevicesService {
       .set({
         status: DEVICE_COMMAND_STATUSES.CANCELLED,
         error: ACTIVE_SENT_REPLACEMENT_REASON,
+        errorMessage: ACTIVE_SENT_REPLACEMENT_REASON,
       })
       .where('device_id = :deviceId', { deviceId })
       .andWhere('command_type = :commandType', {
@@ -773,6 +1103,80 @@ export class DevicesService {
     }
 
     return `ATTLOG recibido. registros=${recordCount}\n${preview}`;
+  }
+
+  private assertCanSendCommand(commandType: string, user?: AuthenticatedUser): void {
+    if (!user || user.isSuperAdmin) {
+      return;
+    }
+
+    if (!user.companyId) {
+      throw new ForbiddenException('El usuario no tiene empresa activa asignada.');
+    }
+
+    if (commandType === DEVICE_COMMAND_TYPES.CLEAR_ATTLOG) {
+      throw new ForbiddenException('Solo super_admin puede borrar fichadas del reloj.');
+    }
+
+    if (
+      commandType === DEVICE_COMMAND_TYPES.REBOOT &&
+      user.companyRole !== CompanyRole.COMPANY_ADMIN
+    ) {
+      throw new ForbiddenException('Solo administradores pueden reiniciar relojes.');
+    }
+
+    if (
+      user.companyRole !== CompanyRole.COMPANY_ADMIN &&
+      user.companyRole !== CompanyRole.OPERATOR
+    ) {
+      throw new ForbiddenException('Se requieren permisos de operación.');
+    }
+  }
+
+  private formatArgentinaDateTime(date: Date): string {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Argentina/Buenos_Aires',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    })
+      .formatToParts(date)
+      .reduce<Record<string, string>>((acc, part) => {
+        if (part.type !== 'literal') {
+          acc[part.type] = part.value;
+        }
+        return acc;
+      }, {});
+
+    return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}:${parts.second}`;
+  }
+
+  private buildQueryAttlogCommand(payload?: Record<string, unknown> | null): string {
+    const startTime = this.normalizePayloadDateTime(payload?.startTime);
+    const endTime = this.normalizePayloadDateTime(payload?.endTime);
+
+    if (startTime && endTime) {
+      return `DATA QUERY ATTLOG StartTime=${startTime} EndTime=${endTime}`;
+    }
+
+    return FORCE_SYNC_COMMAND;
+  }
+
+  private normalizePayloadDateTime(value: unknown): string | null {
+    if (typeof value !== 'string') {
+      return null;
+    }
+
+    const normalized = value.trim().replace('T', ' ').slice(0, 19);
+    if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(:\d{2})?$/.test(normalized)) {
+      return null;
+    }
+
+    return normalized.length === 16 ? `${normalized}:00` : normalized;
   }
 
   private findDeviceForOperation(

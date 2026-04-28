@@ -55,6 +55,6 @@ export class AdminDevicesController {
     @Body('commandType') commandType: string,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.devices.enqueueCommand(id, commandType, user.username);
+    return this.devices.enqueueCommand(id, commandType, user.username, user);
   }
 }

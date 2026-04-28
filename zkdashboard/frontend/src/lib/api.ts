@@ -163,6 +163,16 @@ export interface AttendanceUserOption {
   employee: EmployeeSummary | null;
 }
 
+export type DeviceStatus =
+  | 'disabled'
+  | 'never_seen'
+  | 'online'
+  | 'idle'
+  | 'offline'
+  | 'communicating'
+  | 'pending_commands'
+  | 'error';
+
 export interface Device {
   id: number;
   name: string;
@@ -178,9 +188,24 @@ export interface Device {
   firstSeen: string;
   lastSeen: string;
   online: boolean;
-  status: 'online' | 'offline';
+  isOnline?: boolean;
+  status: DeviceStatus;
+  computedState?: {
+    state: DeviceStatus;
+    label: string;
+    severity: 'neutral' | 'success' | 'warning' | 'danger' | 'info';
+    lastSeen: string | null;
+    minutesSinceLastSeen: number | null;
+    pendingCommandsCount: number;
+    failedCommandsCount: number;
+    lastCommandStatus: string | null;
+  };
   lastSyncAt: string | null;
   pendingCommandsCount: number;
+  failedCommandsCount?: number;
+  lastCommandStatus?: string | null;
+  minutesSinceLastSeen?: number | null;
+  companyName?: string | null;
   isActive: boolean;
 }
 
@@ -193,11 +218,22 @@ export interface DeviceCommand {
   deviceId: number;
   commandType: string;
   command: string;
+  payload?: Record<string, unknown> | null;
   status: string;
+  attempts?: number;
+  maxAttempts?: number;
+  lastAttemptAt?: string | null;
   requestedBy: string | null;
   requestedAt: string;
   sentAt: string | null;
   acknowledgedAt: string | null;
+  failedAt?: string | null;
+  expiresAt?: string | null;
+  resultCode?: string | null;
+  resultRaw?: string | null;
+  errorMessage?: string | null;
+  createdByUserId?: number | null;
+  updatedAt?: string;
   responsePayload: string | null;
   error: string | null;
 }
@@ -822,6 +858,17 @@ export function sendAdminDeviceCommand(deviceId: number, commandType: string) {
       method: 'POST',
       body: JSON.stringify({ commandType }),
     },
+  );
+}
+
+export function getDeviceCommands(deviceId: number) {
+  return apiFetch<DeviceCommand[]>(`/devices/${deviceId}/commands`);
+}
+
+export function retryDeviceCommand(deviceId: number, commandId: number) {
+  return apiFetch<{ command: DeviceCommand; device: Device }>(
+    `/devices/${deviceId}/commands/retry-failed/${commandId}`,
+    { method: 'POST' },
   );
 }
 

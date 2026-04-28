@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Get,
   Param,
@@ -20,6 +21,61 @@ export class DevicesController {
   @Get()
   findAll(@CurrentUser() user: AuthenticatedUser) {
     return this.devices.findAllForUser(user);
+  }
+
+  @Get(':id/commands')
+  findCommands(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.devices.findCommandsForDevice(id, user);
+  }
+
+  @Post(':id/commands/check-time')
+  @UseGuards(CompanyOperatorGuard)
+  enqueueCheckTime(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.devices.enqueueCommand(id, 'check', user.username, user);
+  }
+
+  @Post(':id/commands/set-time')
+  @UseGuards(CompanyOperatorGuard)
+  enqueueSetTime(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.devices.enqueueCommand(id, 'set_time', user.username, user);
+  }
+
+  @Post(':id/commands/query-attlog')
+  @UseGuards(CompanyOperatorGuard)
+  enqueueQueryAttlog(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { startTime?: string; endTime?: string },
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.devices.enqueueCommand(id, 'query_attlog', user.username, user, body ?? null);
+  }
+
+  @Post(':id/commands/reboot')
+  @UseGuards(CompanyOperatorGuard)
+  enqueueReboot(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.devices.enqueueCommand(id, 'reboot', user.username, user);
+  }
+
+  @Post(':id/commands/retry-failed/:commandId')
+  @UseGuards(CompanyOperatorGuard)
+  retryFailedCommand(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('commandId', ParseIntPipe) commandId: number,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.devices.retryCommand(id, commandId, user);
   }
 
   @Post(':id/force-sync')
