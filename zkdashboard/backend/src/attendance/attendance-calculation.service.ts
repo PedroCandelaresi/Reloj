@@ -75,6 +75,9 @@ export interface AttendanceDaySummaryView {
   isHoliday: boolean;
   isWeekend: boolean;
   status: AttendanceDaySummaryStatus;
+  justificationStatus: string;
+  justificationRequestId: string | null;
+  notes: string | null;
   calculatedAt: Date | null;
 }
 

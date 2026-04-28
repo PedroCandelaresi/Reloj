@@ -16,7 +16,10 @@ export type AttendanceDaySummaryStatus =
   | 'absent'
   | 'holiday'
   | 'weekend'
-  | 'needs_review';
+  | 'needs_review'
+  | 'justified';
+
+export type AttendanceJustificationStatus = 'none' | 'pending' | 'approved' | 'rejected';
 
 @Entity('attendance_day_summaries')
 @Unique('UQ_attendance_day_summaries_company_employee_date', ['companyId', 'employeeId', 'date'])
@@ -95,6 +98,15 @@ export class AttendanceDaySummary {
 
   @Column({ default: 'no_records' })
   status: AttendanceDaySummaryStatus;
+
+  @Column({ name: 'justification_status', default: 'none' })
+  justificationStatus: AttendanceJustificationStatus;
+
+  @Column({ name: 'justification_request_id', type: 'uuid', nullable: true })
+  justificationRequestId: string | null;
+
+  @Column({ nullable: true })
+  notes: string | null;
 
   @Column({ name: 'calculated_at', type: 'timestamp', nullable: true })
   calculatedAt: Date | null;

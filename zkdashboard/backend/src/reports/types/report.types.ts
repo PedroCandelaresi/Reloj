@@ -7,7 +7,8 @@ export type MonthlySummaryStatus =
   | 'absent'
   | 'holiday'
   | 'weekend'
-  | 'needs_review';
+  | 'needs_review'
+  | 'justified';
 export type IncompleteReason =
   | 'single_punch'
   | 'odd_punch_count'

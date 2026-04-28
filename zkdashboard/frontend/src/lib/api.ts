@@ -147,6 +147,7 @@ export interface AttendanceRecord {
   status: number;
   verifyType: number;
   workCode: string | null;
+  source?: 'device' | 'manual' | 'correction' | 'import';
   employee?: EmployeeSummary | null;
 }
 
@@ -410,7 +411,8 @@ export type MonthlySummaryStatus =
   | 'absent'
   | 'holiday'
   | 'weekend'
-  | 'needs_review';
+  | 'needs_review'
+  | 'justified';
 export type IncompleteReason =
   | 'single_punch'
   | 'odd_punch_count'
@@ -540,8 +542,73 @@ export interface AttendanceDaySummary {
   isAbsent: boolean;
   isHoliday: boolean;
   isWeekend: boolean;
-  status: 'no_records' | 'present' | 'incomplete' | 'calculated' | 'absent' | 'holiday' | 'weekend' | 'needs_review';
+  status: 'no_records' | 'present' | 'incomplete' | 'calculated' | 'absent' | 'holiday' | 'weekend' | 'needs_review' | 'justified';
+  justificationStatus: 'none' | 'pending' | 'approved' | 'rejected';
+  justificationRequestId: string | null;
+  notes: string | null;
   calculatedAt: string | null;
+}
+
+export type AttendanceRequestType = 'manual_punch' | 'punch_correction' | 'absence_justification' | 'late_justification';
+export type AttendanceRequestStatus = 'pending' | 'approved' | 'rejected' | 'cancelled';
+export type AttendancePunchType = 'in' | 'out' | 'unknown';
+
+export interface AttendanceRequest {
+  id: string;
+  companyId: string;
+  employeeId: string;
+  employee: EmployeeSummary | null;
+  requestedByUserId: number;
+  reviewedByUserId: number | null;
+  type: AttendanceRequestType;
+  status: AttendanceRequestStatus;
+  date: string;
+  punchTime: string | null;
+  punchType: AttendancePunchType | null;
+  targetAttendanceRecordId: number | null;
+  oldPunchTime: string | null;
+  newPunchTime: string | null;
+  reason: string;
+  reviewNotes: string | null;
+  reviewedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AttendanceRequestInput {
+  companyId?: string;
+  employeeId: string;
+  type: AttendanceRequestType;
+  date: string;
+  punchTime?: string;
+  punchType?: AttendancePunchType;
+  targetAttendanceRecordId?: number;
+  newPunchTime?: string;
+  reason: string;
+  autoApprove?: boolean;
+}
+
+export interface AttendanceRequestsParams {
+  status?: AttendanceRequestStatus;
+  type?: AttendanceRequestType;
+  employeeId?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  companyId?: string;
+}
+
+export interface AttendanceAuditLog {
+  id: string;
+  companyId: string;
+  employeeId: string | null;
+  employee: EmployeeSummary | null;
+  attendanceRecordId: number | null;
+  attendanceRequestId: string | null;
+  action: string;
+  oldValue: Record<string, unknown> | null;
+  newValue: Record<string, unknown> | null;
+  performedByUserId: number;
+  createdAt: string;
 }
 
 export interface Holiday {
@@ -962,6 +1029,41 @@ export function recalculateAttendanceSummaries(params: AttendanceSummaryParams) 
     method: 'POST',
     body: JSON.stringify(params),
   });
+}
+
+export function getAttendanceRequests(params: AttendanceRequestsParams = {}) {
+  return apiFetch<AttendanceRequest[]>(`/attendance/requests${buildReportQuery(params)}`);
+}
+
+export function createAttendanceRequest(input: AttendanceRequestInput) {
+  return apiFetch<AttendanceRequest>('/attendance/requests', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export function approveAttendanceRequest(id: string, reviewNotes?: string) {
+  return apiFetch<AttendanceRequest>(`/attendance/requests/${id}/approve`, {
+    method: 'PUT',
+    body: JSON.stringify({ reviewNotes }),
+  });
+}
+
+export function rejectAttendanceRequest(id: string, reviewNotes: string) {
+  return apiFetch<AttendanceRequest>(`/attendance/requests/${id}/reject`, {
+    method: 'PUT',
+    body: JSON.stringify({ reviewNotes }),
+  });
+}
+
+export function cancelAttendanceRequest(id: string) {
+  return apiFetch<AttendanceRequest>(`/attendance/requests/${id}/cancel`, {
+    method: 'PUT',
+  });
+}
+
+export function getAttendanceAuditLog(params: AttendanceRequestsParams & { action?: string; requestId?: string } = {}) {
+  return apiFetch<AttendanceAuditLog[]>(`/attendance/audit-log${buildReportQuery(params)}`);
 }
 
 export function getLateArrivalsReport(params: ReportFilterParams & { minLateMinutes?: string } = {}) {

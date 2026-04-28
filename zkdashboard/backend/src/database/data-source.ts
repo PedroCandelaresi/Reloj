@@ -3,7 +3,9 @@ import * as dotenv from 'dotenv';
 import { join } from 'path';
 import { DataSource, DataSourceOptions } from 'typeorm';
 import { AttendanceRecord } from '../attendance/attendance.entity';
+import { AttendanceAuditLog } from '../attendance/entities/attendance-audit-log.entity';
 import { AttendanceDaySummary } from '../attendance/entities/attendance-day-summary.entity';
+import { AttendanceRequest } from '../attendance/entities/attendance-request.entity';
 import { Holiday } from '../attendance/entities/holiday.entity';
 import { InboundRequest } from '../adms/inbound-request.entity';
 import { CompanyMembership } from '../companies/company-membership.entity';
@@ -20,6 +22,8 @@ export const DATABASE_ENTITIES = [
   InboundRequest,
   AttendanceRecord,
   AttendanceDaySummary,
+  AttendanceRequest,
+  AttendanceAuditLog,
   Holiday,
   Company,
   CompanyMembership,

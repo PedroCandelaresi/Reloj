@@ -1,6 +1,8 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, Index } from 'typeorm';
 import { Employee } from '../employees/employee.entity';
 
+export type AttendanceRecordSource = 'device' | 'manual' | 'correction' | 'import';
+
 @Entity('attendance_records')
 @Index('UQ_attendance_records_device_user_timestamp', ['deviceSn', 'userId', 'timestamp'], {
   unique: true,
@@ -41,6 +43,9 @@ export class AttendanceRecord {
 
   @Column({ name: 'work_code', nullable: true })
   workCode: string;
+
+  @Column({ default: 'device' })
+  source: AttendanceRecordSource;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

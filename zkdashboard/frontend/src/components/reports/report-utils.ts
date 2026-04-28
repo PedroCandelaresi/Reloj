@@ -46,6 +46,8 @@ export function statusLabel(status: MonthlySummaryStatus) {
       return 'Fin de semana';
     case 'needs_review':
       return 'Revisar';
+    case 'justified':
+      return 'Justificado';
   }
 }
 
@@ -57,6 +59,8 @@ export function statusClassName(status: MonthlySummaryStatus) {
     case 'incomplete':
     case 'needs_review':
       return 'bg-amber-500/10 text-amber-700 dark:text-amber-300';
+    case 'justified':
+      return 'bg-blue-500/10 text-blue-700 dark:text-blue-300';
     case 'absent':
       return 'bg-red-500/10 text-red-700 dark:text-red-300';
     case 'holiday':

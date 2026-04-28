@@ -2,10 +2,14 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AttendanceRecord } from './attendance.entity';
 import { AttendanceDaySummary } from './entities/attendance-day-summary.entity';
+import { AttendanceRequest } from './entities/attendance-request.entity';
+import { AttendanceAuditLog } from './entities/attendance-audit-log.entity';
 import { Holiday } from './entities/holiday.entity';
 import { AttendanceService } from './attendance.service';
 import { AttendanceCalculationService } from './attendance-calculation.service';
+import { AttendanceRequestsService } from './attendance-requests.service';
 import { AttendanceController } from './attendance.controller';
+import { AttendanceRequestsController } from './attendance-requests.controller';
 import { HolidaysController } from './holidays.controller';
 import { HolidaysService } from './holidays.service';
 import { ExportService } from './export.service';
@@ -23,6 +27,8 @@ import { ScheduleProfile } from '../companies/schedule-profile.entity';
     TypeOrmModule.forFeature([
       AttendanceRecord,
       AttendanceDaySummary,
+      AttendanceRequest,
+      AttendanceAuditLog,
       Holiday,
       Employee,
       Device,
@@ -33,8 +39,15 @@ import { ScheduleProfile } from '../companies/schedule-profile.entity';
     ]),
     DevicesModule,
   ],
-  providers: [AttendanceService, ExportService, AttendanceCalculationService, HolidaysService, PairingService],
-  controllers: [AttendanceController, HolidaysController],
+  providers: [
+    AttendanceService,
+    ExportService,
+    AttendanceCalculationService,
+    AttendanceRequestsService,
+    HolidaysService,
+    PairingService,
+  ],
+  controllers: [AttendanceController, AttendanceRequestsController, HolidaysController],
   exports: [AttendanceService, AttendanceCalculationService],
 })
 export class AttendanceModule {}

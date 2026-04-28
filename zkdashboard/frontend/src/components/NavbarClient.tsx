@@ -66,6 +66,7 @@ function getNavigationItems(user?: CurrentUserProfile | null) {
     { href: '/dashboard', label: 'Dashboard' },
     { href: '/records', label: 'Fichadas' },
     { href: '/reports', label: 'Reportes' },
+    { href: '/attendance/requests', label: 'Solicitudes' },
     { href: '/employees', label: 'Empleados' },
   ];
 
@@ -80,6 +81,7 @@ function getNavigationItems(user?: CurrentUserProfile | null) {
     { href: '/admin/companies', label: 'Empresas' },
     { href: '/admin/devices', label: 'Dispositivos' },
     { href: '/reports', label: 'Reportes' },
+    { href: '/attendance/requests', label: 'Solicitudes' },
     { href: '/settings/holidays', label: 'Feriados' },
   ];
 }
