@@ -85,7 +85,7 @@ export default function LoginPage() {
       <div
         className="login-glass-card relative isolate z-10 w-full max-w-sm overflow-hidden rounded-2xl px-8 py-9"
         style={{
-          background: 'linear-gradient(145deg, rgba(24,29,34,0.50), rgba(7,11,14,0.50))',
+          background: 'linear-gradient(145deg, rgba(24,29,34,0.42), rgba(7,11,14,0.42))',
           border: '1px solid rgba(240,248,252,0.16)',
           backdropFilter: 'blur(26px) saturate(1.18)',
           boxShadow: '0 26px 70px rgba(0,0,0,0.38), inset 0 1px 0 rgba(255,255,255,0.18), inset 0 -1px 0 rgba(0,0,0,0.34), inset 1px 0 0 rgba(255,255,255,0.06)',
@@ -184,12 +184,12 @@ export default function LoginPage() {
           z-index: 0;
           border-radius: 1rem;
           background:
-            linear-gradient(116deg, transparent 0%, transparent 18%, rgba(255,255,255,0.11) 20%, rgba(255,255,255,0.04) 26%, transparent 34%),
-            linear-gradient(116deg, transparent 54%, rgba(255,255,255,0.06) 59%, rgba(255,255,255,0.025) 66%, transparent 74%),
-            radial-gradient(ellipse at 24% 8%, rgba(255,255,255,0.10), transparent 36%),
+            linear-gradient(116deg, transparent 0%, transparent 19%, rgba(255,255,255,0.055) 21%, rgba(255,255,255,0.022) 26%, transparent 35%),
+            linear-gradient(116deg, transparent 56%, rgba(255,255,255,0.03) 60%, rgba(255,255,255,0.014) 66%, transparent 75%),
+            radial-gradient(ellipse at 24% 8%, rgba(255,255,255,0.055), transparent 38%),
             radial-gradient(ellipse at 88% 92%, rgba(64,255,190,0.045), transparent 40%);
           mix-blend-mode: screen;
-          opacity: 0.78;
+          opacity: 0.58;
           pointer-events: none;
         }
         .login-glass-card::after {
@@ -199,11 +199,11 @@ export default function LoginPage() {
           z-index: 0;
           border-radius: 0.95rem;
           background:
-            linear-gradient(180deg, rgba(255,255,255,0.09), transparent 20%),
-            linear-gradient(90deg, rgba(255,255,255,0.055), transparent 18%, transparent 84%, rgba(255,255,255,0.03)),
-            radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.12), transparent 44%);
+            linear-gradient(180deg, rgba(255,255,255,0.055), transparent 20%),
+            linear-gradient(90deg, rgba(255,255,255,0.032), transparent 18%, transparent 84%, rgba(255,255,255,0.018)),
+            radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.07), transparent 44%);
           box-shadow: inset 0 0 0 1px rgba(255,255,255,0.045);
-          opacity: 0.62;
+          opacity: 0.48;
           pointer-events: none;
         }
         .login-field:-webkit-autofill,
