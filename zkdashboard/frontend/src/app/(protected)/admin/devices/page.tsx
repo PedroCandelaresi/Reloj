@@ -13,10 +13,10 @@ export default async function AdminDevicesPage() {
     <>
       <main className="max-w-7xl mx-auto px-4 py-8 pt-32">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-white drop-shadow-md">
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
             Dispositivos globales
           </h1>
-          <p className="text-emerald-200/70 text-sm mt-1">
+          <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
             Vinculá relojes detectados a empresas y revisá los pendientes de asignación.
           </p>
         </div>

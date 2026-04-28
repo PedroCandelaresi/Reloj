@@ -23,8 +23,8 @@ export default async function CompanyUsersPage() {
     <>
       <main className="max-w-7xl mx-auto px-4 py-8 pt-32">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-white drop-shadow-md">Usuarios</h1>
-          <p className="text-emerald-200/70 text-sm mt-1">
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Usuarios</h1>
+          <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
             Administrá accesos y roles para tu empresa.
           </p>
         </div>
