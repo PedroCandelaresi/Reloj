@@ -71,8 +71,8 @@ function getNavigationItems(user?: CurrentUserProfile | null) {
 
   if (!user?.isSuperAdmin) {
     return user?.companyRole === 'company_admin'
-      ? [...commonItems, { href: '/users', label: 'Usuarios' }, { href: '/settings', label: 'Configuración' }]
-      : commonItems;
+      ? [...commonItems, { href: '/users', label: 'Usuarios' }, { href: '/settings/holidays', label: 'Feriados' }, { href: '/settings', label: 'Configuración' }]
+      : [...commonItems, { href: '/settings/holidays', label: 'Feriados' }];
   }
 
   return [
@@ -80,6 +80,7 @@ function getNavigationItems(user?: CurrentUserProfile | null) {
     { href: '/admin/companies', label: 'Empresas' },
     { href: '/admin/devices', label: 'Dispositivos' },
     { href: '/reports', label: 'Reportes' },
+    { href: '/settings/holidays', label: 'Feriados' },
   ];
 }
 

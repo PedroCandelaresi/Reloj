@@ -1,6 +1,13 @@
 import { Employee } from '../../employees/employee.entity';
 
 export type BasicAttendanceStatus = 'present' | 'no_records' | 'incomplete';
+export type MonthlySummaryStatus =
+  | BasicAttendanceStatus
+  | 'calculated'
+  | 'absent'
+  | 'holiday'
+  | 'weekend'
+  | 'needs_review';
 export type IncompleteReason =
   | 'single_punch'
   | 'odd_punch_count'
@@ -59,9 +66,19 @@ export interface MonthlySummaryDay {
   date: string;
   firstPunch: Date | null;
   lastPunch: Date | null;
+  firstPunchAt?: Date | null;
+  lastPunchAt?: Date | null;
   punchCount: number;
   workedMinutes: number;
-  status: BasicAttendanceStatus;
+  expectedMinutes: number;
+  lateMinutes: number;
+  earlyDepartureMinutes: number;
+  overtimeMinutes: number;
+  isAbsent: boolean;
+  isHoliday: boolean;
+  isWeekend: boolean;
+  hasIncompleteRecord: boolean;
+  status: MonthlySummaryStatus;
 }
 
 export interface MonthlySummaryRow {
@@ -70,11 +87,31 @@ export interface MonthlySummaryRow {
   year: number;
   month: number;
   daysWithRecords: number;
+  presentDays: number;
+  absentDays: number;
+  holidayDays: number;
+  weekendDays: number;
   totalPunches: number;
   totalWorkedMinutes: number;
   totalWorkedHours: number;
+  totalLateMinutes: number;
+  totalEarlyDepartureMinutes: number;
+  totalOvertimeMinutes: number;
   incompleteDays: number;
   days: MonthlySummaryDay[];
+}
+
+export interface MonthlySummaryCoverage {
+  expectedSummaryDays: number;
+  calculatedSummaryDays: number;
+  missingSummaryDays: number;
+  isPartial: boolean;
+}
+
+export interface MonthlySummaryReport {
+  source: 'summaries' | 'raw_records';
+  coverage: MonthlySummaryCoverage;
+  rows: MonthlySummaryRow[];
 }
 
 export function toReportEmployee(employee: Employee): ReportEmployeeSummary {

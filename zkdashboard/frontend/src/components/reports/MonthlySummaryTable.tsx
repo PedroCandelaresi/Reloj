@@ -26,8 +26,12 @@ export function MonthlySummaryTable({ rows }: { rows: MonthlySummaryReportRow[] 
               </div>
               <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
                 <Metric label="Días con fichadas" value={String(row.daysWithRecords)} />
+                <Metric label="Presentes" value={String(row.presentDays)} />
+                <Metric label="Ausentes" value={String(row.absentDays)} />
+                <Metric label="Feriados" value={String(row.holidayDays)} />
                 <Metric label="Fichadas" value={String(row.totalPunches)} />
                 <Metric label="Tiempo" value={formatMinutes(row.totalWorkedMinutes)} />
+                <Metric label="Tardanza" value={formatMinutes(row.totalLateMinutes)} />
                 <Metric label="Incompletos" value={String(row.incompleteDays)} />
               </div>
             </div>
@@ -40,6 +44,10 @@ export function MonthlySummaryTable({ rows }: { rows: MonthlySummaryReportRow[] 
                     <th className="px-6 py-4 text-left font-semibold">Última</th>
                     <th className="px-6 py-4 text-left font-semibold">Fichadas</th>
                     <th className="px-6 py-4 text-left font-semibold">Tiempo</th>
+                    <th className="px-6 py-4 text-left font-semibold">Esperado</th>
+                    <th className="px-6 py-4 text-left font-semibold">Tardanza</th>
+                    <th className="px-6 py-4 text-left font-semibold">Salida temprana</th>
+                    <th className="px-6 py-4 text-left font-semibold">Extra</th>
                     <th className="px-6 py-4 text-left font-semibold">Estado</th>
                   </tr>
                 </thead>
@@ -51,10 +59,23 @@ export function MonthlySummaryTable({ rows }: { rows: MonthlySummaryReportRow[] 
                       <td className="px-6 py-4" style={{ color: 'var(--text-secondary)' }}>{formatDateTime(day.lastPunch)}</td>
                       <td className="px-6 py-4" style={{ color: 'var(--text-secondary)' }}>{day.punchCount}</td>
                       <td className="px-6 py-4" style={{ color: 'var(--text-secondary)' }}>{formatMinutes(day.workedMinutes)}</td>
+                      <td className="px-6 py-4" style={{ color: 'var(--text-secondary)' }}>{formatMinutes(day.expectedMinutes)}</td>
+                      <td className="px-6 py-4" style={{ color: 'var(--text-secondary)' }}>{formatMinutes(day.lateMinutes)}</td>
+                      <td className="px-6 py-4" style={{ color: 'var(--text-secondary)' }}>{formatMinutes(day.earlyDepartureMinutes)}</td>
+                      <td className="px-6 py-4" style={{ color: 'var(--text-secondary)' }}>{formatMinutes(day.overtimeMinutes)}</td>
                       <td className="px-6 py-4">
                         <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${statusClassName(day.status)}`}>
                           {statusLabel(day.status)}
                         </span>
+                        {(day.isHoliday || day.isWeekend || day.hasIncompleteRecord) && (
+                          <span className="mt-1 block text-xs" style={{ color: 'var(--text-muted)' }}>
+                            {[
+                              day.isHoliday ? 'feriado' : '',
+                              day.isWeekend ? 'fin de semana' : '',
+                              day.hasIncompleteRecord ? 'incompleto' : '',
+                            ].filter(Boolean).join(' · ')}
+                          </span>
+                        )}
                       </td>
                     </tr>
                   ))}

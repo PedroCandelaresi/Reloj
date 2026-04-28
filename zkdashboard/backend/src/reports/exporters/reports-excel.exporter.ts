@@ -3,6 +3,7 @@ import * as ExcelJS from 'exceljs';
 import {
   DailyPresenceRow,
   IncompleteRecordRow,
+  MonthlySummaryReport,
   MonthlySummaryRow,
 } from '../types/report.types';
 import { formatArgentinaDateTime, formatArgentinaTime } from '../utils/argentina-date.util';
@@ -72,17 +73,27 @@ export class ReportsExcelExporter {
     return this.writeBuffer(wb);
   }
 
-  async monthlySummary(rows: MonthlySummaryRow[]): Promise<Buffer> {
+  async monthlySummary(reportOrRows: MonthlySummaryReport | MonthlySummaryRow[]): Promise<Buffer> {
+    const rows = Array.isArray(reportOrRows) ? reportOrRows : reportOrRows.rows;
+    const source = Array.isArray(reportOrRows) ? 'raw_records' : reportOrRows.source;
     const wb = new ExcelJS.Workbook();
     const summary = wb.addWorksheet('Resumen mensual');
     summary.columns = [
       { header: 'Empleado', key: 'employee', width: 28 },
       { header: 'PIN', key: 'userId', width: 18 },
       { header: 'Mes', key: 'period', width: 12 },
+      { header: 'Fuente', key: 'source', width: 14 },
       { header: 'Dias con fichadas', key: 'daysWithRecords', width: 18 },
+      { header: 'Dias presentes', key: 'presentDays', width: 16 },
+      { header: 'Dias ausentes', key: 'absentDays', width: 16 },
+      { header: 'Feriados', key: 'holidayDays', width: 12 },
+      { header: 'Fines de semana', key: 'weekendDays', width: 18 },
       { header: 'Total fichadas', key: 'totalPunches', width: 15 },
       { header: 'Minutos estimados', key: 'totalWorkedMinutes', width: 18 },
       { header: 'Horas estimadas', key: 'totalWorkedHours', width: 16 },
+      { header: 'Minutos tardanza', key: 'totalLateMinutes', width: 18 },
+      { header: 'Minutos salida temprana', key: 'totalEarlyDepartureMinutes', width: 24 },
+      { header: 'Extra simple', key: 'totalOvertimeMinutes', width: 16 },
       { header: 'Dias incompletos', key: 'incompleteDays', width: 18 },
     ];
 
@@ -91,10 +102,18 @@ export class ReportsExcelExporter {
         employee: this.employeeName(row.employee),
         userId: row.userId,
         period: `${String(row.month).padStart(2, '0')}/${row.year}`,
+        source,
         daysWithRecords: row.daysWithRecords,
+        presentDays: row.presentDays,
+        absentDays: row.absentDays,
+        holidayDays: row.holidayDays,
+        weekendDays: row.weekendDays,
         totalPunches: row.totalPunches,
         totalWorkedMinutes: row.totalWorkedMinutes,
         totalWorkedHours: row.totalWorkedHours,
+        totalLateMinutes: row.totalLateMinutes,
+        totalEarlyDepartureMinutes: row.totalEarlyDepartureMinutes,
+        totalOvertimeMinutes: row.totalOvertimeMinutes,
         incompleteDays: row.incompleteDays,
       });
     });
@@ -109,6 +128,14 @@ export class ReportsExcelExporter {
       { header: 'Ultima fichada', key: 'lastPunch', width: 22 },
       { header: 'Fichadas', key: 'punchCount', width: 10 },
       { header: 'Minutos estimados', key: 'workedMinutes', width: 18 },
+      { header: 'Minutos esperados', key: 'expectedMinutes', width: 18 },
+      { header: 'Tardanza', key: 'lateMinutes', width: 12 },
+      { header: 'Salida temprana', key: 'earlyDepartureMinutes', width: 18 },
+      { header: 'Extra simple', key: 'overtimeMinutes', width: 14 },
+      { header: 'Ausente', key: 'isAbsent', width: 10 },
+      { header: 'Feriado', key: 'isHoliday', width: 10 },
+      { header: 'Fin de semana', key: 'isWeekend', width: 14 },
+      { header: 'Incompleto', key: 'hasIncompleteRecord', width: 12 },
       { header: 'Estado', key: 'status', width: 14 },
     ];
 
@@ -122,6 +149,14 @@ export class ReportsExcelExporter {
           lastPunch: formatArgentinaDateTime(day.lastPunch),
           punchCount: day.punchCount,
           workedMinutes: day.workedMinutes,
+          expectedMinutes: day.expectedMinutes,
+          lateMinutes: day.lateMinutes,
+          earlyDepartureMinutes: day.earlyDepartureMinutes,
+          overtimeMinutes: day.overtimeMinutes,
+          isAbsent: day.isAbsent ? 'Si' : 'No',
+          isHoliday: day.isHoliday ? 'Si' : 'No',
+          isWeekend: day.isWeekend ? 'Si' : 'No',
+          hasIncompleteRecord: day.hasIncompleteRecord ? 'Si' : 'No',
           status: day.status,
         });
       });

@@ -404,6 +404,13 @@ export interface PaginatedResult {
 }
 
 export type BasicAttendanceStatus = 'present' | 'no_records' | 'incomplete';
+export type MonthlySummaryStatus =
+  | BasicAttendanceStatus
+  | 'calculated'
+  | 'absent'
+  | 'holiday'
+  | 'weekend'
+  | 'needs_review';
 export type IncompleteReason =
   | 'single_punch'
   | 'odd_punch_count'
@@ -445,9 +452,19 @@ export interface MonthlySummaryDay {
   date: string;
   firstPunch: string | null;
   lastPunch: string | null;
+  firstPunchAt?: string | null;
+  lastPunchAt?: string | null;
   punchCount: number;
   workedMinutes: number;
-  status: BasicAttendanceStatus;
+  expectedMinutes: number;
+  lateMinutes: number;
+  earlyDepartureMinutes: number;
+  overtimeMinutes: number;
+  isAbsent: boolean;
+  isHoliday: boolean;
+  isWeekend: boolean;
+  hasIncompleteRecord: boolean;
+  status: MonthlySummaryStatus;
 }
 
 export interface MonthlySummaryReportRow {
@@ -456,11 +473,29 @@ export interface MonthlySummaryReportRow {
   year: number;
   month: number;
   daysWithRecords: number;
+  presentDays: number;
+  absentDays: number;
+  holidayDays: number;
+  weekendDays: number;
   totalPunches: number;
   totalWorkedMinutes: number;
   totalWorkedHours: number;
+  totalLateMinutes: number;
+  totalEarlyDepartureMinutes: number;
+  totalOvertimeMinutes: number;
   incompleteDays: number;
   days: MonthlySummaryDay[];
+}
+
+export interface MonthlySummaryReport {
+  source: 'summaries' | 'raw_records';
+  coverage: {
+    expectedSummaryDays: number;
+    calculatedSummaryDays: number;
+    missingSummaryDays: number;
+    isPartial: boolean;
+  };
+  rows: MonthlySummaryReportRow[];
 }
 
 export interface ReportFilterParams {
@@ -911,7 +946,7 @@ export function exportIncompleteRecordsReport(params: ReportFilterParams = {}) {
 }
 
 export function getMonthlySummaryReport(params: MonthlySummaryParams) {
-  return apiFetch<MonthlySummaryReportRow[]>(`/reports/monthly-summary${buildReportQuery(params)}`);
+  return apiFetch<MonthlySummaryReport>(`/reports/monthly-summary${buildReportQuery(params)}`);
 }
 
 export function exportMonthlySummaryReport(params: MonthlySummaryParams) {

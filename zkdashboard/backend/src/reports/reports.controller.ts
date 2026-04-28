@@ -58,13 +58,13 @@ export class ReportsController {
     @CurrentUser() user: AuthenticatedUser,
     @Res() res: Response,
   ) {
-    const rows = await this.monthlySummary.getReport(filters, user);
+    const report = await this.monthlySummary.getReport(filters, user);
     if (filters.format === 'excel') {
-      this.sendExcel(res, await this.excel.monthlySummary(rows), 'resumen-mensual.xlsx');
+      this.sendExcel(res, await this.excel.monthlySummary(report), 'resumen-mensual.xlsx');
       return;
     }
 
-    res.json(rows);
+    res.json(report);
   }
 
   private sendExcel(res: Response, buffer: Buffer, filename: string): void {
