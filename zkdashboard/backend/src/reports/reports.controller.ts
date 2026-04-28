@@ -97,6 +97,10 @@ export class ReportsController {
     @Res() res: Response,
   ) {
     const rows = await this.phase2.earlyDepartures(filters, user);
+    if (filters.format === 'excel') {
+      this.sendExcel(res, await this.excel.phase2Rows('Salidas tempranas', rows), 'salidas-tempranas.xlsx');
+      return;
+    }
     res.json(rows);
   }
 

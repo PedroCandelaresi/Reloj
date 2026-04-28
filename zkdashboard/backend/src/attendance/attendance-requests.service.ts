@@ -1,6 +1,6 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, EntityManager, QueryFailedError, Repository } from 'typeorm';
 import { AttendanceRecord } from './attendance.entity';
 import { AttendanceCalculationService } from './attendance-calculation.service';
 import { AttendanceAuditLog, AttendanceAuditAction } from './entities/attendance-audit-log.entity';
@@ -35,9 +35,16 @@ export interface AttendanceAuditLogView extends AttendanceAuditLog {
   employee: Pick<Employee, 'id' | 'nombre' | 'apellido'> | null;
 }
 
+interface RecalculateTask {
+  companyId: string;
+  employeeId: string;
+  date: string;
+}
+
 @Injectable()
 export class AttendanceRequestsService {
   constructor(
+    private readonly dataSource: DataSource,
     @InjectRepository(AttendanceRequest)
     private readonly requestsRepo: Repository<AttendanceRequest>,
     @InjectRepository(AttendanceAuditLog)
@@ -139,27 +146,31 @@ export class AttendanceRequestsService {
 
   async approve(user: AuthenticatedUser, id: string, dto: ReviewAttendanceRequestDto): Promise<AttendanceRequestView> {
     this.assertCanReview(user);
-    const request = await this.findWritableRequest(user, id);
-    if (request.status !== 'pending') {
-      throw new BadRequestException('La solicitud ya fue revisada.');
-    }
+    const recalculateTasks = await this.dataSource.transaction(async (manager) => {
+      const request = await this.findWritableRequest(user, id, manager);
+      if (request.status !== 'pending') {
+        throw new BadRequestException('La solicitud ya fue revisada.');
+      }
 
-    await this.applyApprovedRequest(request, user.id);
-    request.status = 'approved';
-    request.reviewedByUserId = user.id;
-    request.reviewNotes = dto.reviewNotes?.trim() || null;
-    request.reviewedAt = new Date();
-    await this.requestsRepo.save(request);
-    await this.writeAudit({
-      companyId: request.companyId,
-      employeeId: request.employeeId,
-      requestId: request.id,
-      action: 'request_approved',
-      newValue: this.requestSnapshot(request),
-      userId: user.id,
+      const tasks = await this.applyApprovedRequest(request, user.id, manager);
+      request.status = 'approved';
+      request.reviewedByUserId = user.id;
+      request.reviewNotes = dto.reviewNotes?.trim() || null;
+      request.reviewedAt = new Date();
+      await manager.getRepository(AttendanceRequest).save(request);
+      await this.writeAudit({
+        companyId: request.companyId,
+        employeeId: request.employeeId,
+        requestId: request.id,
+        action: 'request_approved',
+        newValue: this.requestSnapshot(request),
+        userId: user.id,
+      }, manager);
+      return tasks;
     });
 
-    return this.findOneView(request.id);
+    await this.runRecalculations(recalculateTasks);
+    return this.findOneView(id);
   }
 
   async reject(user: AuthenticatedUser, id: string, dto: ReviewAttendanceRequestDto): Promise<AttendanceRequestView> {
@@ -167,59 +178,62 @@ export class AttendanceRequestsService {
     if (!dto.reviewNotes?.trim()) {
       throw new BadRequestException('reviewNotes es obligatorio al rechazar.');
     }
+    await this.dataSource.transaction(async (manager) => {
+      const request = await this.findWritableRequest(user, id, manager);
+      if (request.status !== 'pending') {
+        throw new BadRequestException('La solicitud ya fue revisada.');
+      }
 
-    const request = await this.findWritableRequest(user, id);
-    if (request.status !== 'pending') {
-      throw new BadRequestException('La solicitud ya fue revisada.');
-    }
+      request.status = 'rejected';
+      request.reviewedByUserId = user.id;
+      request.reviewNotes = dto.reviewNotes.trim();
+      request.reviewedAt = new Date();
+      await manager.getRepository(AttendanceRequest).save(request);
 
-    request.status = 'rejected';
-    request.reviewedByUserId = user.id;
-    request.reviewNotes = dto.reviewNotes.trim();
-    request.reviewedAt = new Date();
-    await this.requestsRepo.save(request);
+      if (this.isJustification(request.type)) {
+        await this.markSummaryJustification(request, 'rejected', user.id, false, undefined, manager);
+      }
 
-    if (this.isJustification(request.type)) {
-      await this.markSummaryJustification(request, 'rejected', user.id, false);
-    }
-
-    await this.writeAudit({
-      companyId: request.companyId,
-      employeeId: request.employeeId,
-      requestId: request.id,
-      action: 'request_rejected',
-      newValue: this.requestSnapshot(request),
-      userId: user.id,
+      await this.writeAudit({
+        companyId: request.companyId,
+        employeeId: request.employeeId,
+        requestId: request.id,
+        action: 'request_rejected',
+        newValue: this.requestSnapshot(request),
+        userId: user.id,
+      }, manager);
     });
 
-    return this.findOneView(request.id);
+    return this.findOneView(id);
   }
 
   async cancel(user: AuthenticatedUser, id: string): Promise<AttendanceRequestView> {
-    const request = await this.findCancellableRequest(user, id);
-    if (request.status !== 'pending') {
-      throw new BadRequestException('Solo se pueden cancelar solicitudes pendientes.');
-    }
+    await this.dataSource.transaction(async (manager) => {
+      const request = await this.findCancellableRequest(user, id, manager);
+      if (request.status !== 'pending') {
+        throw new BadRequestException('Solo se pueden cancelar solicitudes pendientes.');
+      }
 
-    request.status = 'cancelled';
-    request.reviewedByUserId = user.id;
-    request.reviewedAt = new Date();
-    await this.requestsRepo.save(request);
+      request.status = 'cancelled';
+      request.reviewedByUserId = user.id;
+      request.reviewedAt = new Date();
+      await manager.getRepository(AttendanceRequest).save(request);
 
-    if (this.isJustification(request.type)) {
-      await this.markSummaryJustification(request, 'none', user.id, true);
-    }
+      if (this.isJustification(request.type)) {
+        await this.markSummaryJustification(request, 'none', user.id, false, undefined, manager);
+      }
 
-    await this.writeAudit({
-      companyId: request.companyId,
-      employeeId: request.employeeId,
-      requestId: request.id,
-      action: 'request_cancelled',
-      newValue: this.requestSnapshot(request),
-      userId: user.id,
+      await this.writeAudit({
+        companyId: request.companyId,
+        employeeId: request.employeeId,
+        requestId: request.id,
+        action: 'request_cancelled',
+        newValue: this.requestSnapshot(request),
+        userId: user.id,
+      }, manager);
     });
 
-    return this.findOneView(request.id);
+    return this.findOneView(id);
   }
 
   async auditLog(user: AuthenticatedUser, query: AttendanceAuditLogQueryDto): Promise<AttendanceAuditLogView[]> {
@@ -248,29 +262,37 @@ export class AttendanceRequestsService {
     return logs.map((log) => this.toAuditView(log));
   }
 
-  private async applyApprovedRequest(request: AttendanceRequest, userId: number): Promise<void> {
+  private async applyApprovedRequest(
+    request: AttendanceRequest,
+    userId: number,
+    manager: EntityManager,
+  ): Promise<RecalculateTask[]> {
     switch (request.type) {
       case 'manual_punch':
-        await this.applyManualPunch(request, userId);
-        return;
+        return [await this.applyManualPunch(request, userId, manager)];
       case 'punch_correction':
-        await this.applyPunchCorrection(request, userId);
-        return;
+        return this.applyPunchCorrection(request, userId, manager);
       case 'absence_justification':
-        await this.markSummaryJustification(request, 'approved', userId, true, 'absence_justified');
-        return;
+        await this.markSummaryJustification(request, 'approved', userId, true, 'absence_justified', manager);
+        return [];
       case 'late_justification':
-        await this.markSummaryJustification(request, 'approved', userId, true, 'late_justified');
-        return;
+        await this.markSummaryJustification(request, 'approved', userId, true, 'late_justified', manager);
+        return [];
     }
+    return [];
   }
 
-  private async applyManualPunch(request: AttendanceRequest, userId: number): Promise<void> {
+  private async applyManualPunch(
+    request: AttendanceRequest,
+    userId: number,
+    manager: EntityManager,
+  ): Promise<RecalculateTask> {
     if (!request.punchTime) {
       throw new BadRequestException('La solicitud no tiene punchTime.');
     }
 
-    const existing = await this.attendanceRepo.findOne({
+    const attendanceRepo = manager.getRepository(AttendanceRecord);
+    const existing = await attendanceRepo.findOne({
       where: {
         companyId: request.companyId,
         userId: request.employeeId,
@@ -281,8 +303,8 @@ export class AttendanceRequestsService {
       throw new BadRequestException('Ya existe una fichada para ese empleado y horario.');
     }
 
-    const record = await this.attendanceRepo.save(
-      this.attendanceRepo.create({
+    const record = await attendanceRepo.save(
+      attendanceRepo.create({
         deviceSn: 'manual',
         userId: request.employeeId,
         deviceId: null,
@@ -303,11 +325,15 @@ export class AttendanceRequestsService {
       action: 'manual_punch_created',
       newValue: this.recordSnapshot(record),
       userId,
-    });
-    await this.calculations.calculateEmployeeDay(request.companyId, request.employeeId, request.date);
+    }, manager);
+    return { companyId: request.companyId, employeeId: request.employeeId, date: request.date };
   }
 
-  private async applyPunchCorrection(request: AttendanceRequest, userId: number): Promise<void> {
+  private async applyPunchCorrection(
+    request: AttendanceRequest,
+    userId: number,
+    manager: EntityManager,
+  ): Promise<RecalculateTask[]> {
     if (!request.targetAttendanceRecordId || !request.newPunchTime) {
       throw new BadRequestException('La solicitud de corrección está incompleta.');
     }
@@ -316,13 +342,23 @@ export class AttendanceRequestsService {
       request.companyId,
       request.employeeId,
       request.targetAttendanceRecordId,
+      manager,
     );
+    await this.assertNoDuplicatePunchCorrection(request, manager);
     const oldSnapshot = this.recordSnapshot(record);
     const oldDate = getArgentinaDateKey(record.timestamp);
 
     record.timestamp = request.newPunchTime;
     record.source = 'correction';
-    const saved = await this.attendanceRepo.save(record);
+    let saved: AttendanceRecord;
+    try {
+      saved = await manager.getRepository(AttendanceRecord).save(record);
+    } catch (error) {
+      if (this.isUniqueConstraintError(error)) {
+        throw new BadRequestException('Ya existe una fichada para ese empleado en ese horario.');
+      }
+      throw error;
+    }
     const newDate = getArgentinaDateKey(saved.timestamp);
 
     await this.writeAudit({
@@ -334,12 +370,13 @@ export class AttendanceRequestsService {
       oldValue: oldSnapshot,
       newValue: this.recordSnapshot(saved),
       userId,
-    });
+    }, manager);
 
-    await this.calculations.calculateEmployeeDay(request.companyId, request.employeeId, oldDate);
+    const tasks: RecalculateTask[] = [{ companyId: request.companyId, employeeId: request.employeeId, date: oldDate }];
     if (newDate !== oldDate) {
-      await this.calculations.calculateEmployeeDay(request.companyId, request.employeeId, newDate);
+      tasks.push({ companyId: request.companyId, employeeId: request.employeeId, date: newDate });
     }
+    return tasks;
   }
 
   private async markSummaryJustification(
@@ -348,26 +385,35 @@ export class AttendanceRequestsService {
     userId: number,
     markJustified: boolean,
     action?: AttendanceAuditAction,
+    manager?: EntityManager,
   ): Promise<void> {
-    const summary = await this.summariesRepo.findOneBy({
+    const summariesRepo = manager?.getRepository(AttendanceDaySummary) ?? this.summariesRepo;
+    const summary = await summariesRepo.findOneBy({
       companyId: request.companyId,
       employeeId: request.employeeId,
       date: request.date,
     });
 
     if (!summary) {
-      if (status === 'pending') return;
+      if (status !== 'approved') return;
       throw new BadRequestException('No existe resumen diario para justificar. Recalculá el período primero.');
     }
 
     const oldValue = this.summarySnapshot(summary);
-    summary.justificationStatus = status;
-    summary.justificationRequestId = status === 'none' ? null : request.id;
-    summary.notes = markJustified ? request.reason : summary.notes;
-    if (markJustified) {
-      summary.status = 'justified';
+    if (status === 'none') {
+      if (summary.justificationRequestId === request.id) {
+        summary.justificationStatus = 'none';
+        summary.justificationRequestId = null;
+        summary.notes = null;
+      }
+    } else {
+      summary.justificationStatus = status;
+      summary.justificationRequestId = request.id;
+      if (markJustified) {
+        summary.notes = request.reason;
+      }
     }
-    await this.summariesRepo.save(summary);
+    await summariesRepo.save(summary);
 
     if (action) {
       await this.writeAudit({
@@ -378,7 +424,7 @@ export class AttendanceRequestsService {
         oldValue,
         newValue: this.summarySnapshot(summary),
         userId,
-      });
+      }, manager);
     }
   }
 
@@ -451,8 +497,13 @@ export class AttendanceRequestsService {
     return user.isSuperAdmin || user.companyRole === CompanyRole.COMPANY_ADMIN;
   }
 
-  private async findWritableRequest(user: AuthenticatedUser, id: string): Promise<AttendanceRequest> {
-    const request = await this.requestsRepo.findOneBy({ id });
+  private async findWritableRequest(
+    user: AuthenticatedUser,
+    id: string,
+    manager?: EntityManager,
+  ): Promise<AttendanceRequest> {
+    const repo = manager?.getRepository(AttendanceRequest) ?? this.requestsRepo;
+    const request = await repo.findOneBy({ id });
     if (!request) throw new NotFoundException('Solicitud no encontrada.');
     if (user.isSuperAdmin) return request;
     if (!user.companyId || request.companyId !== user.companyId) {
@@ -461,8 +512,12 @@ export class AttendanceRequestsService {
     return request;
   }
 
-  private async findCancellableRequest(user: AuthenticatedUser, id: string): Promise<AttendanceRequest> {
-    const request = await this.findWritableRequest(user, id);
+  private async findCancellableRequest(
+    user: AuthenticatedUser,
+    id: string,
+    manager?: EntityManager,
+  ): Promise<AttendanceRequest> {
+    const request = await this.findWritableRequest(user, id, manager);
     if (this.canReview(user) || request.requestedByUserId === user.id) {
       return request;
     }
@@ -489,15 +544,39 @@ export class AttendanceRequestsService {
     companyId: string,
     employeeId: string,
     recordId?: number,
+    manager?: EntityManager,
   ): Promise<AttendanceRecord> {
     if (!recordId) {
       throw new BadRequestException('targetAttendanceRecordId es requerido.');
     }
-    const record = await this.attendanceRepo.findOneBy({ id: recordId });
+    const repo = manager?.getRepository(AttendanceRecord) ?? this.attendanceRepo;
+    const record = await repo.findOneBy({ id: recordId });
     if (!record || record.companyId !== companyId || record.userId !== employeeId) {
       throw new BadRequestException('La fichada objetivo no pertenece al empleado y empresa indicados.');
     }
     return record;
+  }
+
+  private async assertNoDuplicatePunchCorrection(
+    request: AttendanceRequest,
+    manager: EntityManager,
+  ): Promise<void> {
+    if (!request.newPunchTime || !request.targetAttendanceRecordId) {
+      return;
+    }
+
+    const duplicate = await manager
+      .getRepository(AttendanceRecord)
+      .createQueryBuilder('record')
+      .where('record.company_id = :companyId', { companyId: request.companyId })
+      .andWhere('record.user_id = :employeeId', { employeeId: request.employeeId })
+      .andWhere('record.timestamp = :timestamp', { timestamp: request.newPunchTime })
+      .andWhere('record.id <> :recordId', { recordId: request.targetAttendanceRecordId })
+      .getOne();
+
+    if (duplicate) {
+      throw new BadRequestException('Ya existe una fichada para ese empleado en ese horario.');
+    }
   }
 
   private async findOneView(id: string): Promise<AttendanceRequestView> {
@@ -600,9 +679,10 @@ export class AttendanceRequestsService {
     oldValue?: Record<string, unknown> | null;
     newValue?: Record<string, unknown> | null;
     userId: number;
-  }): Promise<AttendanceAuditLog> {
-    return this.auditRepo.save(
-      this.auditRepo.create({
+  }, manager?: EntityManager): Promise<AttendanceAuditLog> {
+    const repo = manager?.getRepository(AttendanceAuditLog) ?? this.auditRepo;
+    return repo.save(
+      repo.create({
         companyId: opts.companyId,
         employeeId: opts.employeeId ?? null,
         attendanceRecordId: opts.recordId ?? null,
@@ -613,5 +693,19 @@ export class AttendanceRequestsService {
         performedByUserId: opts.userId,
       }),
     );
+  }
+
+  private async runRecalculations(tasks: RecalculateTask[]): Promise<void> {
+    for (const task of tasks) {
+      await this.calculations.calculateEmployeeDay(task.companyId, task.employeeId, task.date);
+    }
+  }
+
+  private isUniqueConstraintError(error: unknown): boolean {
+    if (!(error instanceof QueryFailedError)) {
+      return false;
+    }
+    const driverError = error.driverError as { code?: string } | undefined;
+    return driverError?.code === '23505';
   }
 }

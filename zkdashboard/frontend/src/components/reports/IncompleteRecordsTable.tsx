@@ -1,7 +1,14 @@
+import Link from 'next/link';
 import type { IncompleteRecordsReportRow } from '@/lib/api';
 import { formatReportEmployee, formatTime, reasonLabel } from './report-utils';
 
-export function IncompleteRecordsTable({ rows }: { rows: IncompleteRecordsReportRow[] }) {
+export function IncompleteRecordsTable({
+  rows,
+  canCreateRequests = false,
+}: {
+  rows: IncompleteRecordsReportRow[];
+  canCreateRequests?: boolean;
+}) {
   return (
     <div className="card rounded-xl">
       <div className="overflow-x-auto">
@@ -14,12 +21,13 @@ export function IncompleteRecordsTable({ rows }: { rows: IncompleteRecordsReport
               <th className="px-6 py-4 text-left font-semibold">Horarios</th>
               <th className="px-6 py-4 text-left font-semibold">Dispositivos</th>
               <th className="px-6 py-4 text-left font-semibold">Motivo</th>
+              {canCreateRequests && <th className="px-6 py-4 text-left font-semibold">Acción</th>}
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-6 py-10 text-center" style={{ color: 'var(--text-muted)' }}>
+                <td colSpan={canCreateRequests ? 7 : 6} className="px-6 py-10 text-center" style={{ color: 'var(--text-muted)' }}>
                   No se encontraron fichadas incompletas en el período
                 </td>
               </tr>
@@ -45,6 +53,13 @@ export function IncompleteRecordsTable({ rows }: { rows: IncompleteRecordsReport
                       {reasonLabel(row.reason)}
                     </span>
                   </td>
+                  {canCreateRequests && (
+                    <td className="px-6 py-4">
+                      <Link href={manualPunchHref(row)} className="font-medium" style={{ color: 'var(--brand-text)' }}>
+                        Cargar fichada
+                      </Link>
+                    </td>
+                  )}
                 </tr>
               ))
             )}
@@ -53,4 +68,17 @@ export function IncompleteRecordsTable({ rows }: { rows: IncompleteRecordsReport
       </div>
     </div>
   );
+}
+
+function manualPunchHref(row: IncompleteRecordsReportRow) {
+  const qs = new URLSearchParams({
+    type: 'manual_punch',
+    employeeId: row.userId,
+    date: row.date,
+    dateFrom: row.date,
+    dateTo: row.date,
+    punchType: 'out',
+    fromReport: '1',
+  });
+  return `/attendance/requests?${qs.toString()}`;
 }

@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { AttendanceRecord } from './attendance.entity';
 import {
+  AttendanceJustificationStatus,
   AttendanceDaySummary,
   AttendanceDaySummaryStatus,
 } from './entities/attendance-day-summary.entity';
@@ -204,7 +205,9 @@ export class AttendanceCalculationService {
           summariesCreated += 1;
         }
 
+        const approvedJustification = this.approvedJustificationSnapshot(summary);
         this.applyRecordsToSummary(summary, records, devicesById, employee, company, holidays.get(date) ?? null);
+        this.restoreApprovedJustification(summary, approvedJustification);
         if (summary.isAbsent) absentDays += 1;
         if (summary.hasIncompleteRecord) incompleteDays += 1;
         if (summary.lateMinutes > 0) lateDays += 1;
@@ -458,6 +461,35 @@ export class AttendanceCalculationService {
       isWeekend: summary.isWeekend,
     });
     summary.calculatedAt = new Date();
+  }
+
+  private approvedJustificationSnapshot(summary: AttendanceDaySummary): {
+    status: AttendanceJustificationStatus;
+    requestId: string | null;
+    notes: string | null;
+  } | null {
+    if (summary.justificationStatus !== 'approved') {
+      return null;
+    }
+
+    return {
+      status: summary.justificationStatus,
+      requestId: summary.justificationRequestId,
+      notes: summary.notes,
+    };
+  }
+
+  private restoreApprovedJustification(
+    summary: AttendanceDaySummary,
+    snapshot: { status: AttendanceJustificationStatus; requestId: string | null; notes: string | null } | null,
+  ): void {
+    if (!snapshot) {
+      return;
+    }
+
+    summary.justificationStatus = snapshot.status;
+    summary.justificationRequestId = snapshot.requestId;
+    summary.notes = snapshot.notes;
   }
 
   private resolveExpectedSchedule(employee: Employee, company: Company | null): ExpectedSchedule | null {

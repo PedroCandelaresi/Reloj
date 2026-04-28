@@ -17,6 +17,7 @@ export default async function LateArrivalsPage({ searchParams }: PageProps) {
   const employeeId = sp.employeeId || '';
   const minLateMinutes = sp.minLateMinutes || '';
   const params = { dateFrom, dateTo, employeeId, minLateMinutes };
+  const canCreateRequests = user.isSuperAdmin || user.companyRole === 'company_admin' || user.companyRole === 'operator';
   const [rows, userOptions] = await Promise.all([getLateArrivalsReport(params), getDistinctUsers()]);
 
   return (
@@ -25,7 +26,7 @@ export default async function LateArrivalsPage({ searchParams }: PageProps) {
       <main className="mx-auto max-w-7xl px-4 py-8 pt-32">
         <ReportHeader title="Tardanzas" subtitle={`${rows.length} registro(s)`} excelHref={exportLateArrivalsReport(params)} />
         <ReportFilters action="/reports/late-arrivals" userOptions={userOptions} dateFrom={dateFrom} dateTo={dateTo} employeeId={employeeId} />
-        <Phase2ReportTable rows={rows} mode="late" emptyMessage="No hay tardanzas para los filtros seleccionados" />
+        <Phase2ReportTable rows={rows} mode="late" emptyMessage="No hay tardanzas para los filtros seleccionados" canCreateRequests={canCreateRequests} />
       </main>
     </>
   );

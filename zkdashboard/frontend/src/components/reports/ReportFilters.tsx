@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { formatAttendanceUserOption, type AttendanceUserOption, type Device } from '@/lib/api';
+import type { AttendanceUserOption, Device } from '@/lib/api';
+import { formatAttendanceUserOption } from '@/lib/format-employee';
 
 export function ReportFilters({
   action,

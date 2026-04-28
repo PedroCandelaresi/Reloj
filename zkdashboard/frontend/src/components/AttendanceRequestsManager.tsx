@@ -10,7 +10,6 @@ import {
   rejectAttendanceRequestAction,
 } from '@/app/(protected)/attendance/requests/actions';
 import {
-  formatEmployeeName,
   type AttendanceAuditLog,
   type AttendancePunchType,
   type AttendanceRequest,
@@ -20,6 +19,7 @@ import {
   type CurrentUserProfile,
 } from '@/lib/api';
 import { formatArgentinaDateTime } from '@/lib/argentina-date';
+import { formatEmployeeName } from '@/lib/format-employee';
 
 type FormValues = {
   employeeId: string;
@@ -72,15 +72,19 @@ export function AttendanceRequestsManager({
   auditLogs,
   userOptions,
   user,
+  initialForm,
+  fromReport,
 }: {
   requests: AttendanceRequest[];
   auditLogs: AttendanceAuditLog[];
   userOptions: AttendanceUserOption[];
   user: CurrentUserProfile;
+  initialForm?: FormValues;
+  fromReport?: boolean;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [form, setForm] = useState<FormValues>(EMPTY_FORM);
+  const [form, setForm] = useState<FormValues>(initialForm ?? EMPTY_FORM);
   const [reviewNotesById, setReviewNotesById] = useState<Record<string, string>>({});
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const writable = canCreate(user);
@@ -155,6 +159,12 @@ export function AttendanceRequestsManager({
             : { background: 'var(--danger-soft)', borderColor: 'rgba(230,45,66,0.3)', color: 'var(--danger-text)' }
         }>
           {message.text}
+        </div>
+      )}
+
+      {fromReport && writable && (
+        <div className="rounded-lg border px-4 py-3 text-sm" style={{ background: 'var(--blue-soft)', borderColor: 'rgba(59,130,246,0.25)', color: 'var(--blue-text)' }}>
+          Solicitud precargada desde reporte. Completá el motivo y confirmá.
         </div>
       )}
 

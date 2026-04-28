@@ -1,5 +1,11 @@
 import { cookies } from 'next/headers';
 import type { CompanyRole } from './auth-token';
+export {
+  STATUS_LABELS,
+  formatAttendanceUser,
+  formatAttendanceUserOption,
+  formatEmployeeName,
+} from './format-employee';
 
 const API = process.env.API_URL || 'http://localhost:4370';
 
@@ -466,6 +472,7 @@ export interface MonthlySummaryDay {
   isHoliday: boolean;
   isWeekend: boolean;
   hasIncompleteRecord: boolean;
+  justificationStatus?: 'none' | 'pending' | 'approved' | 'rejected';
   status: MonthlySummaryStatus;
 }
 
@@ -671,15 +678,6 @@ export interface Phase2ReportRow {
   reason?: string;
 }
 
-export const STATUS_LABELS: Record<number, string> = {
-  0: 'Entrada',
-  1: 'Salida',
-  2: 'Descanso Sal.',
-  3: 'Descanso Ent.',
-  4: 'Extra Entrada',
-  5: 'Extra Salida',
-};
-
 export const VERIFY_LABELS: Record<number, string> = {
   0: 'Contraseña',
   1: 'Huella',
@@ -698,32 +696,6 @@ export const VERIFY_LABELS: Record<number, string> = {
   102: 'AI Camera',
   200: 'Otro',
 };
-
-export function formatEmployeeName(employee?: {
-  nombre?: string | null;
-  apellido?: string | null;
-} | null) {
-  const apellido = employee?.apellido?.trim() ?? '';
-  const nombre = employee?.nombre?.trim() ?? '';
-  const fullName = [apellido, nombre].filter(Boolean).join(', ');
-
-  return fullName || null;
-}
-
-export function formatAttendanceUser(record: {
-  userId: string;
-  employee?: {
-    nombre?: string | null;
-    apellido?: string | null;
-  } | null;
-}) {
-  return formatEmployeeName(record.employee) ?? record.userId;
-}
-
-export function formatAttendanceUserOption(option: AttendanceUserOption) {
-  const fullName = formatEmployeeName(option.employee);
-  return fullName ? `${fullName} (${option.userId})` : option.userId;
-}
 
 export function getStats() {
   return apiFetch<Stats>('/attendance/stats');
@@ -1076,6 +1048,10 @@ export function exportLateArrivalsReport(params: ReportFilterParams & { minLateM
 
 export function getEarlyDeparturesReport(params: ReportFilterParams = {}) {
   return apiFetch<Phase2ReportRow[]>(`/reports/early-departures${buildReportQuery(params)}`);
+}
+
+export function exportEarlyDeparturesReport(params: ReportFilterParams = {}) {
+  return `/api/reports/export${buildReportQuery({ ...params, report: 'early-departures' })}`;
 }
 
 export function getAbsencesReport(params: ReportFilterParams = {}) {

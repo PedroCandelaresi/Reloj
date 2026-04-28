@@ -77,6 +77,7 @@ export class MonthlySummaryService {
           isHoliday: false,
           isWeekend: false,
           hasIncompleteRecord: summary.isIncomplete,
+          justificationStatus: 'none',
           status:
             summary.punchCount === 0
               ? 'no_records'
@@ -179,6 +180,7 @@ export class MonthlySummaryService {
           isHoliday: summary.isHoliday,
           isWeekend: summary.isWeekend,
           hasIncompleteRecord: summary.hasIncompleteRecord,
+          justificationStatus: summary.justificationStatus,
           status: summary.status,
         };
       });
@@ -238,6 +240,7 @@ export class MonthlySummaryService {
       isHoliday: false,
       isWeekend: false,
       hasIncompleteRecord: false,
+      justificationStatus: 'none',
       status: 'no_records',
     };
   }

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import type { ReactNode } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { ReportFilters } from '@/components/reports/ReportFilters';
 import {
@@ -31,6 +32,7 @@ export default async function DaySummariesPage({ searchParams }: PageProps) {
   const companyId = sp.companyId || '';
   const params = { dateFrom, dateTo, employeeId, companyId };
   const canRecalculate = user.companyRole === 'company_admin' || (user.isSuperAdmin && Boolean(companyId));
+  const canCreateRequests = user.isSuperAdmin || user.companyRole === 'company_admin' || user.companyRole === 'operator';
   const [rows, userOptions] = await Promise.all([
     getAttendanceDaySummaries(params),
     getDistinctUsers(),
@@ -105,13 +107,19 @@ export default async function DaySummariesPage({ searchParams }: PageProps) {
           companyId={companyId}
         />
 
-        <DaySummariesTable rows={rows} />
+        <DaySummariesTable rows={rows} canCreateRequests={canCreateRequests} />
       </main>
     </>
   );
 }
 
-function DaySummariesTable({ rows }: { rows: AttendanceDaySummary[] }) {
+function DaySummariesTable({
+  rows,
+  canCreateRequests,
+}: {
+  rows: AttendanceDaySummary[];
+  canCreateRequests: boolean;
+}) {
   return (
     <div className="card rounded-xl">
       <div className="overflow-x-auto">
@@ -132,12 +140,13 @@ function DaySummariesTable({ rows }: { rows: AttendanceDaySummary[] }) {
               <th className="px-6 py-4 text-left font-semibold">Justificación</th>
               <th className="px-6 py-4 text-left font-semibold">Incompleto</th>
               <th className="px-6 py-4 text-left font-semibold">Flags</th>
+              {canCreateRequests && <th className="px-6 py-4 text-left font-semibold">Acción</th>}
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={14} className="px-6 py-10 text-center" style={{ color: 'var(--text-muted)' }}>
+                <td colSpan={canCreateRequests ? 15 : 14} className="px-6 py-10 text-center" style={{ color: 'var(--text-muted)' }}>
                   No hay summaries calculados para los filtros seleccionados
                 </td>
               </tr>
@@ -163,6 +172,11 @@ function DaySummariesTable({ rows }: { rows: AttendanceDaySummary[] }) {
                     <span className="inline-flex rounded-full bg-slate-500/10 px-2.5 py-1 text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
                       {row.status}
                     </span>
+                    {row.justificationStatus === 'approved' && (
+                      <span className="mt-1 block text-xs font-medium" style={{ color: 'var(--brand-text)' }}>
+                        {row.isAbsent ? 'Ausente justificado' : row.lateMinutes > 0 ? 'Tardanza justificada' : 'Justificado'}
+                      </span>
+                    )}
                   </td>
                   <td className="px-6 py-4 text-xs" style={{ color: 'var(--text-secondary)' }}>
                     {row.justificationStatus}
@@ -178,6 +192,11 @@ function DaySummariesTable({ rows }: { rows: AttendanceDaySummary[] }) {
                       row.isWeekend ? 'fin de semana' : '',
                     ].filter(Boolean).join(', ') || '-'}
                   </td>
+                  {canCreateRequests && (
+                    <td className="px-6 py-4">
+                      <SummaryAction row={row} />
+                    </td>
+                  )}
                 </tr>
               ))
             )}
@@ -185,5 +204,39 @@ function DaySummariesTable({ rows }: { rows: AttendanceDaySummary[] }) {
         </table>
       </div>
     </div>
+  );
+}
+
+function SummaryAction({ row }: { row: AttendanceDaySummary }) {
+  if (row.isAbsent || row.status === 'absent') {
+    return <ActionLink href={requestHref('absence_justification', row.employeeId, row.date)}>Justificar ausencia</ActionLink>;
+  }
+  if (row.lateMinutes > 0) {
+    return <ActionLink href={requestHref('late_justification', row.employeeId, row.date)}>Justificar tardanza</ActionLink>;
+  }
+  if (row.hasIncompleteRecord || row.status === 'incomplete') {
+    return <ActionLink href={requestHref('manual_punch', row.employeeId, row.date, { punchType: 'out' })}>Cargar fichada</ActionLink>;
+  }
+  return <span className="text-xs" style={{ color: 'var(--text-muted)' }}>-</span>;
+}
+
+function requestHref(type: string, employeeId: string, date: string, extra?: Record<string, string>) {
+  const qs = new URLSearchParams({
+    type,
+    employeeId,
+    date,
+    dateFrom: date,
+    dateTo: date,
+    fromReport: '1',
+    ...(extra ?? {}),
+  });
+  return `/attendance/requests?${qs.toString()}`;
+}
+
+function ActionLink({ href, children }: { href: string; children: ReactNode }) {
+  return (
+    <Link href={href} className="font-medium" style={{ color: 'var(--brand-text)' }}>
+      {children}
+    </Link>
   );
 }

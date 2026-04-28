@@ -53,6 +53,7 @@ export default async function RecordsPage({ searchParams }: PageProps) {
     getDistinctUsers(),
     getDevices(),
   ]);
+  const canCreateRequests = user.isSuperAdmin || user.companyRole === 'company_admin' || user.companyRole === 'operator';
 
   const filterBase = { userId, dateFrom, dateTo };
 
@@ -150,12 +151,13 @@ export default async function RecordsPage({ searchParams }: PageProps) {
                   <th className="px-6 py-4 text-left font-semibold">Estado</th>
                   <th className="px-6 py-4 text-left font-semibold">Verificación</th>
                   <th className="px-6 py-4 text-left font-semibold">Dispositivo</th>
+                  {canCreateRequests && <th className="px-6 py-4 text-left font-semibold">Acción</th>}
                 </tr>
               </thead>
               <tbody>
                 {result.data.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-10 text-center" style={{ color: 'var(--text-muted)' }}>
+                    <td colSpan={canCreateRequests ? 6 : 5} className="px-6 py-10 text-center" style={{ color: 'var(--text-muted)' }}>
                       No hay registros para los filtros seleccionados
                     </td>
                   </tr>
@@ -170,6 +172,13 @@ export default async function RecordsPage({ searchParams }: PageProps) {
                       <td className="px-6 py-4"><StatusBadge status={r.status} /></td>
                       <td className="px-6 py-4" style={{ color: 'var(--text-muted)' }}>{VERIFY_LABELS[r.verifyType] ?? r.verifyType}</td>
                       <td className="px-6 py-4 text-xs" style={{ color: 'var(--text-muted)' }}>{r.deviceSn}</td>
+                      {canCreateRequests && (
+                        <td className="px-6 py-4">
+                          <Link href={correctionHref(r.id, r.userId, r.timestamp)} className="font-medium" style={{ color: 'var(--brand-text)' }}>
+                            Corregir fichada
+                          </Link>
+                        </td>
+                      )}
                     </tr>
                   ))
                 )}
@@ -207,6 +216,31 @@ export default async function RecordsPage({ searchParams }: PageProps) {
       </main>
     </>
   );
+}
+
+function correctionHref(recordId: number, employeeId: string, timestamp: string) {
+  const date = argentinaDateKey(timestamp);
+  const qs = new URLSearchParams({
+    type: 'punch_correction',
+    employeeId,
+    date,
+    dateFrom: date,
+    dateTo: date,
+    targetAttendanceRecordId: String(recordId),
+    fromReport: '1',
+  });
+  return `/attendance/requests?${qs.toString()}`;
+}
+
+function argentinaDateKey(iso: string) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: TZ,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date(iso));
+  const values = new Map(parts.map((part) => [part.type, part.value]));
+  return `${values.get('year')}-${values.get('month')}-${values.get('day')}`;
 }
 
 function ExcelIcon() {

@@ -1,4 +1,4 @@
-import { STATUS_LABELS } from '@/lib/api';
+import { STATUS_LABELS } from '@/lib/format-employee';
 
 const colors: Record<number, string> = {
   0: 'bg-green-100  text-green-700  dark:bg-green-900/30  dark:text-green-400',

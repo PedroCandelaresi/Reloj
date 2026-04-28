@@ -67,6 +67,11 @@ export function MonthlySummaryTable({ rows }: { rows: MonthlySummaryReportRow[] 
                         <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${statusClassName(day.status)}`}>
                           {statusLabel(day.status)}
                         </span>
+                        {day.justificationStatus === 'approved' && (
+                          <span className="mt-1 block text-xs font-medium" style={{ color: 'var(--brand-text)' }}>
+                            {day.isAbsent ? 'Ausente justificado' : day.lateMinutes > 0 ? 'Tardanza justificada' : 'Justificado'}
+                          </span>
+                        )}
                         {(day.isHoliday || day.isWeekend || day.hasIncompleteRecord) && (
                           <span className="mt-1 block text-xs" style={{ color: 'var(--text-muted)' }}>
                             {[

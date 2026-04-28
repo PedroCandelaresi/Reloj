@@ -17,6 +17,12 @@ interface PageProps {
     employeeId?: string;
     dateFrom?: string;
     dateTo?: string;
+    date?: string;
+    punchTime?: string;
+    punchType?: string;
+    targetAttendanceRecordId?: string;
+    newPunchTime?: string;
+    fromReport?: string;
   }>;
 }
 
@@ -102,6 +108,18 @@ export default async function AttendanceRequestsPage({ searchParams }: PageProps
           auditLogs={auditLogs}
           userOptions={userOptions}
           user={user}
+          initialForm={{
+            employeeId: sp.employeeId ?? '',
+            type: sp.type ?? 'manual_punch',
+            date: sp.date ?? sp.dateFrom ?? '',
+            punchTime: sp.punchTime ?? '',
+            punchType: sp.punchType === 'in' || sp.punchType === 'out' || sp.punchType === 'unknown' ? sp.punchType : 'unknown',
+            targetAttendanceRecordId: sp.targetAttendanceRecordId ?? '',
+            newPunchTime: sp.newPunchTime ?? '',
+            reason: '',
+            autoApprove: false,
+          }}
+          fromReport={sp.fromReport === '1'}
         />
       </main>
     </>

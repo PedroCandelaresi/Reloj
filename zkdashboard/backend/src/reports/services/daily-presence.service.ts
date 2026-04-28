@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { AuthenticatedUser } from '../../auth/authenticated-user.interface';
 import { ReportFiltersDto } from '../dto/report-filters.dto';
 import { DailyPresenceRow, toReportEmployee } from '../types/report.types';
@@ -16,6 +16,10 @@ export class DailyPresenceService {
   ) {}
 
   async getReport(filters: ReportFiltersDto, user: AuthenticatedUser): Promise<DailyPresenceRow[]> {
+    if (user.isSuperAdmin && !filters.companyId) {
+      throw new BadRequestException('Para consultar presencia diaria como super admin, seleccioná una empresa.');
+    }
+
     const companyId = resolveReportCompanyId(user, filters.companyId);
     const dateFrom = normalizeDate(filters.dateFrom);
     const dateTo = normalizeDate(filters.dateTo ?? dateFrom);

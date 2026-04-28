@@ -16,6 +16,7 @@ export default async function AbsencesPage({ searchParams }: PageProps) {
   const dateTo = sp.dateTo || dateFrom;
   const employeeId = sp.employeeId || '';
   const params = { dateFrom, dateTo, employeeId };
+  const canCreateRequests = user.isSuperAdmin || user.companyRole === 'company_admin' || user.companyRole === 'operator';
   const [rows, userOptions] = await Promise.all([getAbsencesReport(params), getDistinctUsers()]);
 
   return (
@@ -31,7 +32,7 @@ export default async function AbsencesPage({ searchParams }: PageProps) {
           <ExportButtons excelHref={exportAbsencesReport(params)} />
         </div>
         <ReportFilters action="/reports/absences" userOptions={userOptions} dateFrom={dateFrom} dateTo={dateTo} employeeId={employeeId} />
-        <Phase2ReportTable rows={rows} mode="absences" emptyMessage="No hay ausencias para los filtros seleccionados" />
+        <Phase2ReportTable rows={rows} mode="absences" emptyMessage="No hay ausencias para los filtros seleccionados" canCreateRequests={canCreateRequests} />
       </main>
     </>
   );

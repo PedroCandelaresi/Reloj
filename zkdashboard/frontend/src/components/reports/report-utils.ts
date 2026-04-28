@@ -1,9 +1,10 @@
-import { formatEmployeeName, type IncompleteReason, type MonthlySummaryStatus } from '@/lib/api';
+import type { IncompleteReason, MonthlySummaryStatus } from '@/lib/api';
 import {
   ARGENTINA_TIMEZONE,
   formatArgentinaDateTime,
   formatArgentinaTime,
 } from '@/lib/argentina-date';
+import { formatEmployeeName } from '@/lib/format-employee';
 
 export const TZ = ARGENTINA_TIMEZONE;
 

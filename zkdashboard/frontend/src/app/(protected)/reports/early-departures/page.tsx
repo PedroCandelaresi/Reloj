@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import { Navbar } from '@/components/Navbar';
 import { Phase2ReportTable } from '@/components/reports/Phase2ReportTable';
+import { ExportButtons } from '@/components/reports/ExportButtons';
 import { ReportFilters } from '@/components/reports/ReportFilters';
-import { getDistinctUsers, getEarlyDeparturesReport } from '@/lib/api';
+import { exportEarlyDeparturesReport, getDistinctUsers, getEarlyDeparturesReport } from '@/lib/api';
 import { todayArgentinaDateKey } from '@/lib/argentina-date';
 import { requireCurrentSession } from '@/lib/session';
 
@@ -16,6 +17,7 @@ export default async function EarlyDeparturesPage({ searchParams }: PageProps) {
   const employeeId = sp.employeeId || '';
   const params = { dateFrom, dateTo, employeeId };
   const [rows, userOptions] = await Promise.all([getEarlyDeparturesReport(params), getDistinctUsers()]);
+  const exportParams = { dateFrom, dateTo, employeeId };
 
   return (
     <>
@@ -26,6 +28,7 @@ export default async function EarlyDeparturesPage({ searchParams }: PageProps) {
           <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Salidas tempranas</h1>
           <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>{rows.length} registro(s)</p>
         </div>
+        <ExportButtons excelHref={exportEarlyDeparturesReport(exportParams)} />
         <ReportFilters action="/reports/early-departures" userOptions={userOptions} dateFrom={dateFrom} dateTo={dateTo} employeeId={employeeId} />
         <Phase2ReportTable rows={rows} mode="early" emptyMessage="No hay salidas tempranas para los filtros seleccionados" />
       </main>

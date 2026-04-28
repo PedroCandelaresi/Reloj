@@ -270,6 +270,14 @@ export function HolidaysManager({
           </form>
         </section>
       )}
+      {!writable && (
+        <section className="card rounded-xl p-5">
+          <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Solo lectura</h2>
+          <p className="mt-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
+            Tu rol puede consultar feriados, pero no crear, editar ni eliminar registros.
+          </p>
+        </section>
+      )}
     </div>
   );
 }

@@ -20,6 +20,10 @@ const REPORTS: Record<string, { path: string; filename: string }> = {
     path: '/reports/late-arrivals',
     filename: 'tardanzas.xlsx',
   },
+  'early-departures': {
+    path: '/reports/early-departures',
+    filename: 'salidas-tempranas.xlsx',
+  },
   absences: {
     path: '/reports/absences',
     filename: 'ausencias.xlsx',

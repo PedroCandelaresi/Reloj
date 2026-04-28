@@ -79,6 +79,7 @@ export interface MonthlySummaryDay {
   isHoliday: boolean;
   isWeekend: boolean;
   hasIncompleteRecord: boolean;
+  justificationStatus?: 'none' | 'pending' | 'approved' | 'rejected';
   status: MonthlySummaryStatus;
 }
 
