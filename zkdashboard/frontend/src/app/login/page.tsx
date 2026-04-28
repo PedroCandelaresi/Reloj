@@ -85,7 +85,7 @@ export default function LoginPage() {
       <div
         className="login-glass-card relative isolate z-10 w-full max-w-sm overflow-hidden rounded-2xl px-8 py-9"
         style={{
-          background: 'linear-gradient(145deg, rgba(24,29,34,0.58), rgba(7,11,14,0.68))',
+          background: 'linear-gradient(145deg, rgba(24,29,34,0.50), rgba(7,11,14,0.50))',
           border: '1px solid rgba(240,248,252,0.16)',
           backdropFilter: 'blur(26px) saturate(1.18)',
           boxShadow: '0 26px 70px rgba(0,0,0,0.38), inset 0 1px 0 rgba(255,255,255,0.18), inset 0 -1px 0 rgba(0,0,0,0.34), inset 1px 0 0 rgba(255,255,255,0.06)',
