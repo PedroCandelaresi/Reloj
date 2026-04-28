@@ -55,17 +55,13 @@ export default function LoginPage() {
   return (
     <main
       className="relative flex min-h-screen items-center justify-center overflow-hidden px-6 py-10 text-white"
-      style={{ background: '#030e06' }}
+      style={{ background: '#06120d' }}
     >
       {/* Background: always-dark matrix texture */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute inset-0 matrix-dark" />
         <div className="absolute inset-0 scanlines-dark opacity-50" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,rgba(0,0,0,0.55)_100%)]" />
-
-        {/* Decorative ring */}
-        <div className="absolute left-1/2 top-1/2 h-[50rem] w-[50rem] -translate-x-1/2 -translate-y-1/2 rounded-full border border-emerald-400/8" />
-        <div className="absolute left-1/2 top-1/2 h-[34rem] w-[34rem] -translate-x-1/2 -translate-y-1/2 rounded-full border border-emerald-400/5" />
 
         {/* Particles */}
         {particles.map((p) => (
@@ -89,22 +85,22 @@ export default function LoginPage() {
       <div
         className="relative z-10 w-full max-w-sm rounded-2xl px-8 py-9"
         style={{
-          background: 'rgba(4, 18, 8, 0.82)',
-          border: '1px solid rgba(31, 199, 119, 0.14)',
-          backdropFilter: 'blur(12px)',
-          boxShadow: '0 24px 64px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06)',
+          background: 'linear-gradient(145deg, rgba(30,36,41,0.78), rgba(13,18,22,0.72))',
+          border: '1px solid rgba(214,226,232,0.13)',
+          backdropFilter: 'blur(18px) saturate(1.05)',
+          boxShadow: '0 24px 64px rgba(0,0,0,0.48), inset 0 1px 0 rgba(255,255,255,0.13), inset 0 -1px 0 rgba(0,0,0,0.32)',
         }}
       >
         {/* Logo */}
         <div className="flex flex-col items-center gap-4 mb-8">
           <BrandLogo
-            variant="emerald"
+            variant="steel"
             layout="stacked"
             className="w-full"
             iconClassName="w-28 sm:w-32"
-            wordmarkClassName="w-full max-w-[13rem] mx-auto"
+            wordmarkClassName="w-full max-w-[13rem] mx-auto drop-shadow-[0_2px_10px_rgba(255,255,255,0.12)]"
           />
-          <p className="text-sm text-center text-emerald-100/60">
+          <p className="text-sm text-center text-slate-200/68">
             Ingresá con tus credenciales
           </p>
         </div>
@@ -117,7 +113,7 @@ export default function LoginPage() {
 
         <form action={action} className="space-y-4">
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-emerald-100/70 uppercase tracking-wide">
+            <label className="mb-1.5 block text-xs font-medium text-slate-200/72 uppercase tracking-wide">
               Usuario
             </label>
             <input
@@ -126,23 +122,23 @@ export default function LoginPage() {
               required
               autoComplete="username"
               placeholder="tu.usuario"
-              className="w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:ring-2 focus:ring-emerald-500/50"
+              className="login-field w-full rounded-xl px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:ring-2 focus:ring-emerald-500/45"
               style={{
-                background: 'rgba(255,255,255,0.06)',
-                border: '1px solid rgba(255,255,255,0.1)',
+                background: 'rgba(19,29,36,0.86)',
+                border: '1px solid rgba(214,226,232,0.14)',
               }}
             />
           </div>
 
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-emerald-100/70 uppercase tracking-wide">
+            <label className="mb-1.5 block text-xs font-medium text-slate-200/72 uppercase tracking-wide">
               Contraseña
             </label>
             <div
-              className="flex items-center rounded-xl px-4 transition focus-within:ring-2 focus-within:ring-emerald-500/50"
+              className="login-password-field flex items-center rounded-xl transition focus-within:ring-2 focus-within:ring-emerald-500/45"
               style={{
-                background: 'rgba(255,255,255,0.06)',
-                border: '1px solid rgba(255,255,255,0.1)',
+                background: 'rgba(19,29,36,0.86)',
+                border: '1px solid rgba(214,226,232,0.14)',
               }}
             >
               <input
@@ -151,13 +147,13 @@ export default function LoginPage() {
                 required
                 autoComplete="current-password"
                 placeholder="••••••••"
-                className="w-full bg-transparent py-3 text-sm text-white outline-none placeholder:text-slate-500"
+                className="login-field min-w-0 flex-1 rounded-l-xl bg-transparent py-3 pl-4 pr-3 text-sm text-white outline-none placeholder:text-slate-500"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((c) => !c)}
                 aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                className="ml-3 shrink-0 text-slate-500 hover:text-slate-300 transition-colors"
+                className="flex h-full shrink-0 items-center rounded-r-xl px-4 text-slate-500 transition-colors hover:text-slate-300"
               >
                 <EyeIcon open={showPassword} />
               </button>
@@ -180,6 +176,21 @@ export default function LoginPage() {
           animation-name: floatParticle;
           animation-timing-function: ease-in-out;
           animation-iteration-count: infinite;
+        }
+        .login-field:-webkit-autofill,
+        .login-field:-webkit-autofill:hover,
+        .login-field:-webkit-autofill:focus,
+        .login-field:-webkit-autofill:active {
+          -webkit-text-fill-color: #fff;
+          caret-color: #fff;
+          transition: background-color 9999s ease-in-out 0s;
+          box-shadow: 0 0 0 1000px rgba(19,29,36,0.86) inset;
+        }
+        .login-password-field .login-field:-webkit-autofill,
+        .login-password-field .login-field:-webkit-autofill:hover,
+        .login-password-field .login-field:-webkit-autofill:focus,
+        .login-password-field .login-field:-webkit-autofill:active {
+          box-shadow: 0 0 0 1000px transparent inset;
         }
       `}</style>
     </main>
