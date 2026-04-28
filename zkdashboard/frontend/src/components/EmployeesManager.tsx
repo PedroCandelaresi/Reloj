@@ -399,7 +399,7 @@ export function EmployeesManagerContent({
                           {row.status === 'system_only' && row.employee && canSyncDeviceUsers ? (
                             <button
                               type="button"
-                              onClick={() => handleExportToDevice(row.employee)}
+                              onClick={() => handleExportToDevice(row.employee!)}
                               disabled={isPending}
                               className="font-medium transition-colors disabled:opacity-60"
                               style={{ color: 'var(--brand-text)' }}
@@ -409,7 +409,7 @@ export function EmployeesManagerContent({
                           ) : row.status === 'name_mismatch' && row.employee && canSyncDeviceUsers ? (
                             <button
                               type="button"
-                              onClick={() => handleExportToDevice(row.employee)}
+                              onClick={() => handleExportToDevice(row.employee!)}
                               disabled={isPending}
                               className="font-medium transition-colors disabled:opacity-60"
                               style={{ color: 'var(--brand-text)' }}
