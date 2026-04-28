@@ -97,7 +97,7 @@ export function NavbarClient({ user }: { user?: CurrentUserProfile | null }) {
   /* Navbar keeps dark bg in both themes (GNOME Adwaita headerbar style) */
   return (
     <nav
-      className="fixed top-0 left-0 right-0 z-50 text-white px-4 py-4 flex items-center justify-between"
+      className="relative z-50 flex shrink-0 items-center justify-between px-4 py-4 text-white"
       style={{ background: 'var(--bg-navbar)', borderBottom: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 2px 12px rgba(0,0,0,0.35)' }}
     >
       {/* Logo + hamburger */}

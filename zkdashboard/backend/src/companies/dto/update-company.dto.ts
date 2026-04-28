@@ -1,5 +1,5 @@
 import { Transform } from 'class-transformer';
-import { IsBoolean, IsEmail, IsOptional, IsString, Length, Matches, MaxLength } from 'class-validator';
+import { IsArray, IsBoolean, IsEmail, IsIn, IsOptional, IsString, Length, Matches, MaxLength } from 'class-validator';
 import { IsCuit } from '../validation/cuit.validator';
 import { normalizeCuit } from '../validation/cuit.util';
 
@@ -54,6 +54,11 @@ export class UpdateCompanyDto {
     message: 'El horario global de salida debe tener formato HH:mm en 24 horas.',
   })
   defaultExitTime?: string | null;
+
+  @IsOptional()
+  @IsArray()
+  @IsIn(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'], { each: true })
+  defaultWorkDays?: string[] | null;
 
   @Transform(trimNullableValue)
   @IsOptional()

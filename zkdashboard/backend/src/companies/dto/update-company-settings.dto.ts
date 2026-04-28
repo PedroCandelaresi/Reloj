@@ -1,5 +1,5 @@
 import { Transform } from 'class-transformer';
-import { IsOptional, IsString, Matches } from 'class-validator';
+import { IsArray, IsIn, IsOptional, IsString, Matches } from 'class-validator';
 
 const TIME_24H_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
 
@@ -25,4 +25,9 @@ export class UpdateCompanySettingsDto {
     message: 'El horario global de salida debe tener formato HH:mm en 24 horas.',
   })
   defaultExitTime?: string | null;
+
+  @IsOptional()
+  @IsArray()
+  @IsIn(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'], { each: true })
+  defaultWorkDays?: string[] | null;
 }

@@ -35,6 +35,9 @@ export class Company {
   @Column({ name: 'default_exit_time', type: 'varchar', length: 5, nullable: true })
   defaultExitTime: string | null;
 
+  @Column({ name: 'default_work_days', type: 'jsonb', nullable: true })
+  defaultWorkDays: string[] | null;
+
   @Column({ length: 200, nullable: true })
   email: string | null;
 

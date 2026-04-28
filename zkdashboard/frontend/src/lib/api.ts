@@ -102,6 +102,7 @@ export interface CompanySummary {
   isActive: boolean;
   defaultEntryTime?: string | null;
   defaultExitTime?: string | null;
+  defaultWorkDays?: string[] | null;
   email?: string | null;
   phone?: string | null;
   createdAt?: string;
@@ -298,6 +299,7 @@ export interface CompanyInput {
   isActive?: boolean;
   defaultEntryTime?: string | null;
   defaultExitTime?: string | null;
+  defaultWorkDays?: string[] | null;
   email?: string | null;
   phone?: string | null;
 }
@@ -309,6 +311,7 @@ export interface CompanyUpdateInput {
   isActive?: boolean;
   defaultEntryTime?: string | null;
   defaultExitTime?: string | null;
+  defaultWorkDays?: string[] | null;
   email?: string | null;
   phone?: string | null;
 }
@@ -316,6 +319,7 @@ export interface CompanyUpdateInput {
 export interface CompanySettingsInput {
   defaultEntryTime?: string | null;
   defaultExitTime?: string | null;
+  defaultWorkDays?: string[] | null;
 }
 
 export interface ScheduleProfile {

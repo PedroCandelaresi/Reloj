@@ -60,6 +60,7 @@ export class CompaniesService {
       isActive: company.isActive,
       defaultEntryTime: company.defaultEntryTime,
       defaultExitTime: company.defaultExitTime,
+      defaultWorkDays: company.defaultWorkDays,
       createdAt: company.createdAt,
       updatedAt: company.updatedAt,
     };
@@ -240,6 +241,7 @@ export class CompaniesService {
       isActive: dto.isActive ?? true,
       defaultEntryTime: dto.defaultEntryTime ?? null,
       defaultExitTime: dto.defaultExitTime ?? null,
+      defaultWorkDays: dto.defaultWorkDays?.length ? dto.defaultWorkDays : null,
     });
 
     return this.toCompany(await this.companiesRepo.save(company));
@@ -271,6 +273,9 @@ export class CompaniesService {
     if (dto.defaultExitTime !== undefined) {
       company.defaultExitTime = dto.defaultExitTime;
     }
+    if (dto.defaultWorkDays !== undefined) {
+      company.defaultWorkDays = dto.defaultWorkDays?.length ? dto.defaultWorkDays : null;
+    }
 
     return this.toCompany(await this.companiesRepo.save(company));
   }
@@ -288,6 +293,9 @@ export class CompaniesService {
     }
     if (dto.defaultExitTime !== undefined) {
       company.defaultExitTime = dto.defaultExitTime;
+    }
+    if (dto.defaultWorkDays !== undefined) {
+      company.defaultWorkDays = dto.defaultWorkDays?.length ? dto.defaultWorkDays : null;
     }
 
     return this.toCompany(await this.companiesRepo.save(company));

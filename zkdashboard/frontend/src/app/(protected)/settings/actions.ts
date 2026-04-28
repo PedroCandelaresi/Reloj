@@ -24,11 +24,13 @@ function getErrorMessage(error: unknown, fallback: string) {
 export async function updateCompanySettingsAction(input: {
   defaultEntryTime?: string | null;
   defaultExitTime?: string | null;
+  defaultWorkDays?: string[] | null;
 }): Promise<CompanySettingsActionResult> {
   try {
     await updateCompanySettings({
       defaultEntryTime: cleanText(input.defaultEntryTime) || null,
       defaultExitTime: cleanText(input.defaultExitTime) || null,
+      defaultWorkDays: input.defaultWorkDays?.length ? input.defaultWorkDays : null,
     });
     revalidatePath('/settings');
     revalidatePath('/employees');

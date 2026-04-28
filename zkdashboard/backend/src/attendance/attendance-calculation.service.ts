@@ -514,7 +514,11 @@ export class AttendanceCalculationService {
       expectedMinutes,
       breakMinutes,
       overtimeAfterMinutes: profile?.overtimeAfterMinutes ?? 0,
-      workDays: profile?.workDays?.length ? profile.workDays : ['mon', 'tue', 'wed', 'thu', 'fri'],
+      workDays: profile?.workDays?.length
+        ? profile.workDays
+        : company?.defaultWorkDays?.length
+          ? company.defaultWorkDays
+          : ['mon', 'tue', 'wed', 'thu', 'fri'],
     };
   }
 

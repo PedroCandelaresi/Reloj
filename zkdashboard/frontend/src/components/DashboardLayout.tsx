@@ -19,7 +19,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
   );
 
   return (
-    <div className="min-h-screen relative">
+    <div className="relative h-screen overflow-hidden">
       {/* Dark mode: matrix + scanlines + particles */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0 dark:block hidden">
         <div className="absolute inset-0 conflunet-matrix-bg" />
@@ -55,7 +55,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
         }} />
       </div>
 
-      <div className="relative z-10">{children}</div>
+      <div className="dashboard-shell relative z-10 flex h-screen flex-col overflow-hidden">{children}</div>
 
       <style jsx>{`
         @keyframes floatParticle {

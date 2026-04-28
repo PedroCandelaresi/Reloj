@@ -5,17 +5,42 @@ import type { FormEvent } from 'react';
 import type { CompanySummary } from '@/lib/api';
 import { updateCompanySettingsAction } from '@/app/(protected)/settings/actions';
 
+const WORK_DAY_OPTIONS = [
+  ['mon', 'Lun'],
+  ['tue', 'Mar'],
+  ['wed', 'Mié'],
+  ['thu', 'Jue'],
+  ['fri', 'Vie'],
+  ['sat', 'Sáb'],
+  ['sun', 'Dom'],
+] as const;
+
+const DEFAULT_WORK_DAYS = ['mon', 'tue', 'wed', 'thu', 'fri'];
+
 export function CompanySettingsManager({ company }: { company: CompanySummary }) {
   const [isPending, startTransition] = useTransition();
   const [defaultEntryTime, setDefaultEntryTime] = useState(company.defaultEntryTime ?? '');
   const [defaultExitTime, setDefaultExitTime] = useState(company.defaultExitTime ?? '');
+  const [defaultWorkDays, setDefaultWorkDays] = useState<string[]>(
+    company.defaultWorkDays?.length ? company.defaultWorkDays : DEFAULT_WORK_DAYS,
+  );
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const handleWorkDayChange = (value: string, checked: boolean) => {
+    setDefaultWorkDays((current) => {
+      if (checked) {
+        return current.includes(value) ? current : [...current, value];
+      }
+
+      return current.filter((day) => day !== value);
+    });
+  };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setMessage(null);
     startTransition(() => {
-      void updateCompanySettingsAction({ defaultEntryTime, defaultExitTime }).then((result) => {
+      void updateCompanySettingsAction({ defaultEntryTime, defaultExitTime, defaultWorkDays }).then((result) => {
         if (result.error) { setMessage({ type: 'error', text: result.error }); return; }
         setMessage({ type: 'success', text: 'Horarios globales guardados correctamente.' });
       });
@@ -59,6 +84,26 @@ export function CompanySettingsManager({ company }: { company: CompanySummary })
               className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
               style={inputStyle} />
           </div>
+        </div>
+
+        <div>
+          <p className="mb-2 text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Días laborales globales</p>
+          <div className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-4" style={{ color: 'var(--text-secondary)' }}>
+            {WORK_DAY_OPTIONS.map(([value, label]) => (
+              <label key={value} className="inline-flex items-center gap-2 rounded-lg px-3 py-2" style={{ background: 'var(--surface-raised)', border: '1px solid var(--border)' }}>
+                <input
+                  type="checkbox"
+                  value={value}
+                  checked={defaultWorkDays.includes(value)}
+                  onChange={(event) => handleWorkDayChange(value, event.target.checked)}
+                />
+                {label}
+              </label>
+            ))}
+          </div>
+          <p className="mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+            Se usan para calcular ausencias cuando el empleado no tiene un perfil horario con días propios.
+          </p>
         </div>
 
         <div className="flex justify-end">
