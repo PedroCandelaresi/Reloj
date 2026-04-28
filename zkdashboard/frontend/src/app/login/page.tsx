@@ -83,16 +83,16 @@ export default function LoginPage() {
 
       {/* Card */}
       <div
-        className="relative z-10 w-full max-w-sm rounded-2xl px-8 py-9"
+        className="login-glass-card relative isolate z-10 w-full max-w-sm overflow-hidden rounded-2xl px-8 py-9"
         style={{
-          background: 'linear-gradient(145deg, rgba(30,36,41,0.78), rgba(13,18,22,0.72))',
-          border: '1px solid rgba(214,226,232,0.13)',
-          backdropFilter: 'blur(18px) saturate(1.05)',
-          boxShadow: '0 24px 64px rgba(0,0,0,0.48), inset 0 1px 0 rgba(255,255,255,0.13), inset 0 -1px 0 rgba(0,0,0,0.32)',
+          background: 'linear-gradient(145deg, rgba(54,64,72,0.58), rgba(15,22,27,0.68))',
+          border: '1px solid rgba(240,248,252,0.22)',
+          backdropFilter: 'blur(24px) saturate(1.2)',
+          boxShadow: '0 26px 70px rgba(0,0,0,0.42), inset 0 1px 0 rgba(255,255,255,0.30), inset 0 -1px 0 rgba(0,0,0,0.38), inset 1px 0 0 rgba(255,255,255,0.12), inset -1px 0 0 rgba(255,255,255,0.05)',
         }}
       >
         {/* Logo */}
-        <div className="flex flex-col items-center gap-4 mb-8">
+        <div className="relative z-10 flex flex-col items-center gap-4 mb-8">
           <BrandLogo
             variant="steel"
             layout="stacked"
@@ -106,12 +106,12 @@ export default function LoginPage() {
         </div>
 
         {state?.error && (
-          <div className="mb-5 rounded-xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+          <div className="relative z-10 mb-5 rounded-xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
             {state.error}
           </div>
         )}
 
-        <form action={action} className="space-y-4">
+        <form action={action} className="relative z-10 space-y-4">
           <div>
             <label className="mb-1.5 block text-xs font-medium text-slate-200/72 uppercase tracking-wide">
               Usuario
@@ -176,6 +176,35 @@ export default function LoginPage() {
           animation-name: floatParticle;
           animation-timing-function: ease-in-out;
           animation-iteration-count: infinite;
+        }
+        .login-glass-card::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          z-index: 0;
+          border-radius: 1rem;
+          background:
+            linear-gradient(116deg, transparent 0%, transparent 17%, rgba(255,255,255,0.22) 19%, rgba(255,255,255,0.075) 25%, transparent 32%),
+            linear-gradient(116deg, transparent 52%, rgba(255,255,255,0.12) 57%, rgba(255,255,255,0.035) 64%, transparent 72%),
+            radial-gradient(ellipse at 24% 8%, rgba(255,255,255,0.24), transparent 34%),
+            radial-gradient(ellipse at 88% 92%, rgba(64,255,190,0.08), transparent 38%);
+          mix-blend-mode: screen;
+          opacity: 0.95;
+          pointer-events: none;
+        }
+        .login-glass-card::after {
+          content: '';
+          position: absolute;
+          inset: 1px;
+          z-index: 0;
+          border-radius: 0.95rem;
+          background:
+            linear-gradient(180deg, rgba(255,255,255,0.18), transparent 18%),
+            linear-gradient(90deg, rgba(255,255,255,0.12), transparent 16%, transparent 84%, rgba(255,255,255,0.06)),
+            radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.28), transparent 42%);
+          box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
+          opacity: 0.78;
+          pointer-events: none;
         }
         .login-field:-webkit-autofill,
         .login-field:-webkit-autofill:hover,
