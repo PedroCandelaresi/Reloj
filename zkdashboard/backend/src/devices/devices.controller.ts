@@ -10,6 +10,7 @@ import {
 import { JwtAuthGuard } from '../auth/auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { AuthenticatedUser } from '../auth/authenticated-user.interface';
+import { CompanyAdminGuard } from '../auth/guards/company-admin.guard';
 import { CompanyOperatorGuard } from '../auth/guards/company-operator.guard';
 import { DevicesService } from './devices.service';
 
@@ -29,6 +30,61 @@ export class DevicesController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.devices.findCommandsForDevice(id, user);
+  }
+
+  @Get(':id/user-reconciliation')
+  findUserReconciliation(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.devices.getUserReconciliation(id, user);
+  }
+
+  @Post(':id/query-users')
+  @UseGuards(CompanyOperatorGuard)
+  async queryUsers(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    const result = await this.devices.enqueueUserInfoQuery(id, user);
+
+    return {
+      ok: true,
+      device: {
+        id: result.device.id,
+        serialNumber: result.device.serialNumber,
+      },
+      commands: result.commands.map((command) => ({
+        id: command.id,
+        commandType: command.commandType,
+        command: command.command,
+        status: command.status,
+      })),
+      message: 'Consulta USERINFO encolada. El reloj responderá en el próximo heartbeat.',
+    };
+  }
+
+  @Post(':id/employees/:employeeId/sync-user')
+  @UseGuards(CompanyAdminGuard)
+  async syncEmployeeUser(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('employeeId') employeeId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    const result = await this.devices.enqueueEmployeeUserSync(id, employeeId, user);
+
+    return {
+      ok: true,
+      device: {
+        id: result.device.id,
+        serialNumber: result.device.serialNumber,
+      },
+      command: {
+        id: result.command.id,
+        status: result.command.status,
+      },
+      message: `Empleado ${employeeId} encolado para enviar al reloj.`,
+    };
   }
 
   @Post(':id/commands/check-time')

@@ -1,15 +1,23 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
-import type { Device, Employee, ScheduleProfile } from '@/lib/api';
+import type {
+  Device,
+  DeviceUserMatchStatus,
+  DeviceUserReconciliation,
+  DeviceUserReconciliationRow,
+  Employee,
+  ScheduleProfile,
+} from '@/lib/api';
 import type { ActionResult } from '@/app/(protected)/employees/actions';
 import {
   createEmployeeAction,
   deleteEmployeeAction,
-  exportEmployeeToDeviceAction,
-  importEmployeesFromDeviceAction,
+  getDeviceUserReconciliationAction,
+  queryDeviceUsersAction,
+  syncDeviceEmployeeUserAction,
   updateEmployeeAction,
 } from '@/app/(protected)/employees/actions';
 
@@ -42,6 +50,14 @@ const EMPTY_FORM: FormValues = {
   scheduleProfileId: '',
 };
 
+const RECONCILIATION_STATUS_LABELS: Record<DeviceUserMatchStatus, string> = {
+  matched: 'Sincronizado',
+  system_only: 'Solo sistema',
+  device_only: 'Solo reloj',
+  name_mismatch: 'Nombre distinto',
+  pin_conflict: 'Conflicto PIN',
+};
+
 function toFormValues(employee: Employee): FormValues {
   return {
     id: employee.id,
@@ -64,11 +80,17 @@ export function EmployeesManagerContent({
   scheduleProfiles,
   devices,
   canManage,
+  canQueryDeviceUsers = canManage,
+  canRequestDeviceUserQuery = canManage,
+  canSyncDeviceUsers = canManage,
 }: {
   employees: Employee[];
   scheduleProfiles: ScheduleProfile[];
   devices: Device[];
   canManage: boolean;
+  canQueryDeviceUsers?: boolean;
+  canRequestDeviceUserQuery?: boolean;
+  canSyncDeviceUsers?: boolean;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -78,6 +100,8 @@ export function EmployeesManagerContent({
   const [formError, setFormError] = useState<string | null>(null);
   const [banner, setBanner] = useState<BannerState>(null);
   const [syncDeviceId, setSyncDeviceId] = useState(devices[0]?.id ? String(devices[0].id) : '');
+  const [reconciliation, setReconciliation] = useState<DeviceUserReconciliation | null>(null);
+  const [isReconciliationLoading, setIsReconciliationLoading] = useState(false);
 
   const openCreate = () => {
     setMode('create');
@@ -161,6 +185,43 @@ export function EmployeesManagerContent({
 
   const selectedDeviceId = Number.parseInt(syncDeviceId, 10);
 
+  const loadReconciliation = (deviceId: number) => {
+    if (!canQueryDeviceUsers || !Number.isInteger(deviceId) || deviceId <= 0) {
+      setReconciliation(null);
+      return;
+    }
+
+    setIsReconciliationLoading(true);
+    startTransition(() => {
+      void getDeviceUserReconciliationAction(deviceId)
+        .then((result) => {
+          if (result.error) {
+            setReconciliation(null);
+            setBanner({ type: 'error', text: result.error });
+            return;
+          }
+          setReconciliation(result.data ?? null);
+        })
+        .catch(() => {
+          setReconciliation(null);
+          setBanner({ type: 'error', text: 'No se pudo cargar la conciliación del reloj.' });
+        })
+        .finally(() => {
+          setIsReconciliationLoading(false);
+        });
+    });
+  };
+
+  useEffect(() => {
+    if (!canQueryDeviceUsers || !Number.isInteger(selectedDeviceId) || selectedDeviceId <= 0) {
+      setReconciliation(null);
+      return;
+    }
+
+    loadReconciliation(selectedDeviceId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [syncDeviceId, canQueryDeviceUsers]);
+
   const handleImportFromDevice = () => {
     setBanner(null);
     if (!Number.isInteger(selectedDeviceId) || selectedDeviceId <= 0) {
@@ -169,17 +230,17 @@ export function EmployeesManagerContent({
     }
 
     startTransition(() => {
-      void importEmployeesFromDeviceAction(selectedDeviceId)
+      void queryDeviceUsersAction(selectedDeviceId)
         .then((result: ActionResult) => {
           if (result.error) { setBanner({ type: 'error', text: result.error }); return; }
-          setBanner({ type: 'success', text: result.message || 'Importación solicitada al reloj.' });
-          router.refresh();
+          setBanner({ type: 'success', text: result.message || 'Consulta USERINFO solicitada al reloj.' });
+          loadReconciliation(selectedDeviceId);
         })
-        .catch(() => { setBanner({ type: 'error', text: 'No se pudo solicitar la importación.' }); });
+        .catch(() => { setBanner({ type: 'error', text: 'No se pudo solicitar USERINFO al reloj.' }); });
     });
   };
 
-  const handleExportToDevice = (employee: Employee) => {
+  const handleExportToDevice = (employee: Pick<Employee, 'id' | 'apellido' | 'nombre'>) => {
     setBanner(null);
     if (!Number.isInteger(selectedDeviceId) || selectedDeviceId <= 0) {
       setBanner({ type: 'error', text: 'Seleccioná un reloj.' });
@@ -188,15 +249,25 @@ export function EmployeesManagerContent({
     if (!window.confirm(`¿Enviar a ${employee.apellido}, ${employee.nombre} al reloj seleccionado?`)) return;
 
     startTransition(() => {
-      void exportEmployeeToDeviceAction(selectedDeviceId, employee.id)
+      void syncDeviceEmployeeUserAction(selectedDeviceId, employee.id)
         .then((result: ActionResult) => {
           if (result.error) { setBanner({ type: 'error', text: result.error }); return; }
           setBanner({ type: 'success', text: result.message || 'Empleado encolado para enviar al reloj.' });
-          router.refresh();
+          loadReconciliation(selectedDeviceId);
         })
         .catch(() => { setBanner({ type: 'error', text: 'No se pudo enviar el empleado al reloj.' }); });
     });
   };
+
+  const reconciliationRows: DeviceUserReconciliationRow[] = reconciliation
+    ? [
+        ...reconciliation.pinConflicts,
+        ...reconciliation.nameMismatches,
+        ...reconciliation.deviceOnly,
+        ...reconciliation.systemOnly,
+        ...reconciliation.matched,
+      ]
+    : [];
 
   return (
     <>
@@ -234,13 +305,13 @@ export function EmployeesManagerContent({
           </div>
         )}
 
-        {canManage && (
+        {canQueryDeviceUsers && (
           <div className="mx-6 mt-6 rounded-xl p-4" style={{ border: '1px solid var(--border)', background: 'var(--surface-raised)' }}>
             <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
               <div className="min-w-0">
                 <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Usuarios del reloj</p>
                 <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                  Importa USERINFO a la maestra. El envío al reloj se hace por empleado.
+                  Compara USERINFO del reloj contra la maestra. No importa biometría ni crea empleados automáticamente.
                 </p>
               </div>
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -261,15 +332,105 @@ export function EmployeesManagerContent({
                     ))
                   )}
                 </select>
-                <button
-                  type="button"
-                  onClick={handleImportFromDevice}
-                  disabled={isPending || devices.length === 0}
-                  className="rounded-lg bg-emerald-600 hover:bg-emerald-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-60 transition-colors"
-                >
-                  Importar usuarios del reloj
-                </button>
+                {canRequestDeviceUserQuery && (
+                  <button
+                    type="button"
+                    onClick={handleImportFromDevice}
+                    disabled={isPending || devices.length === 0}
+                    className="rounded-lg bg-emerald-600 hover:bg-emerald-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-60 transition-colors"
+                  >
+                    Consultar usuarios del reloj
+                  </button>
+                )}
               </div>
+            </div>
+
+            <div className="mt-4 flex flex-wrap items-center gap-3 text-xs" style={{ color: 'var(--text-muted)' }}>
+              <span>
+                Última consulta:{' '}
+                {reconciliation?.lastUserInfoSync
+                  ? new Date(reconciliation.lastUserInfoSync).toLocaleString('es-AR')
+                  : 'sin datos'}
+              </span>
+              <span>
+                Total conciliado: {reconciliationRows.length}
+              </span>
+              {isReconciliationLoading && <span>Cargando...</span>}
+            </div>
+
+            <div className="mt-4 overflow-x-auto rounded-lg" style={{ border: '1px solid var(--border)' }}>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="table-header-row text-xs uppercase">
+                    <th className="px-4 py-3 text-left font-semibold">PIN</th>
+                    <th className="px-4 py-3 text-left font-semibold">Nombre en reloj</th>
+                    <th className="px-4 py-3 text-left font-semibold">Empleado del sistema</th>
+                    <th className="px-4 py-3 text-left font-semibold">Estado</th>
+                    <th className="px-4 py-3 text-right font-semibold">Acción</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {devices.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-4 py-8 text-center" style={{ color: 'var(--text-muted)' }}>
+                        No hay relojes disponibles.
+                      </td>
+                    </tr>
+                  ) : reconciliationRows.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-4 py-8 text-center" style={{ color: 'var(--text-muted)' }}>
+                        Todavía no hay USERINFO recibido para este reloj.
+                      </td>
+                    </tr>
+                  ) : (
+                    reconciliationRows.map((row) => (
+                      <tr key={`${row.status}-${row.pin}`} className="border-t" style={{ borderColor: 'var(--border)' }}>
+                        <td className="px-4 py-3 font-medium" style={{ color: 'var(--text-primary)' }}>{row.pin}</td>
+                        <td className="px-4 py-3" style={{ color: 'var(--text-secondary)' }}>
+                          {row.deviceUser?.name || '—'}
+                        </td>
+                        <td className="px-4 py-3" style={{ color: 'var(--text-secondary)' }}>
+                          {row.employee ? `${row.employee.apellido}, ${row.employee.nombre}` : '—'}
+                        </td>
+                        <td className="px-4 py-3" style={{ color: 'var(--text-muted)' }}>
+                          {RECONCILIATION_STATUS_LABELS[row.status]}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          {row.status === 'system_only' && row.employee && canSyncDeviceUsers ? (
+                            <button
+                              type="button"
+                              onClick={() => handleExportToDevice(row.employee)}
+                              disabled={isPending}
+                              className="font-medium transition-colors disabled:opacity-60"
+                              style={{ color: 'var(--brand-text)' }}
+                            >
+                              Enviar al reloj
+                            </button>
+                          ) : row.status === 'name_mismatch' && row.employee && canSyncDeviceUsers ? (
+                            <button
+                              type="button"
+                              onClick={() => handleExportToDevice(row.employee)}
+                              disabled={isPending}
+                              className="font-medium transition-colors disabled:opacity-60"
+                              style={{ color: 'var(--brand-text)' }}
+                            >
+                              Actualizar reloj
+                            </button>
+                          ) : row.status === 'device_only' ? (
+                            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Revisar / importar manualmente</span>
+                          ) : row.status === 'matched' ? (
+                            <span className="text-xs" style={{ color: 'var(--brand-text)' }}>Sincronizado</span>
+                          ) : (row.status === 'system_only' || row.status === 'name_mismatch') && !canSyncDeviceUsers ? (
+                            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Solo lectura</span>
+                          ) : (
+                            <span className="text-xs" style={{ color: 'var(--danger-text)' }}>Revisar PIN</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         )}

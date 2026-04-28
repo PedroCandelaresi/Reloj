@@ -13,6 +13,7 @@ import { Company } from '../companies/company.entity';
 import { ScheduleProfile } from '../companies/schedule-profile.entity';
 import { Device } from '../devices/device.entity';
 import { DeviceCommand } from '../devices/device-command.entity';
+import { DeviceUserSnapshot } from '../devices/device-user-snapshot.entity';
 import { Employee } from '../employees/employee.entity';
 import { AdminUser } from '../users/admin-user.entity';
 
@@ -30,6 +31,7 @@ export const DATABASE_ENTITIES = [
   ScheduleProfile,
   Device,
   DeviceCommand,
+  DeviceUserSnapshot,
   AdminUser,
   Employee,
 ];

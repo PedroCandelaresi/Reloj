@@ -4,7 +4,6 @@ import { Repository } from 'typeorm';
 import { AttendanceService } from '../attendance/attendance.service';
 import { Device } from '../devices/device.entity';
 import { DevicesService } from '../devices/devices.service';
-import { EmployeesService } from '../employees/employees.service';
 import { InboundRequest } from './inbound-request.entity';
 import { logAttendance, logSecurity } from '../logging/file-log.util';
 
@@ -24,7 +23,6 @@ export class AdmsService {
     private readonly inboundRequestsRepo: Repository<InboundRequest>,
     private readonly attendance: AttendanceService,
     private readonly devices: DevicesService,
-    private readonly employees: EmployeesService,
   ) {}
 
   async startInboundRequest(params: {
@@ -118,9 +116,9 @@ export class AdmsService {
       const device = await this.devices.upsert(serialNumber, ipAddress);
       const normalizedTable = table?.trim().toUpperCase();
       if (normalizedTable === 'USERINFO' && device.companyId) {
-        const result = await this.employees.importUserInfoFromDevice(device.companyId, body);
+        const result = await this.devices.importUserInfoSnapshotFromPush(device, body);
         this.logger.log(
-          `USERINFO importado desde ${serialNumber}: creados=${result.created} actualizados=${result.updated} omitidos=${result.skipped}`,
+          `USERINFO registrado desde ${serialNumber}: snapshots=${result.upserted} omitidos=${result.skipped}`,
         );
       }
       await this.devices.markDeviceDataQueryFromPush(serialNumber, table, body);

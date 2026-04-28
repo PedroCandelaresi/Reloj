@@ -5,10 +5,20 @@ import { requireCurrentSession } from '@/lib/session';
 export default async function EmployeesPage() {
   const user = await requireCurrentSession();
   const canManage = !user.isSuperAdmin && user.companyRole === 'company_admin';
+  const canQueryDeviceUsers =
+    user.isSuperAdmin ||
+    user.companyRole === 'company_admin' ||
+    user.companyRole === 'operator' ||
+    user.companyRole === 'read_only';
+  const canRequestDeviceUserQuery =
+    user.isSuperAdmin ||
+    user.companyRole === 'company_admin' ||
+    user.companyRole === 'operator';
+  const canSyncDeviceUsers = user.isSuperAdmin || user.companyRole === 'company_admin';
   const [employees, scheduleProfiles, devices] = await Promise.all([
     getEmployees(),
     canManage ? getScheduleProfiles() : Promise.resolve([]),
-    canManage ? getDevices() : Promise.resolve([]),
+    canQueryDeviceUsers ? getDevices() : Promise.resolve([]),
   ]);
 
   return (
@@ -28,6 +38,9 @@ export default async function EmployeesPage() {
           scheduleProfiles={scheduleProfiles}
           devices={devices}
           canManage={canManage}
+          canQueryDeviceUsers={canQueryDeviceUsers}
+          canRequestDeviceUserQuery={canRequestDeviceUserQuery}
+          canSyncDeviceUsers={canSyncDeviceUsers}
         />
       </main>
     </>

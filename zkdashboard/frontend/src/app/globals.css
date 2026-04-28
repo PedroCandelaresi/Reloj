@@ -143,12 +143,10 @@ body {
 /* ── Login: always-dark matrix (ignores theme) ──────────────────── */
 .matrix-dark {
   background:
-    linear-gradient(rgba(0, 255, 110, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 255, 110, 0.035) 1px, transparent 1px),
     radial-gradient(circle at 50% 12%, rgba(0, 255, 130, 0.10), transparent 34%),
     radial-gradient(circle at 15% 18%, rgba(40, 255, 166, 0.07), transparent 22%),
     linear-gradient(180deg, #020b05 0%, #03140a 48%, #050708 100%);
-  background-size: 26px 26px, 26px 26px, auto, auto, auto;
+  background-size: auto;
 }
 .scanlines-dark {
   background:
@@ -164,23 +162,19 @@ body {
 /* ── Dark mode: matrix / scanlines bg (DashboardLayout) ────────── */
 .dark .conflunet-matrix-bg {
   background:
-    linear-gradient(rgba(0, 255, 110, 0.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 255, 110, 0.04) 1px, transparent 1px),
     radial-gradient(circle at 50% 12%, rgba(0, 255, 130, 0.14), transparent 34%),
     radial-gradient(circle at 15% 18%, rgba(40, 255, 166, 0.10), transparent 22%),
     linear-gradient(180deg, #020b05 0%, #03140a 48%, #050708 100%);
-  background-size: 26px 26px, 26px 26px, auto, auto, auto;
+  background-size: auto;
 }
 
-/* Light mode: same matrix language, softened for contrast */
+/* Light mode: same brand atmosphere, softened for contrast */
 .conflunet-matrix-bg {
   background:
-    linear-gradient(rgba(23, 168, 95, 0.12) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(23, 168, 95, 0.09) 1px, transparent 1px),
     radial-gradient(circle at 50% 12%, rgba(31, 199, 119, 0.16), transparent 34%),
     radial-gradient(circle at 15% 18%, rgba(31, 199, 119, 0.12), transparent 22%),
     linear-gradient(180deg, #f6f3ed 0%, #ece9e1 48%, #e6e2da 100%);
-  background-size: 26px 26px, 26px 26px, auto, auto, auto;
+  background-size: auto;
 }
 
 .dark .conflunet-steel-bg {

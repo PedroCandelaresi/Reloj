@@ -274,6 +274,53 @@ export interface EmployeeDeviceExportResult {
   };
 }
 
+export type DeviceUserMatchStatus =
+  | 'matched'
+  | 'system_only'
+  | 'device_only'
+  | 'name_mismatch'
+  | 'pin_conflict';
+
+export interface DeviceUserReconciliationRow {
+  pin: string;
+  deviceUser: {
+    id: string;
+    pin: string;
+    name: string | null;
+    privilege: string | null;
+    card: string | null;
+    passwordPresent: boolean | null;
+    lastSeenAt: string;
+  } | null;
+  employee: (EmployeeSummary & { companyId?: string | null }) | null;
+  status: DeviceUserMatchStatus;
+}
+
+export interface DeviceUserReconciliation {
+  device: Device;
+  lastUserInfoSync: string | null;
+  matched: DeviceUserReconciliationRow[];
+  deviceOnly: DeviceUserReconciliationRow[];
+  systemOnly: DeviceUserReconciliationRow[];
+  nameMismatches: DeviceUserReconciliationRow[];
+  pinConflicts: DeviceUserReconciliationRow[];
+}
+
+export interface DeviceUserQueryResult {
+  ok: true;
+  message: string;
+  device: {
+    id: number;
+    serialNumber: string;
+  };
+  commands: Array<{
+    id: number;
+    commandType: string;
+    command: string;
+    status: string;
+  }>;
+}
+
 export interface Stats {
   totalToday: number;
   totalWeek: number;
@@ -1028,6 +1075,23 @@ export function requestEmployeeImportFromDevice(deviceId: number) {
 export function requestEmployeeExportToDevice(deviceId: number, employeeId: string) {
   return apiFetch<EmployeeDeviceExportResult>(
     `/employees/device-sync/${deviceId}/export/${encodeURIComponent(employeeId)}`,
+    { method: 'POST' },
+  );
+}
+
+export function getDeviceUserReconciliation(deviceId: number) {
+  return apiFetch<DeviceUserReconciliation>(`/devices/${deviceId}/user-reconciliation`);
+}
+
+export function queryDeviceUsers(deviceId: number) {
+  return apiFetch<DeviceUserQueryResult>(`/devices/${deviceId}/query-users`, {
+    method: 'POST',
+  });
+}
+
+export function syncDeviceEmployeeUser(deviceId: number, employeeId: string) {
+  return apiFetch<EmployeeDeviceExportResult>(
+    `/devices/${deviceId}/employees/${encodeURIComponent(employeeId)}/sync-user`,
     { method: 'POST' },
   );
 }

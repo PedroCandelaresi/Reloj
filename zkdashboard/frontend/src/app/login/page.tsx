@@ -54,15 +54,7 @@ export default function LoginPage() {
   return (
     <main className="grid min-h-screen bg-white text-slate-950 lg:grid-cols-[minmax(0,0.96fr)_minmax(520px,1.04fr)]">
       <section className="relative flex min-h-screen flex-col px-6 py-8 sm:px-10 lg:px-12">
-        <div className="flex h-16 items-center">
-          <BrandLogo
-            variant="emerald"
-            layout="horizontal"
-            className="justify-start"
-            iconClassName="w-10"
-            wordmarkClassName="w-44"
-          />
-        </div>
+        <div className="h-16" />
 
         <div className="flex flex-1 items-center justify-center py-12">
           <div className="w-full max-w-[390px]">
@@ -127,13 +119,17 @@ export default function LoginPage() {
 
       <section className="relative hidden min-h-screen overflow-hidden lg:block">
         <div className="absolute inset-0 login-brand-art" />
-        <div className="absolute inset-0 login-brand-grid opacity-40" />
-        <div className="absolute left-12 top-12 rounded-full border border-white/25 bg-white/20 px-4 py-2 text-sm font-medium text-white shadow-lg backdrop-blur-md">
-          ADMS activo
+        <div className="absolute left-12 top-10">
+          <BrandLogo
+            variant="emerald"
+            layout="horizontal"
+            className="justify-start"
+            iconClassName="w-10"
+            wordmarkClassName="w-44"
+          />
         </div>
         <div className="absolute bottom-14 left-12 right-12 max-w-xl text-white">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-100/90">ZKTeco conectado</p>
-          <h2 className="mt-4 text-4xl font-bold leading-tight tracking-normal drop-shadow-sm">
+          <h2 className="text-4xl font-bold leading-tight tracking-normal drop-shadow-sm">
             Control de asistencia claro, centralizado y listo para operar.
           </h2>
         </div>
@@ -166,14 +162,14 @@ export default function LoginPage() {
 
         .login-brand-art {
           background:
-            radial-gradient(circle at 78% 8%, rgba(255,255,255,0.78) 0 1px, transparent 2px),
-            radial-gradient(circle at 18% 22%, rgba(255,255,255,0.62) 0 1px, transparent 2px),
-            radial-gradient(circle at 74% 70%, rgba(255,255,255,0.46) 0 2px, transparent 3px),
-            radial-gradient(circle at 44% 58%, rgba(255,255,255,0.54) 0 3px, transparent 5px),
-            linear-gradient(128deg, rgba(255,255,255,0.58) 0 3%, transparent 14% 100%),
-            linear-gradient(112deg, transparent 0 12%, rgba(255,255,255,0.26) 16% 18%, transparent 25% 100%),
-            linear-gradient(128deg, transparent 0 33%, rgba(9,102,69,0.42) 39% 42%, transparent 52% 100%),
-            linear-gradient(142deg, #d9fff0 0%, #a9efd1 22%, #1fc777 47%, #0f7f52 69%, #0d2519 100%);
+            radial-gradient(circle at 78% 8%, rgba(255,255,255,0.42) 0 1px, transparent 2px),
+            radial-gradient(circle at 20% 22%, rgba(255,255,255,0.36) 0 1px, transparent 2px),
+            radial-gradient(circle at 72% 70%, rgba(255,255,255,0.26) 0 2px, transparent 3px),
+            radial-gradient(circle at 44% 58%, rgba(255,255,255,0.28) 0 3px, transparent 5px),
+            linear-gradient(128deg, rgba(255,255,255,0.28) 0 3%, transparent 14% 100%),
+            linear-gradient(112deg, transparent 0 12%, rgba(255,255,255,0.14) 16% 18%, transparent 25% 100%),
+            linear-gradient(128deg, transparent 0 32%, rgba(0,69,47,0.58) 39% 43%, transparent 54% 100%),
+            linear-gradient(142deg, #7ee8c0 0%, #2cb57d 24%, #07965e 48%, #07583c 70%, #04140f 100%);
         }
 
         .login-brand-art::before,
@@ -182,9 +178,9 @@ export default function LoginPage() {
           position: absolute;
           inset: -12%;
           background:
-            radial-gradient(ellipse at 24% 34%, rgba(255,255,255,0.58), transparent 18%),
-            radial-gradient(ellipse at 70% 60%, rgba(196,255,226,0.42), transparent 22%),
-            linear-gradient(120deg, transparent 0 22%, rgba(255,255,255,0.24) 26%, transparent 36% 100%);
+            radial-gradient(ellipse at 24% 34%, rgba(255,255,255,0.36), transparent 18%),
+            radial-gradient(ellipse at 70% 60%, rgba(107,255,189,0.28), transparent 22%),
+            linear-gradient(120deg, transparent 0 22%, rgba(255,255,255,0.12) 26%, transparent 36% 100%);
           filter: blur(8px);
           transform: rotate(-7deg);
           mix-blend-mode: screen;
@@ -192,19 +188,11 @@ export default function LoginPage() {
 
         .login-brand-art::after {
           background:
-            linear-gradient(115deg, transparent 0 18%, rgba(0,52,36,0.3) 24% 27%, transparent 34% 100%),
-            radial-gradient(ellipse at 68% 30%, rgba(255,255,255,0.22), transparent 18%),
-            radial-gradient(ellipse at 42% 74%, rgba(9,102,69,0.34), transparent 28%);
+            linear-gradient(115deg, transparent 0 18%, rgba(0,32,24,0.44) 24% 27%, transparent 34% 100%),
+            radial-gradient(ellipse at 68% 30%, rgba(255,255,255,0.14), transparent 18%),
+            radial-gradient(ellipse at 42% 74%, rgba(0,67,48,0.48), transparent 28%);
           filter: blur(4px);
           transform: rotate(9deg);
-        }
-
-        .login-brand-grid {
-          background:
-            linear-gradient(rgba(255,255,255,0.14) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px);
-          background-size: 42px 42px;
-          mask-image: linear-gradient(90deg, transparent 0%, black 22%, black 100%);
         }
 
         input:-webkit-autofill,

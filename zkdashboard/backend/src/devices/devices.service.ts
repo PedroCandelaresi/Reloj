@@ -12,6 +12,7 @@ import { AuthenticatedUser } from '../auth/authenticated-user.interface';
 import { getCompanyScope } from '../auth/company-scope.util';
 import { CompanyRole } from '../companies/company-role.enum';
 import { Company } from '../companies/company.entity';
+import { Employee } from '../employees/employee.entity';
 import {
   isSensitiveAdmsTable,
   logSecurity,
@@ -24,6 +25,11 @@ import {
   DeviceCommand,
   DeviceCommandType,
 } from './device-command.entity';
+import {
+  DEVICE_USER_MATCH_STATUSES,
+  DeviceUserMatchStatus,
+  DeviceUserSnapshot,
+} from './device-user-snapshot.entity';
 
 const FORCE_SYNC_COMMAND = 'DATA QUERY ATTLOG';
 const FORCE_SYNC_DUPLICATE_WINDOW_MS = 5 * 60 * 1000;
@@ -105,6 +111,31 @@ export interface DeviceEmployeeSyncRecord {
   companyId?: string | null;
 }
 
+export interface DeviceUserReconciliationRow {
+  pin: string;
+  deviceUser: {
+    id: string;
+    pin: string;
+    name: string | null;
+    privilege: string | null;
+    card: string | null;
+    passwordPresent: boolean | null;
+    lastSeenAt: Date;
+  } | null;
+  employee: DeviceEmployeeSyncRecord | null;
+  status: DeviceUserMatchStatus;
+}
+
+export interface DeviceUserReconciliationView {
+  device: DeviceOperationalView;
+  lastUserInfoSync: Date | null;
+  matched: DeviceUserReconciliationRow[];
+  deviceOnly: DeviceUserReconciliationRow[];
+  systemOnly: DeviceUserReconciliationRow[];
+  nameMismatches: DeviceUserReconciliationRow[];
+  pinConflicts: DeviceUserReconciliationRow[];
+}
+
 @Injectable()
 export class DevicesService {
   private readonly logger = new Logger(DevicesService.name);
@@ -114,8 +145,12 @@ export class DevicesService {
     private readonly repo: Repository<Device>,
     @InjectRepository(DeviceCommand)
     private readonly commandsRepo: Repository<DeviceCommand>,
+    @InjectRepository(DeviceUserSnapshot)
+    private readonly userSnapshotsRepo: Repository<DeviceUserSnapshot>,
     @InjectRepository(Company)
     private readonly companiesRepo: Repository<Company>,
+    @InjectRepository(Employee)
+    private readonly employeesRepo: Repository<Employee>,
   ) {}
 
   async upsert(serialNumber: string, ipAddress: string): Promise<Device> {
@@ -659,6 +694,197 @@ export class DevicesService {
       : rawPayload.trim() || `${table} recibido sin payload`;
     command.responsePayload = command.resultRaw;
     await this.commandsRepo.save(command);
+  }
+
+  async importUserInfoSnapshotFromPush(
+    device: Device,
+    rawBody: string,
+  ): Promise<{ upserted: number; skipped: number }> {
+    if (!device.companyId) {
+      return { upserted: 0, skipped: 0 };
+    }
+
+    const rows = this.parseUserInfoRows(rawBody);
+    let upserted = 0;
+    let skipped = 0;
+    const now = new Date();
+
+    for (const row of rows) {
+      const pin = this.getFirstValue(row, ['PIN', 'USERID', 'UID', 'ID']);
+      if (!pin) {
+        skipped += 1;
+        continue;
+      }
+
+      const name = this.getFirstValue(row, ['NAME', 'NOMBRE', 'USERNAME']);
+      const employee = await this.employeesRepo.findOneBy({ id: pin });
+      const match = this.resolveSnapshotMatch(device.companyId, employee, name);
+      const existing = await this.userSnapshotsRepo.findOneBy({
+        deviceId: device.id,
+        pin,
+      });
+
+      const snapshot = existing ?? this.userSnapshotsRepo.create({
+        deviceId: device.id,
+        companyId: device.companyId,
+        pin,
+      });
+
+      snapshot.companyId = device.companyId;
+      snapshot.deviceId = device.id;
+      snapshot.pin = pin;
+      snapshot.name = name;
+      snapshot.privilege = this.getFirstValue(row, ['PRI', 'PRIVILEGE', 'ROLE']);
+      snapshot.card = this.getFirstValue(row, ['CARD', 'CARDNO', 'CARDNUMBER']);
+      snapshot.passwordPresent = this.hasPasswordValue(row);
+      snapshot.rawData = this.sanitizeUserInfoRow(row);
+      snapshot.lastSeenAt = now;
+      snapshot.matchedEmployeeId = match.employeeId;
+      snapshot.matchStatus = match.status;
+
+      await this.userSnapshotsRepo.save(snapshot);
+      upserted += 1;
+    }
+
+    return { upserted, skipped };
+  }
+
+  async getUserReconciliation(
+    deviceId: number,
+    user: AuthenticatedUser,
+  ): Promise<DeviceUserReconciliationView> {
+    const device = await this.findDeviceForOperation(deviceId, user);
+    if (!device) {
+      throw new NotFoundException('Dispositivo no encontrado.');
+    }
+    if (!device.companyId) {
+      throw new BadRequestException('El reloj debe estar asignado a una empresa.');
+    }
+
+    const [snapshots, employees, latestUserInfoCommand, deviceView] = await Promise.all([
+      this.userSnapshotsRepo.find({
+        where: { deviceId: device.id, companyId: device.companyId },
+        relations: { matchedEmployee: true },
+        order: { pin: 'ASC' },
+      }),
+      this.employeesRepo.find({
+        where: { companyId: device.companyId },
+        order: { apellido: 'ASC', nombre: 'ASC', id: 'ASC' },
+      }),
+      this.findLatestUserInfoCommand(device.id),
+      this.serializeOperationalDevice(device),
+    ]);
+
+    const rowsByStatus: Record<DeviceUserMatchStatus, DeviceUserReconciliationRow[]> = {
+      matched: [],
+      system_only: [],
+      device_only: [],
+      name_mismatch: [],
+      pin_conflict: [],
+    };
+    const latestSnapshotSeenAt = snapshots.reduce<Date | null>((latest, snapshot) => {
+      if (!latest || snapshot.lastSeenAt > latest) {
+        return snapshot.lastSeenAt;
+      }
+      return latest;
+    }, null);
+    const currentSnapshots = latestSnapshotSeenAt
+      ? snapshots.filter(
+          (snapshot) => snapshot.lastSeenAt.getTime() === latestSnapshotSeenAt.getTime(),
+        )
+      : snapshots;
+    const snapshotsByPin = new Map(currentSnapshots.map((snapshot) => [snapshot.pin, snapshot]));
+    const employeesById = new Map(employees.map((employee) => [employee.id, employee]));
+    const employeesByPin = currentSnapshots.length > 0
+      ? await this.employeesRepo.find({
+          where: { id: In(currentSnapshots.map((snapshot) => snapshot.pin)) },
+        })
+      : [];
+    const anyEmployeeById = new Map(employeesByPin.map((employee) => [employee.id, employee]));
+
+    for (const snapshot of currentSnapshots) {
+      const employee = employeesById.get(snapshot.pin) ?? null;
+      const status = this.resolveReconciliationStatus(
+        device.companyId,
+        snapshot,
+        employee ?? anyEmployeeById.get(snapshot.pin) ?? null,
+      );
+      const matchedEmployeeId = status === DEVICE_USER_MATCH_STATUSES.PIN_CONFLICT
+        ? null
+        : employee?.id ?? null;
+      if (snapshot.matchStatus !== status || snapshot.matchedEmployeeId !== matchedEmployeeId) {
+        snapshot.matchStatus = status;
+        snapshot.matchedEmployeeId = matchedEmployeeId;
+        await this.userSnapshotsRepo.save(snapshot);
+      }
+
+      rowsByStatus[status].push(this.buildReconciliationRow(snapshot.pin, snapshot, employee, status));
+    }
+
+    for (const employee of employees) {
+      if (snapshotsByPin.has(employee.id)) {
+        continue;
+      }
+
+      rowsByStatus.system_only.push(
+        this.buildReconciliationRow(
+          employee.id,
+          null,
+          employee,
+          DEVICE_USER_MATCH_STATUSES.SYSTEM_ONLY,
+        ),
+      );
+    }
+
+    return {
+      device: deviceView,
+      lastUserInfoSync: latestUserInfoCommand?.acknowledgedAt ?? latestSnapshotSeenAt,
+      matched: rowsByStatus.matched,
+      deviceOnly: rowsByStatus.device_only,
+      systemOnly: rowsByStatus.system_only,
+      nameMismatches: rowsByStatus.name_mismatch,
+      pinConflicts: rowsByStatus.pin_conflict,
+    };
+  }
+
+  async enqueueUserInfoQuery(
+    deviceId: number,
+    user: AuthenticatedUser,
+  ): Promise<{ device: Device; commands: DeviceCommand[] }> {
+    return this.enqueueEmployeeImportCommands(deviceId, user.username, user);
+  }
+
+  async enqueueEmployeeUserSync(
+    deviceId: number,
+    employeeId: string,
+    user: AuthenticatedUser,
+  ): Promise<{ device: Device; command: DeviceCommand }> {
+    const companyId = getCompanyScope(user);
+    const employee = await this.employeesRepo.findOneBy(
+      user.isSuperAdmin
+        ? { id: employeeId }
+        : { id: employeeId, companyId },
+    );
+
+    if (!employee) {
+      throw new NotFoundException('Empleado no encontrado.');
+    }
+
+    const result = await this.enqueueEmployeeExportCommands(
+      deviceId,
+      [
+        {
+          id: employee.id,
+          nombre: employee.nombre,
+          apellido: employee.apellido,
+          companyId: employee.companyId,
+        },
+      ],
+      user.username,
+      user,
+    );
+
+    return { device: result.device, command: result.commands[0] };
   }
 
 
@@ -1210,6 +1436,165 @@ export class DevicesService {
       .orderBy('command.sent_at', 'DESC')
       .addOrderBy('command.requested_at', 'DESC')
       .getOne();
+  }
+
+  private findLatestUserInfoCommand(deviceId: number): Promise<DeviceCommand | null> {
+    return this.commandsRepo.findOne({
+      where: {
+        deviceId,
+        commandType: DEVICE_COMMAND_TYPES.QUERY_USERINFO,
+      },
+      order: {
+        acknowledgedAt: 'DESC',
+        requestedAt: 'DESC',
+        id: 'DESC',
+      },
+    });
+  }
+
+  private parseUserInfoRows(rawBody: string): Array<Record<string, string>> {
+    return rawBody
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) => {
+        const row: Record<string, string> = {};
+        for (const part of line.split(/\t|&/)) {
+          const separatorIndex = part.indexOf('=');
+          if (separatorIndex <= 0) continue;
+          const key = part.slice(0, separatorIndex).trim().toUpperCase();
+          const value = part.slice(separatorIndex + 1).trim();
+          if (key) row[key] = value;
+        }
+
+        if (Object.keys(row).length > 0) {
+          return row;
+        }
+
+        const fields = line.split(/\s+/).filter(Boolean);
+        if (fields.length >= 2) {
+          row.PIN = fields[0];
+          row.NAME = fields.slice(1).join(' ');
+        }
+
+        return row;
+      })
+      .filter((row) => Object.keys(row).length > 0);
+  }
+
+  private getFirstValue(row: Record<string, string>, keys: string[]): string | null {
+    for (const key of keys) {
+      const value = row[key]?.trim();
+      if (value) return value;
+    }
+
+    return null;
+  }
+
+  private hasPasswordValue(row: Record<string, string>): boolean | null {
+    const password = this.getFirstValue(row, ['PASSWD', 'PASSWORD', 'PWD']);
+    return password === null ? null : true;
+  }
+
+  private sanitizeUserInfoRow(row: Record<string, string>): Record<string, string> {
+    const sanitized: Record<string, string> = {};
+    const blockedKeys = new Set(['PASSWD', 'PASSWORD', 'PWD']);
+
+    for (const [key, value] of Object.entries(row)) {
+      if (blockedKeys.has(key.toUpperCase())) {
+        continue;
+      }
+      sanitized[key] = value;
+    }
+
+    return sanitized;
+  }
+
+  private resolveSnapshotMatch(
+    companyId: string,
+    employee: Employee | null,
+    deviceName: string | null,
+  ): { employeeId: string | null; status: DeviceUserMatchStatus } {
+    if (!employee) {
+      return { employeeId: null, status: DEVICE_USER_MATCH_STATUSES.DEVICE_ONLY };
+    }
+
+    if (employee.companyId !== companyId) {
+      return { employeeId: null, status: DEVICE_USER_MATCH_STATUSES.PIN_CONFLICT };
+    }
+
+    return {
+      employeeId: employee.id,
+      status: this.namesAreCompatible(deviceName, employee)
+        ? DEVICE_USER_MATCH_STATUSES.MATCHED
+        : DEVICE_USER_MATCH_STATUSES.NAME_MISMATCH,
+    };
+  }
+
+  private resolveReconciliationStatus(
+    companyId: string,
+    snapshot: DeviceUserSnapshot,
+    employee: Employee | null,
+  ): DeviceUserMatchStatus {
+    return this.resolveSnapshotMatch(companyId, employee, snapshot.name).status;
+  }
+
+  private buildReconciliationRow(
+    pin: string,
+    snapshot: DeviceUserSnapshot | null,
+    employee: Employee | null,
+    status: DeviceUserMatchStatus,
+  ): DeviceUserReconciliationRow {
+    return {
+      pin,
+      deviceUser: snapshot
+        ? {
+            id: snapshot.id,
+            pin: snapshot.pin,
+            name: snapshot.name,
+            privilege: snapshot.privilege,
+            card: snapshot.card,
+            passwordPresent: snapshot.passwordPresent,
+            lastSeenAt: snapshot.lastSeenAt,
+          }
+        : null,
+      employee: employee
+        ? {
+            id: employee.id,
+            nombre: employee.nombre,
+            apellido: employee.apellido,
+            companyId: employee.companyId,
+          }
+        : null,
+      status,
+    };
+  }
+
+  private namesAreCompatible(deviceName: string | null, employee: Employee): boolean {
+    const normalizedDeviceName = this.normalizeNameForMatch(deviceName);
+    if (!normalizedDeviceName) {
+      return false;
+    }
+
+    const apellidoNombre = this.normalizeNameForMatch(`${employee.apellido} ${employee.nombre}`);
+    const nombreApellido = this.normalizeNameForMatch(`${employee.nombre} ${employee.apellido}`);
+    const commaName = this.normalizeNameForMatch(`${employee.apellido}, ${employee.nombre}`);
+
+    return (
+      normalizedDeviceName === apellidoNombre ||
+      normalizedDeviceName === nombreApellido ||
+      normalizedDeviceName === commaName
+    );
+  }
+
+  private normalizeNameForMatch(value: string | null | undefined): string {
+    return (value ?? '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^\p{L}\p{N}]+/gu, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toUpperCase();
   }
 
   private getDataQueryCommandTypeForTable(table: string): DeviceCommandType | null {
