@@ -92,7 +92,9 @@ export function ScheduleProfilesManager({ profiles }: { profiles: ScheduleProfil
     setForm((current) => ({
       ...current,
       workDays: checked
-        ? [...new Set([...current.workDays, value])]
+        ? current.workDays.includes(value)
+          ? current.workDays
+          : [...current.workDays, value]
         : current.workDays.filter((day) => day !== value),
     }));
   };
