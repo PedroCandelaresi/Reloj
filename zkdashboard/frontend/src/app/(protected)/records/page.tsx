@@ -146,7 +146,7 @@ export default async function RecordsPage({ searchParams }: PageProps) {
                 <tr className="table-header-row text-xs uppercase">
                   <th className="px-6 py-4 text-left font-semibold">Usuario</th>
                   <th className="px-6 py-4 text-left font-semibold">Fecha y Hora</th>
-                  <th className="px-6 py-4 text-left font-semibold">Estado</th>
+                  <th className="px-6 py-4 text-left font-semibold">Estado informado por reloj</th>
                   <th className="px-6 py-4 text-left font-semibold">Verificación</th>
                   <th className="px-6 py-4 text-left font-semibold">Dispositivo</th>
                   {canCreateRequests && <th className="px-6 py-4 text-left font-semibold">Acción</th>}
@@ -167,7 +167,7 @@ export default async function RecordsPage({ searchParams }: PageProps) {
                         {r.employee && <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{r.userId}</div>}
                       </td>
                       <td className="px-6 py-4" style={{ color: 'var(--text-secondary)' }}>{formatDate(r.timestamp)}</td>
-                      <td className="px-6 py-4"><StatusBadge status={r.status} /></td>
+                      <td className="px-6 py-4"><StatusBadge status={r.status} label={r.devicePunchStateLabel} /></td>
                       <td className="px-6 py-4" style={{ color: 'var(--text-muted)' }}>{VERIFY_LABELS[r.verifyType] ?? r.verifyType}</td>
                       <td className="px-6 py-4 text-xs" style={{ color: 'var(--text-muted)' }}>{r.deviceSn}</td>
                       {canCreateRequests && (

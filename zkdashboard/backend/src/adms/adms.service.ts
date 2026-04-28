@@ -14,6 +14,35 @@ export interface AdmsProcessResult {
   parseError?: string | null;
 }
 
+const DEVICE_PUNCH_STATE_LABELS: Record<number, string> = {
+  0: 'Entrada informada por reloj',
+  1: 'Salida informada por reloj',
+  2: 'Salida a descanso informada por reloj',
+  3: 'Entrada de descanso informada por reloj',
+  4: 'Entrada extra informada por reloj',
+  5: 'Salida extra informada por reloj',
+};
+
+function devicePunchStateLabel(rawValue: string): string | null {
+  const numericValue = Number.parseInt(rawValue, 10);
+  if (Number.isFinite(numericValue) && DEVICE_PUNCH_STATE_LABELS[numericValue]) {
+    return DEVICE_PUNCH_STATE_LABELS[numericValue];
+  }
+
+  const normalized = rawValue.trim();
+  return normalized ? `Estado informado por reloj: ${normalized}` : null;
+}
+
+function normalizeDevicePunchState(rawValue: string): number {
+  const numericValue = Number.parseInt(rawValue, 10);
+  return Number.isFinite(numericValue) ? numericValue : 0;
+}
+
+function isDeviceOvertimeState(rawValue: string | null | undefined): boolean {
+  const normalized = `${rawValue ?? ''}`.trim().toUpperCase();
+  return ['4', '5', 'OT', 'OVERTIME', 'EXTRA', 'ENTRADA EXTRA', 'SALIDA EXTRA'].includes(normalized);
+}
+
 @Injectable()
 export class AdmsService {
   private readonly logger = new Logger(AdmsService.name);
@@ -180,6 +209,7 @@ export class AdmsService {
 
       try {
         const [userId, rawTimestamp, rawStatus, rawVerify, workCode] = parts;
+        const trimmedStatus = rawStatus.trim();
         // El reloj manda hora local Argentina (UTC-3) sin offset. Se agrega
         // explícitamente para que Date lo interprete como hora Argentina y lo
         // almacene en UTC correctamente.
@@ -192,9 +222,12 @@ export class AdmsService {
           companyId: device.companyId ?? null,
           userId: userId.trim(),
           timestamp,
-          status: parseInt(rawStatus, 10),
+          status: normalizeDevicePunchState(trimmedStatus),
+          devicePunchStateRaw: trimmedStatus || null,
+          devicePunchStateLabel: devicePunchStateLabel(trimmedStatus),
           verifyType: parseInt(rawVerify, 10),
           workCode: workCode?.trim() || null,
+          rawPayload: line,
         });
       } catch {
         this.logger.warn(`Línea ATTLOG inválida: ${line}`);
@@ -204,6 +237,14 @@ export class AdmsService {
     if (records.length > 0) {
       await this.attendance.saveRecords(records);
       this.logger.log(`${records.length} registros guardados del dispositivo ${serialNumber}`);
+      const deviceOvertimeStateCount = records.filter((record) =>
+        isDeviceOvertimeState(record.devicePunchStateRaw),
+      ).length;
+      if (deviceOvertimeStateCount > 0) {
+        this.logger.log(
+          `ATTLOG ${serialNumber}: ${deviceOvertimeStateCount} fichada(s) llegaron con estado extra/OT del reloj; se guardan solo como auditoría.`,
+        );
+      }
     }
 
     await this.devices.markAttendanceSyncFromPush(serialNumber, records.length, body);

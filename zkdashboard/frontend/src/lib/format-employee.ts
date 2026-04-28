@@ -3,8 +3,8 @@ export const STATUS_LABELS: Record<number, string> = {
   1: 'Salida',
   2: 'Descanso Sal.',
   3: 'Descanso Ent.',
-  4: 'Extra Entrada',
-  5: 'Extra Salida',
+  4: 'Entrada extra informada',
+  5: 'Salida extra informada',
 };
 
 export function formatEmployeeName(employee?: {

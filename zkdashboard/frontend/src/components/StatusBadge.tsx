@@ -9,10 +9,10 @@ const colors: Record<number, string> = {
   5: 'bg-blue-100   text-blue-700   dark:bg-blue-900/30   dark:text-blue-400',
 };
 
-export function StatusBadge({ status }: { status: number }) {
+export function StatusBadge({ status, label }: { status: number; label?: string | null }) {
   return (
     <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${colors[status] ?? 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'}`}>
-      {STATUS_LABELS[status] ?? status}
+      {label ?? STATUS_LABELS[status] ?? status}
     </span>
   );
 }

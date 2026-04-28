@@ -15,8 +15,8 @@ const STATUS_LABELS: Record<number, string> = {
   1: 'Salida',
   2: 'Descanso Sal.',
   3: 'Descanso Ent.',
-  4: 'Extra Entrada',
-  5: 'Extra Salida',
+  4: 'Entrada extra informada',
+  5: 'Salida extra informada',
 };
 
 const VERIFY_LABELS: Record<number, string> = {
@@ -323,7 +323,7 @@ export class ExportService {
       { key: 'apellido',  width: 20 },
       { key: 'nombre',    width: 20 },
       { key: 'timestamp', width: 24 },
-      { key: 'status',    width: 16 },
+      { key: 'status',    width: 28 },
       { key: 'verify',    width: 14 },
       { key: 'workCode',  width: 14 },
       { key: 'device',    width: 14 },
@@ -346,7 +346,7 @@ export class ExportService {
       apellido: 'Apellido',
       nombre: 'Nombre',
       timestamp: 'Fecha y Hora',
-      status: 'Estado',
+      status: 'Estado informado por reloj',
       verify: 'Verificación',
       workCode: 'Cód. Trabajo',
       device: 'Dispositivo',
@@ -369,7 +369,7 @@ export class ExportService {
         apellido:  r.employee?.apellido ?? '—',
         nombre:    r.employee?.nombre   ?? '—',
         timestamp: fmtDate(r.timestamp),
-        status:    STATUS_LABELS[r.status]     ?? String(r.status),
+        status:    r.devicePunchStateLabel ?? STATUS_LABELS[r.status] ?? String(r.status),
         verify:    VERIFY_LABELS[r.verifyType] ?? String(r.verifyType),
         workCode:  r.workCode ?? '—',
         device:    r.deviceSn,
@@ -438,7 +438,7 @@ export class ExportService {
       doc.moveDown(1.2);
 
       // Tabla
-      const headers = ['ID Empleado', 'Apellido', 'Nombre', 'Fecha y Hora', 'Estado', 'Verificación', 'Dispositivo'];
+      const headers = ['ID Empleado', 'Apellido', 'Nombre', 'Fecha y Hora', 'Estado reloj', 'Verificación', 'Dispositivo'];
       const widths  = [70,             115,        105,       135,            85,       90,             115];
 
       this.drawPdfTable(doc, records, headers, widths, 40);
@@ -642,7 +642,7 @@ export class ExportService {
           r.employee?.apellido ?? '—',
           r.employee?.nombre   ?? '—',
           fmtDate(r.timestamp),
-          STATUS_LABELS[r.status]     ?? String(r.status),
+          r.devicePunchStateLabel ?? STATUS_LABELS[r.status] ?? String(r.status),
           VERIFY_LABELS[r.verifyType] ?? String(r.verifyType),
           r.deviceSn,
         ],

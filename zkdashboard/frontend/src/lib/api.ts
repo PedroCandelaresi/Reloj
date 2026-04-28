@@ -152,8 +152,11 @@ export interface AttendanceRecord {
   companyId: string | null;
   timestamp: string;
   status: number;
+  devicePunchStateRaw: string | null;
+  devicePunchStateLabel: string | null;
   verifyType: number;
   workCode: string | null;
+  rawPayload?: string | null;
   source?: 'device' | 'manual' | 'correction' | 'import';
   employee?: EmployeeSummary | null;
 }

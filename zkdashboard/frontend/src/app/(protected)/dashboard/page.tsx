@@ -116,7 +116,7 @@ export default async function DashboardPage() {
                 <tr className="table-header-row text-xs uppercase">
                   <th className="px-6 py-4 text-left font-semibold">Usuario</th>
                   <th className="px-6 py-4 text-left font-semibold">Fecha y Hora</th>
-                  <th className="px-6 py-4 text-left font-semibold">Estado</th>
+                  <th className="px-6 py-4 text-left font-semibold">Marcación del dispositivo</th>
                   <th className="px-6 py-4 text-left font-semibold">Verificación</th>
                   <th className="px-6 py-4 text-left font-semibold">Dispositivo</th>
                 </tr>
@@ -137,7 +137,7 @@ export default async function DashboardPage() {
                       </td>
                       <td className="px-6 py-4" style={{ color: 'var(--text-secondary)' }}>{formatDate(r.timestamp)}</td>
                       <td className="px-6 py-4">
-                        <StatusBadge status={r.status} />
+                        <StatusBadge status={r.status} label={r.devicePunchStateLabel} />
                       </td>
                       <td className="px-6 py-4" style={{ color: 'var(--text-muted)' }}>{VERIFY_LABELS[r.verifyType] ?? r.verifyType}</td>
                       <td className="px-6 py-4 text-xs" style={{ color: 'var(--text-muted)' }}>{r.deviceSn}</td>

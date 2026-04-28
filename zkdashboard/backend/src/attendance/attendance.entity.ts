@@ -33,9 +33,15 @@ export class AttendanceRecord {
   @Index()
   timestamp: Date;
 
-  // 0=Entrada, 1=Salida, 2=Descanso Sal, 3=Descanso Ent, 4=Extra Ent, 5=Extra Sal
+  // Estado crudo informado por el reloj. Es auditoría del dispositivo, no regla laboral.
   @Column()
   status: number;
+
+  @Column({ name: 'device_punch_state_raw', nullable: true })
+  devicePunchStateRaw: string | null;
+
+  @Column({ name: 'device_punch_state_label', nullable: true })
+  devicePunchStateLabel: string | null;
 
   // BioTime/ZKTeco: 0=Contraseña, 1=Huella, 4=Tarjeta RFID, 15=Rostro.
   @Column({ name: 'verify_type' })
@@ -43,6 +49,9 @@ export class AttendanceRecord {
 
   @Column({ name: 'work_code', nullable: true })
   workCode: string;
+
+  @Column({ name: 'raw_payload', type: 'text', nullable: true })
+  rawPayload: string | null;
 
   @Column({ default: 'device' })
   source: AttendanceRecordSource;
