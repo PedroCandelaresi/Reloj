@@ -318,8 +318,8 @@ export function ScheduleProfilesManager({ profiles }: { profiles: ScheduleProfil
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 p-6 xl:grid-cols-[minmax(0,0.9fr)_minmax(560px,1.1fr)]">
-        <div className="space-y-3">
+      <div className="space-y-6 p-5 sm:p-6">
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
           {profiles.length === 0 ? (
             <div className="rounded-xl px-4 py-8 text-center" style={{ border: '1px dashed var(--border)', color: 'var(--text-muted)' }}>
               No hay perfiles de horario cargados. Creá un perfil para que el sistema pueda calcular asistencia.
@@ -355,14 +355,23 @@ export function ScheduleProfilesManager({ profiles }: { profiles: ScheduleProfil
           )}
         </div>
 
-        <form onSubmit={handleSubmit} className="rounded-xl p-4 space-y-4" style={{ border: '1px solid var(--border)', background: 'var(--surface-raised)' }}>
-          <div>
-            <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>
-              {isEditing ? 'Editar perfil' : 'Nuevo perfil'}
-            </h3>
-            <p className="mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
-              Podés configurar horarios distintos por día. Si no configurás verano o invierno, se usará el horario normal.
-            </p>
+        <form onSubmit={handleSubmit} className="rounded-xl p-5 sm:p-6 space-y-5" style={{ border: '1px solid var(--border)', background: 'var(--surface-raised)' }}>
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>
+                {isEditing ? 'Editar perfil' : 'Nuevo perfil'}
+              </h3>
+              <p className="mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>
+                Configurá la semana laboral por temporada. Si no usás verano o invierno, dejá solo “Normal”.
+              </p>
+            </div>
+            {isEditing && (
+              <button type="button" onClick={resetForm} disabled={isPending}
+                className="self-start rounded-lg px-3 py-2 text-sm"
+                style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
+                Crear otro perfil
+              </button>
+            )}
           </div>
 
           {message && (
@@ -375,38 +384,46 @@ export function ScheduleProfilesManager({ profiles }: { profiles: ScheduleProfil
             </div>
           )}
 
-          <label className="block text-sm">
-            <span className="font-medium" style={{ color: 'var(--text-secondary)' }}>Nombre del perfil</span>
-            <input name="name" value={form.name} onChange={handleChange} required
-              className="mt-1 w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
-            />
-          </label>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(260px,360px)_minmax(0,1fr)]">
+            <label className="block text-sm">
+              <span className="font-medium" style={{ color: 'var(--text-secondary)' }}>Nombre del perfil</span>
+              <input name="name" value={form.name} onChange={handleChange} required
+                className="mt-1 w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
+              />
+            </label>
 
-          <div className="rounded-lg p-3" style={{ background: 'var(--blue-soft)', border: '1px solid rgba(59,130,246,0.2)' }}>
-            <p className="text-xs" style={{ color: 'var(--blue-text)' }}>
-              El reloj solo registra fichadas. Estos horarios se aplican en el sistema para calcular tardanzas, ausencias y horas.
-            </p>
+            <div className="rounded-lg p-3" style={{ background: 'var(--blue-soft)', border: '1px solid rgba(59,130,246,0.2)' }}>
+              <p className="text-xs leading-relaxed" style={{ color: 'var(--blue-text)' }}>
+                El reloj solo registra fichadas. Estos horarios se aplican en el sistema para calcular tardanzas, ausencias y horas.
+              </p>
+            </div>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            {SEASONS.map((season) => (
-              <button key={season.value} type="button" onClick={() => setActiveSeason(season.value)}
-                className="rounded-lg px-3 py-2 text-sm font-medium"
-                style={activeSeason === season.value
-                  ? { background: 'var(--brand-soft)', color: 'var(--brand-text)', border: '1px solid rgba(31,199,119,0.35)' }
-                  : { background: 'var(--surface)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
-                {season.label}
-              </button>
-            ))}
-            <button type="button" onClick={() => copyNormalToSeason('summer')}
-              className="rounded-lg px-3 py-2 text-sm" style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
-              Copiar normal a verano
-            </button>
-            <button type="button" onClick={() => copyNormalToSeason('winter')}
-              className="rounded-lg px-3 py-2 text-sm" style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
-              Copiar normal a invierno
-            </button>
+          <div className="rounded-xl p-3" style={{ border: '1px solid var(--border)', background: 'var(--surface)' }}>
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div className="inline-flex rounded-lg p-1" style={{ background: 'var(--surface-raised)', border: '1px solid var(--border)' }}>
+                {SEASONS.map((season) => (
+                  <button key={season.value} type="button" onClick={() => setActiveSeason(season.value)}
+                    className="rounded-md px-3 py-2 text-sm font-medium"
+                    style={activeSeason === season.value
+                      ? { background: 'var(--brand-soft)', color: 'var(--brand-text)' }
+                      : { color: 'var(--text-secondary)' }}>
+                    {season.label}
+                  </button>
+                ))}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button type="button" onClick={() => copyNormalToSeason('summer')}
+                  className="rounded-lg px-3 py-2 text-sm" style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
+                  Copiar normal a verano
+                </button>
+                <button type="button" onClick={() => copyNormalToSeason('winter')}
+                  className="rounded-lg px-3 py-2 text-sm" style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
+                  Copiar normal a invierno
+                </button>
+              </div>
+            </div>
           </div>
 
           <div className="space-y-3">
@@ -453,43 +470,56 @@ function DayRuleEditor({
 }) {
   const day = DAYS.find((candidate) => candidate.value === rule.dayOfWeek);
   return (
-    <div className="rounded-lg p-3" style={{ border: '1px solid var(--border)', background: 'var(--surface)' }}>
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-[120px_120px_repeat(5,minmax(90px,1fr))]">
-        <label className="flex items-center gap-2 text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+    <div className="rounded-xl p-4" style={{ border: '1px solid var(--border)', background: 'var(--surface)' }}>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <label className="inline-flex items-center gap-3 text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
           <input type="checkbox" checked={rule.isWorkday} onChange={(event) => onChange({ isWorkday: event.target.checked })} />
           {day?.label ?? rule.dayOfWeek}
         </label>
-        <span className="self-center text-xs" style={{ color: rule.isWorkday ? 'var(--brand-text)' : 'var(--text-muted)' }}>
+        <span className="w-fit rounded-full px-2.5 py-1 text-xs font-medium" style={
+          rule.isWorkday
+            ? { background: 'var(--brand-soft)', color: 'var(--brand-text)' }
+            : { background: 'var(--surface-raised)', color: 'var(--text-muted)' }
+        }>
           {rule.isWorkday ? 'Trabaja este día' : 'No trabaja'}
         </span>
-        <SmallTimeInput label="Entrada" value={rule.entryTime ?? ''} disabled={!rule.isWorkday} onChange={(value) => onChange({ entryTime: value || null })} />
-        <SmallTimeInput label="Salida" value={rule.exitTime ?? ''} disabled={!rule.isWorkday} onChange={(value) => onChange({ exitTime: value || null })} />
-        <SmallNumberInput label="Pausa" value={rule.breakMinutes} disabled={!rule.isWorkday} onChange={(value) => onChange({ breakMinutes: value })} />
-        <SmallNumberInput label="Jornada esperada" value={rule.expectedMinutes ?? 0} disabled={!rule.isWorkday} onChange={(value) => onChange({ expectedMinutes: value })} />
-        <SmallNumberInput label="Tol. tardanza" value={rule.lateToleranceMinutes ?? 0} disabled={!rule.isWorkday} onChange={(value) => onChange({ lateToleranceMinutes: value })} />
       </div>
-      <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-[repeat(2,minmax(140px,1fr))_minmax(180px,2fr)]">
-        <SmallNumberInput label="Tol. salida temprana" value={rule.earlyDepartureToleranceMinutes ?? 0} disabled={!rule.isWorkday} onChange={(value) => onChange({ earlyDepartureToleranceMinutes: value })} />
-        <SmallNumberInput label="Horas extra a partir de" value={rule.overtimeAfterMinutes ?? 0} disabled={!rule.isWorkday} onChange={(value) => onChange({ overtimeAfterMinutes: value })} />
-        <label className="block text-xs">
-          <span style={{ color: 'var(--text-muted)' }}>Notas</span>
-          <input value={rule.notes ?? ''} disabled={!rule.isWorkday} onChange={(event) => onChange({ notes: event.target.value || null })}
-            className="mt-1 w-full rounded-lg px-2 py-2 text-sm disabled:opacity-60"
-            style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
-          />
-        </label>
-      </div>
+
+      {rule.isWorkday ? (
+        <>
+          <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7">
+            <SmallTimeInput label="Entrada" value={rule.entryTime ?? ''} onChange={(value) => onChange({ entryTime: value || null })} />
+            <SmallTimeInput label="Salida" value={rule.exitTime ?? ''} onChange={(value) => onChange({ exitTime: value || null })} />
+            <SmallNumberInput label="Pausa" value={rule.breakMinutes} onChange={(value) => onChange({ breakMinutes: value })} />
+            <SmallNumberInput label="Jornada" value={rule.expectedMinutes ?? 0} onChange={(value) => onChange({ expectedMinutes: value })} />
+            <SmallNumberInput label="Tol. tardanza" value={rule.lateToleranceMinutes ?? 0} onChange={(value) => onChange({ lateToleranceMinutes: value })} />
+            <SmallNumberInput label="Tol. salida" value={rule.earlyDepartureToleranceMinutes ?? 0} onChange={(value) => onChange({ earlyDepartureToleranceMinutes: value })} />
+            <SmallNumberInput label="Extra desde" value={rule.overtimeAfterMinutes ?? 0} onChange={(value) => onChange({ overtimeAfterMinutes: value })} />
+          </div>
+          <label className="mt-3 block text-xs">
+            <span style={{ color: 'var(--text-muted)' }}>Notas</span>
+            <input value={rule.notes ?? ''} onChange={(event) => onChange({ notes: event.target.value || null })}
+              className="mt-1 w-full min-w-0 rounded-lg px-2 py-2 text-sm"
+              style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
+            />
+          </label>
+        </>
+      ) : (
+        <p className="mt-3 text-sm" style={{ color: 'var(--text-muted)' }}>
+          Este día no genera ausencia si el empleado no ficha.
+        </p>
+      )}
     </div>
   );
 }
 
 function SmallTimeInput({ label, value, disabled, onChange }: { label: string; value: string; disabled?: boolean; onChange: (value: string) => void }) {
   return (
-    <label className="block text-xs">
+    <label className="block min-w-0 text-xs">
       <span style={{ color: 'var(--text-muted)' }}>{label}</span>
       <input value={value} disabled={disabled} onChange={(event) => onChange(event.target.value)}
         placeholder="HH:MM" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$"
-        className="mt-1 w-full rounded-lg px-2 py-2 text-sm disabled:opacity-60"
+        className="mt-1 w-full min-w-0 rounded-lg px-2 py-2 text-sm disabled:opacity-60"
         style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
       />
     </label>
@@ -498,11 +528,11 @@ function SmallTimeInput({ label, value, disabled, onChange }: { label: string; v
 
 function SmallNumberInput({ label, value, disabled, onChange }: { label: string; value: number; disabled?: boolean; onChange: (value: number) => void }) {
   return (
-    <label className="block text-xs">
+    <label className="block min-w-0 text-xs">
       <span style={{ color: 'var(--text-muted)' }}>{label}</span>
       <input type="number" min="0" value={value} disabled={disabled}
         onChange={(event) => onChange(Number.parseInt(event.target.value || '0', 10) || 0)}
-        className="mt-1 w-full rounded-lg px-2 py-2 text-sm disabled:opacity-60"
+        className="mt-1 w-full min-w-0 rounded-lg px-2 py-2 text-sm disabled:opacity-60"
         style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
       />
     </label>

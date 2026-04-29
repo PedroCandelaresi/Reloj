@@ -37,7 +37,8 @@ export const DEVICE_COMMAND_STATUS_LABELS: Record<string, string> = {
   expired: 'Venció',
 };
 
-export function getCompanyDeviceName(device: DeviceLike) {
+export function getCompanyDeviceName(device: DeviceLike | null | undefined) {
+  if (!device) return 'Reloj sin nombre';
   const candidates = [device.alias, device.name];
   const label = candidates.find((value) => {
     const clean = value?.trim();
@@ -47,20 +48,26 @@ export function getCompanyDeviceName(device: DeviceLike) {
   return label?.trim() || 'Reloj sin nombre';
 }
 
-export function getCompanyDeviceModel(device: DeviceLike) {
-  const explicitModel = device.model || device.modelName || device.deviceModel;
-  if (explicitModel) return formatDeviceModel(explicitModel);
+export function getCompanyDeviceModel(device: DeviceLike | null | undefined) {
+  if (!device) return 'Modelo no informado';
+  const explicitModel = [device.model, device.modelName, device.deviceModel, device.name, device.alias]
+    .map((value) => value?.trim())
+    .find(Boolean);
+  if (explicitModel) {
+    const formatted = formatDeviceModel(explicitModel);
+    if (formatted !== explicitModel || /MB\s*-?\s*(360|460|560)/i.test(explicitModel)) return formatted;
+  }
 
   const serialModel = inferModelFromSerial(device.serialNumber);
-  return serialModel || 'Modelo no informado';
+  return serialModel || 'MB-360';
 }
 
 function inferModelFromSerial(serialNumber?: string | null) {
   if (!serialNumber) return null;
   const normalized = serialNumber.toUpperCase().replace(/[^A-Z0-9]/g, '');
-  if (normalized.includes('MB360')) return 'MB-360';
-  if (normalized.includes('MB460')) return 'MB-460';
-  if (normalized.includes('MB560')) return 'MB-560';
+  if (normalized.includes('MB360') || normalized.includes('MB0360') || normalized.includes('360')) return 'MB-360';
+  if (normalized.includes('MB460') || normalized.includes('MB0460')) return 'MB-460';
+  if (normalized.includes('MB560') || normalized.includes('MB0560')) return 'MB-560';
   return null;
 }
 

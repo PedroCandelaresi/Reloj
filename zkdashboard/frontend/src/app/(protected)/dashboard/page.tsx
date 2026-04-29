@@ -43,6 +43,7 @@ export default async function DashboardPage() {
   const summary = await getAttendanceDashboard();
   const recent = summary.recentRecords;
   const devices = summary.devices;
+  const devicesById = new Map(devices.map((device) => [device.id, device]));
   const activeCompany =
     user.memberships.find((membership) => membership.companyId === user.companyId)?.company;
   const activeCompanyName =
@@ -169,7 +170,9 @@ export default async function DashboardPage() {
                         <StatusBadge status={r.status} label={r.devicePunchStateLabel} />
                       </td>
                       <td className="px-6 py-4" style={{ color: 'var(--text-muted)' }}>{VERIFY_LABELS[r.verifyType] ?? r.verifyType}</td>
-                      <td className="px-6 py-4 text-xs" style={{ color: 'var(--text-muted)' }}>Reloj de asistencia</td>
+                      <td className="px-6 py-4 text-xs" style={{ color: 'var(--text-muted)' }}>
+                        {r.deviceId ? getCompanyDeviceName(devicesById.get(r.deviceId) ?? null) : 'Reloj sin nombre'}
+                      </td>
                     </tr>
                   ))
                 )}
