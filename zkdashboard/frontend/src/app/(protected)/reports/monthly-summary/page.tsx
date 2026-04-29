@@ -47,7 +47,7 @@ export default async function MonthlySummaryPage({ searchParams }: PageProps) {
               background: report.source === 'summaries' ? 'var(--brand-soft)' : 'var(--blue-soft)',
               color: report.source === 'summaries' ? 'var(--brand-text)' : 'var(--blue-text)',
             }}>
-              Fuente: {report.source === 'summaries' ? 'Resúmenes calculados' : 'Fichadas crudas'}
+              Fuente: {report.source === 'summaries' ? 'resúmenes calculados' : 'fichadas directas del reloj'}
             </span>
           </div>
           <ExportButtons excelHref={exportMonthlySummaryReport(params)} />
@@ -62,7 +62,7 @@ export default async function MonthlySummaryPage({ searchParams }: PageProps) {
         />
         {report.source === 'raw_records' && (
           <div className="mb-5 rounded-lg border px-4 py-3 text-sm" style={{ background: 'var(--blue-soft)', borderColor: 'rgba(59,130,246,0.25)', color: 'var(--blue-text)' }}>
-            Este reporte usa fichadas crudas. Para ver tardanzas, ausencias y feriados, recalculá el período desde Resúmenes diarios.
+            Este reporte usa fichadas directas del reloj. Para ver tardanzas, ausencias y feriados, recalculá el período desde Resúmenes diarios.
           </div>
         )}
         {report.source === 'summaries' && report.coverage.isPartial && (
@@ -75,7 +75,7 @@ export default async function MonthlySummaryPage({ searchParams }: PageProps) {
             </div>
             <Link href={`/reports/day-summaries?dateFrom=${dateFrom}&dateTo=${dateTo}${employeeId ? `&employeeId=${employeeId}` : ''}`}
               className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
-              Recalcular período
+              Abrir recálculo del período
             </Link>
           </div>
         )}

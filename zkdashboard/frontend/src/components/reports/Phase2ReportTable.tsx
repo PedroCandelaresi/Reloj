@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import type { Phase2ReportRow } from '@/lib/api';
 import { formatArgentinaDateTime } from '@/lib/argentina-date';
 import { formatEmployeeName } from '@/lib/format-employee';
+import { getAttendanceJustificationLabel } from '@/lib/ux-labels';
 
 export function Phase2ReportTable({
   rows,
@@ -61,7 +62,20 @@ export function Phase2ReportTable({
                     {row.workedMinutes} / {row.expectedMinutes} min
                     {row.overtimeMinutes > 0 ? ` · extra ${row.overtimeMinutes}` : ''}
                   </td>
-                  <td className="px-6 py-4" style={{ color: 'var(--text-secondary)' }}>{row.status}</td>
+                  <td className="px-6 py-4">
+                    <span className="inline-flex rounded-full bg-slate-500/10 px-2.5 py-1 text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
+                      {phase2StatusLabel(row.status)}
+                    </span>
+                    {(mode === 'absences' || (mode === 'late' && row.lateMinutes > 0)) && (
+                      <span className="mt-1 block text-xs" style={{ color: 'var(--text-muted)' }}>
+                        {getAttendanceJustificationLabel({
+                          isAbsent: mode === 'absences',
+                          lateMinutes: row.lateMinutes,
+                          justificationStatus: 'none',
+                        })}
+                      </span>
+                    )}
+                  </td>
                   {canCreateRequests && (
                     <td className="px-6 py-4">
                       {mode === 'absences' ? (
@@ -85,6 +99,23 @@ export function Phase2ReportTable({
       </div>
     </div>
   );
+}
+
+function phase2StatusLabel(status: string) {
+  switch (status) {
+    case 'absent':
+      return 'Ausente';
+    case 'present':
+      return 'Presente';
+    case 'late':
+      return 'Tardanza';
+    case 'incomplete':
+      return 'Incompleto';
+    case 'calculated':
+      return 'Calculado';
+    default:
+      return status;
+  }
 }
 
 function requestHref(type: string, employeeId: string, date: string) {

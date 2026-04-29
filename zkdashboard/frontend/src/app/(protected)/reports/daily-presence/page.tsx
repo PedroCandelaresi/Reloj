@@ -37,7 +37,7 @@ export default async function DailyPresencePage({ searchParams }: PageProps) {
       <main className="mx-auto max-w-7xl px-4 py-8 pt-32">
         <Header
           title="Presencia diaria"
-          description={`${rows.length} fila(s) para el período seleccionado`}
+          description={`Primera y última fichada por empleado. ${rows.length} fila(s) para el período seleccionado.`}
           excelHref={exportDailyPresenceReport(params)}
         />
         <ReportFilters

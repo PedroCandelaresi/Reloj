@@ -29,7 +29,9 @@ export default async function EmployeesPage() {
           <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
             {user.isSuperAdmin
               ? 'Vista global de empleados. La edición queda reservada a la administración de cada empresa.'
-              : 'Administrá la maestra usada para enriquecer los registros de asistencia.'}
+              : canManage
+                ? 'Gestioná la lista de empleados de tu empresa.'
+                : 'Consultá la lista de empleados de tu empresa.'}
           </p>
         </div>
 

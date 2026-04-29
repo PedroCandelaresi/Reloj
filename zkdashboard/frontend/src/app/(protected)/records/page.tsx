@@ -68,8 +68,11 @@ export default async function RecordsPage({ searchParams }: PageProps) {
 
         <div className="flex items-start justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Todos los Registros</h1>
-            <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>{result.total} registros encontrados</p>
+            <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Fichadas</h1>
+            <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
+              Son las marcaciones recibidas directamente desde el reloj. Todavía no tienen aplicadas reglas de horario, tolerancias ni feriados.
+            </p>
+            <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>{result.total} fichadas encontradas</p>
           </div>
 
           <div className="flex flex-wrap gap-2">
@@ -96,6 +99,11 @@ export default async function RecordsPage({ searchParams }: PageProps) {
           devices={devices}
           canSync={user.isSuperAdmin || user.companyRole === 'company_admin' || user.companyRole === 'operator'}
         />
+
+        <div className="mb-6 rounded-lg border px-4 py-3 text-sm" style={{ background: 'var(--blue-soft)', borderColor: 'rgba(59,130,246,0.25)', color: 'var(--blue-text)' }}>
+          Estas son las marcaciones recibidas directamente desde el reloj. Para ver tardanzas, ausencias y horas trabajadas, usá los reportes calculados.
+          <span className="mt-1 block">Método de marcación indica cómo el reloj identificó a la persona, por ejemplo huella, tarjeta, rostro o código personal.</span>
+        </div>
 
         {/* Filtros */}
         <form method="get" className="card rounded-xl p-4 mb-6 flex flex-wrap gap-4 items-end">
@@ -146,9 +154,9 @@ export default async function RecordsPage({ searchParams }: PageProps) {
                 <tr className="table-header-row text-xs uppercase">
                   <th className="px-6 py-4 text-left font-semibold">Usuario</th>
                   <th className="px-6 py-4 text-left font-semibold">Fecha y Hora</th>
-                  <th className="px-6 py-4 text-left font-semibold">Estado informado por reloj</th>
-                  <th className="px-6 py-4 text-left font-semibold">Verificación</th>
-                  <th className="px-6 py-4 text-left font-semibold">Dispositivo</th>
+                  <th className="px-6 py-4 text-left font-semibold">Tipo de marcación del reloj</th>
+                  <th className="px-6 py-4 text-left font-semibold">Método de marcación</th>
+                  <th className="px-6 py-4 text-left font-semibold">Reloj</th>
                   {canCreateRequests && <th className="px-6 py-4 text-left font-semibold">Acción</th>}
                 </tr>
               </thead>
@@ -156,7 +164,7 @@ export default async function RecordsPage({ searchParams }: PageProps) {
                 {result.data.length === 0 ? (
                   <tr>
                     <td colSpan={canCreateRequests ? 6 : 5} className="px-6 py-10 text-center" style={{ color: 'var(--text-muted)' }}>
-                      No hay registros para los filtros seleccionados
+                      No hay fichadas para el período seleccionado. Verificá que el reloj esté conectado o cambiá el rango de fechas.
                     </td>
                   </tr>
                 ) : (
@@ -169,7 +177,7 @@ export default async function RecordsPage({ searchParams }: PageProps) {
                       <td className="px-6 py-4" style={{ color: 'var(--text-secondary)' }}>{formatDate(r.timestamp)}</td>
                       <td className="px-6 py-4"><StatusBadge status={r.status} label={r.devicePunchStateLabel} /></td>
                       <td className="px-6 py-4" style={{ color: 'var(--text-muted)' }}>{VERIFY_LABELS[r.verifyType] ?? r.verifyType}</td>
-                      <td className="px-6 py-4 text-xs" style={{ color: 'var(--text-muted)' }}>{r.deviceSn}</td>
+                      <td className="px-6 py-4 text-xs" style={{ color: 'var(--text-muted)' }}>Reloj de asistencia</td>
                       {canCreateRequests && (
                         <td className="px-6 py-4">
                           <Link href={correctionHref(r.id, r.userId, r.timestamp)} className="font-medium" style={{ color: 'var(--brand-text)' }}>

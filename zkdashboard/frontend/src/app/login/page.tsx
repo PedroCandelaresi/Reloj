@@ -42,7 +42,7 @@ function SubmitButton() {
       disabled={pending}
       className="h-14 w-full rounded-md bg-emerald-600 px-4 text-sm font-semibold text-white shadow-[0_16px_34px_rgba(31,199,119,0.28)] transition-colors hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
     >
-      {pending ? 'Accediendo...' : 'Acceder'}
+      {pending ? 'Accediendo...' : 'Seguir adelante'}
     </button>
   );
 }
@@ -53,23 +53,16 @@ export default function LoginPage() {
 
   return (
     <main className="grid min-h-screen bg-white text-slate-950 lg:grid-cols-[minmax(0,0.96fr)_minmax(520px,1.04fr)]">
-      <section className="relative flex min-h-screen flex-col px-6 py-8 sm:px-10 lg:px-12">
-        <div className="h-16" />
-
-        <div className="flex flex-1 items-center justify-center py-12">
+      <section className="login-soft-panel relative flex min-h-screen flex-col px-6 py-8 sm:px-10 lg:px-12">
+        <div className="relative z-10 flex flex-1 items-center justify-center py-12">
           <div className="w-full max-w-[390px]">
-            <p className="text-base font-medium text-slate-500">Panel operativo</p>
-            <h1 className="mt-4 text-3xl font-bold tracking-normal text-slate-950">
-              Ingresar a CONFLUNET
-            </h1>
-
             {state?.error && (
-              <div className="mt-8 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              <div className="mb-8 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                 {state.error}
               </div>
             )}
 
-            <form action={action} className="mt-12 space-y-7">
+            <form action={action} className="space-y-7">
               <label className="login-outline-field block">
                 <span>Usuario</span>
                 <div className="flex h-14 items-center gap-3 px-4">
@@ -113,25 +106,27 @@ export default function LoginPage() {
             </form>
           </div>
         </div>
-
-        <p className="text-sm text-slate-400">Acceso seguro para empresas y administradores.</p>
+        <div className="absolute bottom-6 right-6 z-20 lg:hidden">
+          <BrandLogo
+            variant="steel"
+            layout="horizontal"
+            className="justify-end"
+            iconClassName="w-14"
+            wordmarkClassName="w-48 max-w-[64vw]"
+          />
+        </div>
       </section>
 
       <section className="relative hidden min-h-screen overflow-hidden lg:block">
         <div className="absolute inset-0 login-brand-art" />
-        <div className="absolute left-12 top-10">
+        <div className="absolute bottom-10 right-10 z-20">
           <BrandLogo
-            variant="emerald"
+            variant="steel"
             layout="horizontal"
-            className="justify-start"
-            iconClassName="w-10"
-            wordmarkClassName="w-44"
+            className="justify-end"
+            iconClassName="w-20"
+            wordmarkClassName="w-72 max-w-[34vw]"
           />
-        </div>
-        <div className="absolute bottom-14 left-12 right-12 max-w-xl text-white">
-          <h2 className="text-4xl font-bold leading-tight tracking-normal drop-shadow-sm">
-            Control de asistencia claro, centralizado y listo para operar.
-          </h2>
         </div>
       </section>
 
@@ -158,6 +153,43 @@ export default function LoginPage() {
           color: #17a85f;
           font-size: 0.82rem;
           font-weight: 600;
+        }
+
+        .login-soft-panel {
+          overflow: hidden;
+          background:
+            linear-gradient(90deg, rgba(255,255,255,0.96), rgba(255,255,255,0.9)),
+            linear-gradient(232deg, rgba(126,232,192,0.08) 0%, rgba(44,181,125,0.055) 24%, rgba(7,150,94,0.035) 48%, rgba(7,88,60,0.02) 70%, rgba(4,20,15,0.016) 100%);
+        }
+
+        .login-soft-panel::before,
+        .login-soft-panel::after {
+          content: '';
+          position: absolute;
+          inset: -12%;
+          pointer-events: none;
+        }
+
+        .login-soft-panel::before {
+          background:
+            radial-gradient(circle at 22% 8%, rgba(7,150,94,0.055) 0 1px, transparent 2px),
+            radial-gradient(circle at 80% 22%, rgba(7,150,94,0.045) 0 1px, transparent 2px),
+            radial-gradient(circle at 28% 70%, rgba(7,150,94,0.035) 0 2px, transparent 3px),
+            linear-gradient(52deg, transparent 0 34%, rgba(31,199,119,0.035) 40% 42%, transparent 54% 100%),
+            linear-gradient(38deg, rgba(255,255,255,0.82), rgba(255,255,255,0.96));
+          filter: saturate(0.42) contrast(0.62) brightness(1.72);
+          opacity: 0.85;
+          transform: scaleX(-1) rotate(-2deg);
+        }
+
+        .login-soft-panel::after {
+          background:
+            radial-gradient(ellipse at 76% 30%, rgba(31,199,119,0.032), transparent 18%),
+            radial-gradient(ellipse at 30% 74%, rgba(7,88,60,0.026), transparent 26%),
+            linear-gradient(58deg, transparent 0 18%, rgba(31,199,119,0.03) 24% 27%, transparent 36% 100%);
+          filter: blur(12px) saturate(0.35) brightness(1.85);
+          opacity: 0.64;
+          transform: scaleX(-1) rotate(5deg);
         }
 
         .login-brand-art {

@@ -20,6 +20,7 @@ import {
   syncDeviceEmployeeUserAction,
   updateEmployeeAction,
 } from '@/app/(protected)/employees/actions';
+import { getCompanyDeviceName, humanizeActionError } from '@/lib/ux-labels';
 
 type FormMode = 'create' | 'edit';
 
@@ -55,7 +56,7 @@ const RECONCILIATION_STATUS_LABELS: Record<DeviceUserMatchStatus, string> = {
   system_only: 'Solo sistema',
   device_only: 'Solo reloj',
   name_mismatch: 'Nombre distinto',
-  pin_conflict: 'Conflicto PIN',
+  pin_conflict: 'Conflicto de N° de usuario',
 };
 
 function toFormValues(employee: Employee): FormValues {
@@ -147,6 +148,9 @@ export function EmployeesManagerContent({
       setFormError('Completá DNI, nombre y apellido.');
       return;
     }
+    if (mode === 'edit' && scheduleProfileId) {
+      if (!window.confirm('Cambiar el perfil de horario puede afectar los cálculos de períodos anteriores. Después de guardar, recalculá el período actual para ver los cambios. ¿Continuás?')) return;
+    }
 
     startTransition(() => {
       const request =
@@ -156,14 +160,14 @@ export function EmployeesManagerContent({
 
       void request
         .then((result: ActionResult) => {
-          if (result.error) { setFormError(result.error); return; }
+          if (result.error) { setFormError(humanizeActionError(result.error)); return; }
           setIsModalOpen(false);
           setForm(EMPTY_FORM);
           setFormError(null);
           setBanner({ type: 'success', text: mode === 'create' ? 'Empleado creado correctamente.' : 'Empleado actualizado correctamente.' });
           router.refresh();
         })
-        .catch(() => { setFormError('No se pudo guardar el empleado.'); });
+        .catch(() => { setFormError(humanizeActionError('Failed to fetch')); });
     });
   };
 
@@ -174,12 +178,12 @@ export function EmployeesManagerContent({
     startTransition(() => {
       void deleteEmployeeAction(employee.id)
         .then((result: ActionResult) => {
-          if (result.error) { setBanner({ type: 'error', text: result.error }); return; }
+          if (result.error) { setBanner({ type: 'error', text: humanizeActionError(result.error) }); return; }
           if (isModalOpen && form.id === employee.id) { setIsModalOpen(false); setForm(EMPTY_FORM); setFormError(null); }
           setBanner({ type: 'success', text: 'Empleado eliminado correctamente.' });
           router.refresh();
         })
-        .catch(() => { setBanner({ type: 'error', text: 'No se pudo eliminar el empleado.' }); });
+        .catch(() => { setBanner({ type: 'error', text: humanizeActionError('Failed to fetch') }); });
     });
   };
 
@@ -197,14 +201,14 @@ export function EmployeesManagerContent({
         .then((result) => {
           if (result.error) {
             setReconciliation(null);
-            setBanner({ type: 'error', text: result.error });
+            setBanner({ type: 'error', text: humanizeActionError(result.error) });
             return;
           }
           setReconciliation(result.data ?? null);
         })
         .catch(() => {
           setReconciliation(null);
-          setBanner({ type: 'error', text: 'No se pudo cargar la conciliación del reloj.' });
+          setBanner({ type: 'error', text: humanizeActionError('Failed to fetch') });
         })
         .finally(() => {
           setIsReconciliationLoading(false);
@@ -232,11 +236,11 @@ export function EmployeesManagerContent({
     startTransition(() => {
       void queryDeviceUsersAction(selectedDeviceId)
         .then((result: ActionResult) => {
-          if (result.error) { setBanner({ type: 'error', text: result.error }); return; }
-          setBanner({ type: 'success', text: result.message || 'Consulta USERINFO solicitada al reloj.' });
+          if (result.error) { setBanner({ type: 'error', text: humanizeActionError(result.error) }); return; }
+          setBanner({ type: 'success', text: result.message || 'Consulta de usuarios solicitada al reloj.' });
           loadReconciliation(selectedDeviceId);
         })
-        .catch(() => { setBanner({ type: 'error', text: 'No se pudo solicitar USERINFO al reloj.' }); });
+        .catch(() => { setBanner({ type: 'error', text: humanizeActionError('Failed to fetch') }); });
     });
   };
 
@@ -246,16 +250,16 @@ export function EmployeesManagerContent({
       setBanner({ type: 'error', text: 'Seleccioná un reloj.' });
       return;
     }
-    if (!window.confirm(`¿Enviar a ${employee.apellido}, ${employee.nombre} al reloj seleccionado?`)) return;
+    if (!window.confirm('Se va a enviar este empleado al reloj seleccionado. El empleado podrá fichar cuando el reloj confirme la operación. ¿Continuás?')) return;
 
     startTransition(() => {
       void syncDeviceEmployeeUserAction(selectedDeviceId, employee.id)
         .then((result: ActionResult) => {
-          if (result.error) { setBanner({ type: 'error', text: result.error }); return; }
+          if (result.error) { setBanner({ type: 'error', text: humanizeActionError(result.error) }); return; }
           setBanner({ type: 'success', text: result.message || 'Empleado encolado para enviar al reloj.' });
           loadReconciliation(selectedDeviceId);
         })
-        .catch(() => { setBanner({ type: 'error', text: 'No se pudo enviar el empleado al reloj.' }); });
+        .catch(() => { setBanner({ type: 'error', text: humanizeActionError('Failed to fetch') }); });
     });
   };
 
@@ -311,7 +315,7 @@ export function EmployeesManagerContent({
               <div className="min-w-0">
                 <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Usuarios del reloj</p>
                 <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                  Compara USERINFO del reloj contra la maestra. No importa biometría ni crea empleados automáticamente.
+                  Compara usuarios del reloj contra empleados del sistema. No importa biometría ni crea empleados automáticamente.
                 </p>
               </div>
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -327,7 +331,7 @@ export function EmployeesManagerContent({
                   ) : (
                     devices.map((device) => (
                       <option key={device.id} value={device.id}>
-                        {device.name || device.serialNumber}
+                        {getCompanyDeviceName(device)}
                       </option>
                     ))
                   )}
@@ -362,7 +366,7 @@ export function EmployeesManagerContent({
               <table className="w-full text-sm">
                 <thead>
                   <tr className="table-header-row text-xs uppercase">
-                    <th className="px-4 py-3 text-left font-semibold">PIN</th>
+                    <th className="px-4 py-3 text-left font-semibold">N° de usuario</th>
                     <th className="px-4 py-3 text-left font-semibold">Nombre en reloj</th>
                     <th className="px-4 py-3 text-left font-semibold">Empleado del sistema</th>
                     <th className="px-4 py-3 text-left font-semibold">Estado</th>
@@ -373,13 +377,13 @@ export function EmployeesManagerContent({
                   {devices.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="px-4 py-8 text-center" style={{ color: 'var(--text-muted)' }}>
-                        No hay relojes disponibles.
+                        Esta empresa no tiene relojes asignados. Contactá al administrador del sistema para asignar uno.
                       </td>
                     </tr>
                   ) : reconciliationRows.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="px-4 py-8 text-center" style={{ color: 'var(--text-muted)' }}>
-                        Todavía no hay USERINFO recibido para este reloj.
+                        Todavía no se consultaron los usuarios del reloj. Presioná “Consultar usuarios del reloj” y esperá la próxima comunicación del equipo.
                       </td>
                     </tr>
                   ) : (
@@ -423,7 +427,7 @@ export function EmployeesManagerContent({
                           ) : (row.status === 'system_only' || row.status === 'name_mismatch') && !canSyncDeviceUsers ? (
                             <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Solo lectura</span>
                           ) : (
-                            <span className="text-xs" style={{ color: 'var(--danger-text)' }}>Revisar PIN</span>
+                            <span className="text-xs" style={{ color: 'var(--danger-text)' }}>Revisar N° de usuario</span>
                           )}
                         </td>
                       </tr>
@@ -454,7 +458,7 @@ export function EmployeesManagerContent({
               {employees.length === 0 ? (
                 <tr>
                   <td colSpan={canManage ? 9 : 8} className="px-6 py-10 text-center" style={{ color: 'var(--text-muted)' }}>
-                    No hay empleados registrados todavía.
+                    No hay empleados cargados todavía. Para calcular asistencia, primero cargá empleados o importalos desde el reloj.
                   </td>
                 </tr>
               ) : (

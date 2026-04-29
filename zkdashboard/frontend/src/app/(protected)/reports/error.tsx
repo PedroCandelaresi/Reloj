@@ -1,5 +1,7 @@
 'use client';
 
+import { humanizeActionError } from '@/lib/ux-labels';
+
 export default function ReportsError({
   error,
   reset,
@@ -14,7 +16,7 @@ export default function ReportsError({
           No se pudo cargar el reporte
         </h1>
         <p className="mt-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
-          {error.message || 'Revisá los filtros e intentá nuevamente.'}
+          {humanizeActionError(error.message)}
         </p>
         <button
           type="button"

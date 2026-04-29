@@ -15,27 +15,27 @@ export default async function ReportsHubPage() {
           <ReportCard
             href="/reports/daily-presence"
             title="Presencia diaria"
-            description="Primera y última fichada por empleado, total de marcas y tiempo estimado."
+            description="Primera y última fichada por empleado."
           />
           <ReportCard
             href="/reports/incomplete-records"
             title="Fichadas incompletas"
-            description="Días con una sola fichada o cantidad impar de registros para revisar."
+            description="Días donde falta una entrada o salida."
           />
           <ReportCard
             href="/reports/monthly-summary"
             title="Resumen mensual"
-            description="Totales por empleado y detalle diario del mes consultado."
+            description="Totales del mes por empleado."
           />
           <ReportCard
             href="/reports/day-summaries"
             title="Resumen diario calculado"
             description="Validación del motor diario con estado, fichadas y minutos estimados."
           />
-          <ReportCard href="/reports/late-arrivals" title="Tardanzas" description="Llegadas fuera de tolerancia calculadas desde summaries." />
+          <ReportCard href="/reports/late-arrivals" title="Tardanzas" description="Llegadas fuera del horario permitido." />
           <ReportCard href="/reports/early-departures" title="Salidas tempranas" description="Salidas anteriores al horario esperado con tolerancia." />
-          <ReportCard href="/reports/absences" title="Ausencias" description="Días laborales con horario esperado y sin fichadas." />
-          <ReportCard href="/reports/worked-hours" title="Horas trabajadas" description="Minutos trabajados, esperados y extra simple por día." />
+          <ReportCard href="/reports/absences" title="Ausencias" description="Días laborales sin fichadas." />
+          <ReportCard href="/reports/worked-hours" title="Horas trabajadas" description="Tiempo trabajado calculado a partir de las fichadas y horarios configurados." />
         </div>
       </main>
     </>

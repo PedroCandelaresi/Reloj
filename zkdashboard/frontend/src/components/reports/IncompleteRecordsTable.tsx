@@ -28,7 +28,7 @@ export function IncompleteRecordsTable({
             {rows.length === 0 ? (
               <tr>
                 <td colSpan={canCreateRequests ? 7 : 6} className="px-6 py-10 text-center" style={{ color: 'var(--text-muted)' }}>
-                  No se encontraron fichadas incompletas en el período
+                  No hay fichadas incompletas para el período seleccionado.
                 </td>
               </tr>
             ) : (
@@ -46,7 +46,7 @@ export function IncompleteRecordsTable({
                     {row.punchTimes.map(formatTime).join(', ')}
                   </td>
                   <td className="px-6 py-4 text-xs" style={{ color: 'var(--text-muted)' }}>
-                    {row.devices.join(', ') || '-'}
+                    {row.devices.length > 0 ? 'Reloj de asistencia' : '-'}
                   </td>
                   <td className="px-6 py-4">
                     <span className="inline-flex rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-700 dark:text-amber-300">

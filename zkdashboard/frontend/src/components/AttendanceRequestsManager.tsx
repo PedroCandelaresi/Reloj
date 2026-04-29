@@ -20,6 +20,7 @@ import {
 } from '@/lib/api';
 import { formatArgentinaDateTime } from '@/lib/argentina-date';
 import { formatEmployeeName } from '@/lib/format-employee';
+import { humanizeActionError } from '@/lib/ux-labels';
 
 type FormValues = {
   employeeId: string;
@@ -57,6 +58,13 @@ const STATUS_LABELS: Record<AttendanceRequest['status'], string> = {
   approved: 'Aprobada',
   rejected: 'Rechazada',
   cancelled: 'Cancelada',
+};
+
+const TYPE_HELP: Record<AttendanceRequestType, string> = {
+  manual_punch: 'Agrega una fichada que el reloj no registró.',
+  punch_correction: 'Modifica una fichada existente y deja auditoría.',
+  absence_justification: 'Marca una ausencia como justificada sin borrar el registro.',
+  late_justification: 'La tardanza sigue registrada, pero queda justificada por RRHH.',
 };
 
 function canCreate(user: CurrentUserProfile) {
@@ -102,7 +110,16 @@ export function AttendanceRequestsManager({
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setMessage(null);
-    if (!writable) return;
+    if (!writable) {
+      setMessage({ type: 'error', text: 'No tenés permisos para realizar esta acción. Podés consultar la información, pero no modificarla.' });
+      return;
+    }
+    if (reviewer && form.autoApprove && form.type === 'manual_punch') {
+      if (!window.confirm('Vas a cargar una fichada manual y aprobarla automáticamente. La solicitud quedará aprobada al crearla. ¿Continuás?')) return;
+    }
+    if (form.type === 'punch_correction') {
+      if (!window.confirm('Vas a corregir una fichada existente. El cambio quedará registrado en la auditoría. ¿Continuás?')) return;
+    }
 
     const payload: AttendanceRequestInput = {
       employeeId: form.employeeId,
@@ -117,20 +134,29 @@ export function AttendanceRequestsManager({
     };
 
     startTransition(() => {
-      void createAttendanceRequestAction(payload).then((result) => {
-        if (result.error) {
-          setMessage({ type: 'error', text: result.error });
-          return;
-        }
-        setForm(EMPTY_FORM);
-        setMessage({ type: 'success', text: 'Solicitud creada correctamente.' });
-        router.refresh();
-      });
+      void createAttendanceRequestAction(payload)
+        .then((result) => {
+          if (result.error) {
+            setMessage({ type: 'error', text: humanizeActionError(result.error) });
+            return;
+          }
+          setForm(EMPTY_FORM);
+          setMessage({ type: 'success', text: 'Solicitud creada correctamente.' });
+          router.refresh();
+        })
+        .catch(() => setMessage({ type: 'error', text: humanizeActionError('Failed to fetch') }));
     });
   };
 
   const review = (id: string, action: 'approve' | 'reject' | 'cancel') => {
     setMessage(null);
+    const confirmation =
+      action === 'approve'
+        ? 'Vas a aprobar esta solicitud. El sistema aplicará el cambio correspondiente y dejará registro de auditoría. ¿Continuás?'
+        : action === 'reject'
+          ? 'Vas a rechazar esta solicitud. No se aplicarán cambios sobre las fichadas o el resumen del día. ¿Continuás?'
+          : 'Vas a cancelar esta solicitud pendiente. No se aplicarán cambios. ¿Continuás?';
+    if (!window.confirm(confirmation)) return;
     const notes = reviewNotesById[id] ?? '';
     startTransition(() => {
       const task =
@@ -139,14 +165,16 @@ export function AttendanceRequestsManager({
           : action === 'reject'
             ? rejectAttendanceRequestAction(id, notes)
             : cancelAttendanceRequestAction(id);
-      void task.then((result) => {
-        if (result.error) {
-          setMessage({ type: 'error', text: result.error });
-          return;
-        }
-        setMessage({ type: 'success', text: 'Solicitud actualizada.' });
-        router.refresh();
-      });
+      void task
+        .then((result) => {
+          if (result.error) {
+            setMessage({ type: 'error', text: humanizeActionError(result.error) });
+            return;
+          }
+          setMessage({ type: 'success', text: 'Solicitud actualizada.' });
+          router.refresh();
+        })
+        .catch(() => setMessage({ type: 'error', text: humanizeActionError('Failed to fetch') }));
     });
   };
 
@@ -168,10 +196,17 @@ export function AttendanceRequestsManager({
         </div>
       )}
 
+      {!writable && (
+        <div className="rounded-lg border px-4 py-3 text-sm" style={{ background: 'var(--amber-soft)', borderColor: 'rgba(251,191,36,0.3)', color: 'var(--amber-text)' }}>
+          No tenés permisos para realizar esta acción. Podés consultar la información, pero no modificarla.
+        </div>
+      )}
+
       {writable && (
         <section className="card rounded-xl">
           <div className="px-6 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
             <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Nueva solicitud</h2>
+            <p className="mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>{TYPE_HELP[form.type]}</p>
           </div>
           <form onSubmit={submit} className="grid grid-cols-1 gap-4 p-6 lg:grid-cols-4">
             <Field label="Empleado">
@@ -210,7 +245,10 @@ export function AttendanceRequestsManager({
             )}
             {form.type === 'punch_correction' && (
               <>
-                <Field label="ID fichada">
+                <Field
+                  label="Fichada a corregir"
+                  help="Se completa automáticamente cuando iniciás la corrección desde una fichada. Si lo hacés manualmente, seleccioná o indicá la fichada correspondiente."
+                >
                   <input name="targetAttendanceRecordId" value={form.targetAttendanceRecordId} onChange={handleChange} inputMode="numeric" required className="input-field w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
                 </Field>
                 <Field label="Nueva hora">
@@ -226,6 +264,7 @@ export function AttendanceRequestsManager({
               <label className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
                 <input type="checkbox" checked={form.autoApprove} onChange={handleAutoApprove} />
                 Aprobar automáticamente
+                <span title="Si marcás esta opción, la solicitud queda aprobada al crearla, sin revisión posterior." style={{ color: 'var(--text-muted)' }}>ⓘ</span>
               </label>
             )}
             <div className="lg:col-span-4 flex justify-end">
@@ -257,7 +296,7 @@ export function AttendanceRequestsManager({
               {requests.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-10 text-center" style={{ color: 'var(--text-muted)' }}>
-                    No hay solicitudes para los filtros seleccionados.
+                    No hay solicitudes en este momento. Las correcciones y justificaciones aparecerán acá.
                   </td>
                 </tr>
               ) : requests.map((request) => (
@@ -348,11 +387,12 @@ export function AttendanceRequestsManager({
   );
 }
 
-function Field({ label, children }: { label: string; children: ReactNode }) {
+function Field({ label, children, help }: { label: string; children: ReactNode; help?: string }) {
   return (
     <label className="block text-sm">
       <span className="font-medium" style={{ color: 'var(--text-secondary)' }}>{label}</span>
       <div className="mt-1">{children}</div>
+      {help && <span className="mt-1 block text-xs" style={{ color: 'var(--text-muted)' }}>{help}</span>}
     </label>
   );
 }

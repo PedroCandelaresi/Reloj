@@ -22,12 +22,14 @@ export default async function WorkedHoursPage({ searchParams }: PageProps) {
           <div>
             <Link href="/reports" className="mb-2 block text-sm font-medium" style={{ color: 'var(--brand-text)' }}>← Reportes</Link>
             <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Horas trabajadas</h1>
-            <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>{rows.length} registro(s)</p>
+            <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
+              Tiempo trabajado calculado a partir de las fichadas y horarios configurados. {rows.length} registro(s).
+            </p>
           </div>
           <ExportButtons excelHref={exportWorkedHoursReport(params)} />
         </div>
         <ReportFilters action="/reports/worked-hours" userOptions={userOptions} dateFrom={dateFrom} dateTo={dateTo} employeeId={employeeId} />
-        <Phase2ReportTable rows={rows} mode="worked" emptyMessage="No hay horas trabajadas para los filtros seleccionados" />
+        <Phase2ReportTable rows={rows} mode="worked" emptyMessage="No hay horas trabajadas para el período seleccionado." />
       </main>
     </>
   );

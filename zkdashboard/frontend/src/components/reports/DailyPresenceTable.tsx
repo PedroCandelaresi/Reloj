@@ -28,7 +28,7 @@ export function DailyPresenceTable({ rows }: { rows: DailyPresenceReportRow[] })
             {rows.length === 0 ? (
               <tr>
                 <td colSpan={8} className="px-6 py-10 text-center" style={{ color: 'var(--text-muted)' }}>
-                  No hay empleados o fichadas para los filtros seleccionados
+                  No hay fichadas para el período seleccionado. Verificá que el reloj esté conectado o cambiá el rango de fechas.
                 </td>
               </tr>
             ) : (

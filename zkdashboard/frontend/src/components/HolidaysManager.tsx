@@ -8,6 +8,7 @@ import {
   saveHolidayAction,
 } from '@/app/(protected)/settings/holidays/actions';
 import type { CurrentUserProfile, Holiday, HolidayInput } from '@/lib/api';
+import { humanizeActionError } from '@/lib/ux-labels';
 
 type HolidayType = 'national' | 'company' | 'regional';
 
@@ -101,34 +102,38 @@ export function HolidaysManager({
     };
 
     startTransition(() => {
-      void saveHolidayAction(payload).then((result) => {
-        if (result.error) {
-          setMessage({ type: 'error', text: result.error });
-          return;
-        }
+      void saveHolidayAction(payload)
+        .then((result) => {
+          if (result.error) {
+            setMessage({ type: 'error', text: humanizeActionError(result.error) });
+            return;
+          }
 
-        setMessage({ type: 'success', text: isEditing ? 'Feriado actualizado.' : 'Feriado creado.' });
-        resetForm();
-        router.refresh();
-      });
+          setMessage({ type: 'success', text: isEditing ? 'Feriado actualizado.' : 'Feriado creado.' });
+          resetForm();
+          router.refresh();
+        })
+        .catch(() => setMessage({ type: 'error', text: humanizeActionError('Failed to fetch') }));
     });
   };
 
   const handleDelete = (holiday: Holiday) => {
     setMessage(null);
-    if (!writable || !window.confirm(`¿Eliminar el feriado ${holiday.name}?`)) return;
+    if (!writable || !window.confirm('Después de eliminar este feriado, recalculá el período para que los reportes se actualicen. ¿Continuás?')) return;
 
     startTransition(() => {
-      void deleteHolidayAction(holiday.id).then((result) => {
-        if (result.error) {
-          setMessage({ type: 'error', text: result.error });
-          return;
-        }
+      void deleteHolidayAction(holiday.id)
+        .then((result) => {
+          if (result.error) {
+            setMessage({ type: 'error', text: humanizeActionError(result.error) });
+            return;
+          }
 
-        if (form.id === holiday.id) resetForm();
-        setMessage({ type: 'success', text: 'Feriado eliminado.' });
-        router.refresh();
-      });
+          if (form.id === holiday.id) resetForm();
+          setMessage({ type: 'success', text: 'Feriado eliminado.' });
+          router.refresh();
+        })
+        .catch(() => setMessage({ type: 'error', text: humanizeActionError('Failed to fetch') }));
     });
   };
 
@@ -138,7 +143,7 @@ export function HolidaysManager({
         <div className="px-6 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
           <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Feriados cargados</h2>
           <p className="mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>
-            Los feriados no laborables evitan marcar ausencia al recalcular summaries.
+            Los feriados no laborables evitan marcar ausencias incorrectas al recalcular reportes.
           </p>
         </div>
 
@@ -158,7 +163,7 @@ export function HolidaysManager({
               {holidays.length === 0 ? (
                 <tr>
                   <td colSpan={writable ? 6 : 5} className="px-6 py-10 text-center" style={{ color: 'var(--text-muted)' }}>
-                    No hay feriados para el filtro seleccionado.
+                    No hay feriados para el período seleccionado. Si corresponde, cargá los feriados antes de recalcular los reportes.
                   </td>
                 </tr>
               ) : (

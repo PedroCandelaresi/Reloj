@@ -3,6 +3,14 @@
 import { useState, useTransition } from 'react';
 import type { Device } from '@/lib/api';
 import { requestDeviceForceSyncAction } from '@/app/(protected)/records/actions';
+import {
+  formatLastCommunication,
+  getCompanyDeviceModel,
+  getCompanyDeviceName,
+  getDeviceStatusClasses,
+  getDeviceStatusLabel,
+  humanizeActionError,
+} from '@/lib/ux-labels';
 
 const TZ = 'America/Argentina/Buenos_Aires';
 
@@ -14,21 +22,6 @@ function formatDate(iso?: string | null) {
     hour: '2-digit', minute: '2-digit',
     hour12: false,
   });
-}
-
-function stateBadgeClasses(severity?: string) {
-  switch (severity) {
-    case 'success':
-      return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400';
-    case 'warning':
-      return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300';
-    case 'danger':
-      return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300';
-    case 'info':
-      return 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300';
-    default:
-      return 'bg-gray-200 text-gray-600 dark:bg-gray-700/50 dark:text-gray-400';
-  }
 }
 
 export function DeviceStatusPanel({
@@ -44,17 +37,19 @@ export function DeviceStatusPanel({
   const forceSync = (device: Device) => {
     setMessage(null);
     startTransition(() => {
-      void requestDeviceForceSyncAction(device.id).then((result) => {
-        setMessage(result.error || result.message || 'Sincronización solicitada.');
-      });
+      void requestDeviceForceSyncAction(device.id)
+        .then((result) => {
+          setMessage(result.error ? humanizeActionError(result.error) : result.message || 'Sincronización solicitada.');
+        })
+        .catch(() => setMessage(humanizeActionError('Failed to fetch')));
     });
   };
 
   return (
     <section className="card rounded-xl">
       <div className="px-6 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
-        <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Estado de dispositivos</h2>
-        <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Heartbeat, sincronización y comandos ADMS.</p>
+        <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Estado de relojes</h2>
+        <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Conexión, última comunicación y tareas pendientes de cada reloj.</p>
       </div>
 
       {message && (
@@ -67,22 +62,20 @@ export function DeviceStatusPanel({
         <table className="w-full text-sm">
           <thead>
             <tr className="table-header-row text-xs uppercase">
-              <th className="px-6 py-4 text-left font-semibold">Dispositivo</th>
-              <th className="px-6 py-4 text-left font-semibold">Serial</th>
-              <th className="px-6 py-4 text-left font-semibold">Empresa</th>
-              <th className="px-6 py-4 text-left font-semibold">Estado</th>
-              <th className="px-6 py-4 text-left font-semibold">Diagnóstico</th>
-              <th className="px-6 py-4 text-left font-semibold">Última conexión</th>
-              <th className="px-6 py-4 text-left font-semibold">Última sync</th>
-              <th className="px-6 py-4 text-left font-semibold">Comandos</th>
+              <th className="px-6 py-4 text-left font-semibold">Reloj</th>
+              <th className="px-6 py-4 text-left font-semibold">Modelo</th>
+              <th className="px-6 py-4 text-left font-semibold">Estado del reloj</th>
+              <th className="px-6 py-4 text-left font-semibold">Última comunicación</th>
+              <th className="px-6 py-4 text-left font-semibold">Última sincronización</th>
+              <th className="px-6 py-4 text-left font-semibold">Tareas del reloj</th>
               {canSync && <th className="px-6 py-4 text-right font-semibold">Acción</th>}
             </tr>
           </thead>
           <tbody>
             {devices.length === 0 ? (
               <tr>
-                <td colSpan={canSync ? 9 : 8} className="px-6 py-10 text-center" style={{ color: 'var(--text-muted)' }}>
-                  No hay dispositivos registrados para esta vista.
+                <td colSpan={canSync ? 7 : 6} className="px-6 py-10 text-center" style={{ color: 'var(--text-muted)' }}>
+                  Esta empresa no tiene relojes asignados. Contactá al administrador del sistema para asignar uno.
                 </td>
               </tr>
             ) : (
@@ -91,24 +84,14 @@ export function DeviceStatusPanel({
                   onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--row-hover)')}
                   onMouseLeave={(e) => (e.currentTarget.style.background = '')}
                 >
-                  <td className="px-6 py-4 font-medium" style={{ color: 'var(--text-primary)' }}>{device.name}</td>
-                  <td className="px-6 py-4" style={{ color: 'var(--text-secondary)' }}>{device.serialNumber}</td>
-                  <td className="px-6 py-4" style={{ color: 'var(--text-muted)' }}>
-                    <div>
-                      <p>{device.companyName || device.company?.nombreFantasia || device.company?.razonSocial || (device.companyId ? 'Empresa asignada' : 'Sin empresa')}</p>
-                      <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{device.companyId || 'Sin companyId'}</p>
-                    </div>
-                  </td>
+                  <td className="px-6 py-4 font-medium" style={{ color: 'var(--text-primary)' }}>{getCompanyDeviceName(device)}</td>
+                  <td className="px-6 py-4" style={{ color: 'var(--text-secondary)' }}>{getCompanyDeviceModel(device)}</td>
                   <td className="px-6 py-4">
-                    <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${stateBadgeClasses(device.computedState?.severity)}`}>
-                      {device.computedState?.label || (device.online ? 'Online' : 'Offline')}
+                    <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${getDeviceStatusClasses(device.computedState?.state || device.status)}`}>
+                      {getDeviceStatusLabel(device.computedState?.state || device.status)}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-xs" style={{ color: 'var(--text-muted)' }}>
-                    <p>{device.minutesSinceLastSeen ?? device.computedState?.minutesSinceLastSeen ?? '—'} min desde heartbeat</p>
-                    <p>Origen: backend</p>
-                  </td>
-                  <td className="px-6 py-4" style={{ color: 'var(--text-muted)' }}>{formatDate(device.lastSeen)}</td>
+                  <td className="px-6 py-4" style={{ color: 'var(--text-muted)' }}>{formatLastCommunication(device)}</td>
                   <td className="px-6 py-4" style={{ color: 'var(--text-muted)' }}>{formatDate(device.lastSyncAt)}</td>
                   <td className="px-6 py-4" style={{ color: 'var(--text-secondary)' }}>
                     <p>{device.pendingCommandsCount} pendientes</p>
@@ -122,7 +105,7 @@ export function DeviceStatusPanel({
                         disabled={isPending || device.isActive === false}
                         className="rounded-lg bg-blue-600 hover:bg-blue-700 px-3 py-2 text-xs font-medium text-white disabled:opacity-60 transition-colors"
                       >
-                        Sincronizar
+                        Pedir fichadas ahora
                       </button>
                     </td>
                   )}

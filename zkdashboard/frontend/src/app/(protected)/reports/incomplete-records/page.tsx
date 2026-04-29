@@ -43,7 +43,7 @@ export default async function IncompleteRecordsPage({ searchParams }: PageProps)
             <Link href="/reports" className="mb-2 block text-sm font-medium" style={{ color: 'var(--brand-text)' }}>← Reportes</Link>
             <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Fichadas incompletas</h1>
             <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
-              {rows.length} anomalía(s) para revisar
+              Días donde falta una entrada o salida. {rows.length} anomalía(s) para revisar.
             </p>
           </div>
           <ExportButtons excelHref={exportIncompleteRecordsReport(params)} />

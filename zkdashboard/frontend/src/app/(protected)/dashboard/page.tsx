@@ -3,10 +3,10 @@ import { StatusBadge } from '@/components/StatusBadge';
 import {
   formatAttendanceUser,
   getAttendanceDashboard,
-  getStats,
   VERIFY_LABELS,
 } from '@/lib/api';
 import { requireCurrentSession } from '@/lib/session';
+import { formatLastCommunication, getCompanyDeviceModel, getCompanyDeviceName } from '@/lib/ux-labels';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
@@ -40,10 +40,7 @@ export default async function DashboardPage() {
     redirect('/admin/dashboard');
   }
 
-  const [stats, summary] = await Promise.all([
-    getStats(),
-    getAttendanceDashboard(),
-  ]);
+  const summary = await getAttendanceDashboard();
   const recent = summary.recentRecords;
   const devices = summary.devices;
   const activeCompany =
@@ -62,37 +59,69 @@ export default async function DashboardPage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-5 mb-8">
-          <StatCard label="Presentes hoy" value={summary.presentToday} color="text-emerald-600 dark:text-emerald-400" />
-          <StatCard label="Fichadas hoy" value={summary.recordsToday} color="text-blue-600 dark:text-blue-400" />
-          <StatCard label="Online" value={summary.devicesOnline} color="text-green-600 dark:text-green-400" />
-          <StatCard label="Offline" value={summary.devicesOffline} color="text-slate-600 dark:text-slate-400" />
-          <StatCard label="Comandos pendientes" value={summary.pendingCommands} color="text-amber-600 dark:text-amber-400" />
-          <InfoCard label="Última sync" value={formatOptionalDate(summary.lastSyncAt)} />
-          <div className="card rounded-xl p-5 lg:col-span-6">
-            <p className="text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>Novedades técnicas</p>
-            {summary.technicalNews.map((item) => (
-              <p key={item} className="text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-                {item}
-              </p>
-            ))}
-          </div>
+          <StatCard
+            label="Personas presentes hoy"
+            value={summary.presentToday}
+            color="text-emerald-600 dark:text-emerald-400"
+            hint="Empleados que registraron al menos una fichada hoy."
+          />
+          <StatCard
+            label="Fichadas hoy"
+            value={summary.recordsToday}
+            color="text-blue-600 dark:text-blue-400"
+            hint="Cada entrada o salida registrada en el reloj cuenta como una fichada."
+          />
+          <StatCard
+            label="Relojes conectados"
+            value={summary.devicesOnline}
+            color="text-green-600 dark:text-green-400"
+            hint="Relojes que se comunicaron recientemente con el sistema."
+          />
+          <StatCard
+            label="Relojes sin conexión"
+            value={summary.devicesOffline}
+            color="text-red-600 dark:text-red-400"
+            hint="Relojes que no se comunican recientemente con el sistema."
+          />
+          <StatCard
+            label="Tareas pendientes del reloj"
+            value={summary.pendingCommands}
+            color="text-amber-600 dark:text-amber-400"
+            hint="Instrucciones enviadas al reloj que todavía no fueron confirmadas."
+          />
+          <InfoCard label="Última sincronización" value={formatOptionalDate(summary.lastSyncAt)} />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8">
-          <StatCard label="Registros Hoy" value={stats.totalToday} color="text-blue-600 dark:text-blue-400" />
-          <StatCard label="Registros Esta Semana" value={stats.totalWeek} color="text-green-600 dark:text-green-400" />
+        <section className="card rounded-xl p-6 mb-8">
+          <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Para que los reportes funcionen correctamente</h2>
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            <ChecklistLink href="/employees" label="Empleados cargados" />
+            <ChecklistLink href="#estado-relojes" label="Reloj asignado" />
+            <ChecklistLink href="/settings" label="Horarios configurados" />
+            <ChecklistLink href="/settings/holidays" label="Feriados cargados" />
+            <ChecklistLink href="/reports/monthly-summary" label="Período recalculado" />
+          </div>
+        </section>
+
+        <div className="grid grid-cols-1 gap-5 mb-8">
           <div className="card rounded-xl p-6">
-            <p className="text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>Dispositivos</p>
+            <p className="text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>Relojes asignados</p>
             <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">{devices.length}</p>
-            {devices.map((d) => (
-              <p key={d.id} className="text-xs mt-1 truncate" style={{ color: 'var(--text-muted)' }}>
-                {d.serialNumber} · {d.ipAddress} · {formatLastSeen(d.lastSeen)}
+            {devices.length === 0 ? (
+              <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
+                Esta empresa no tiene relojes asignados. Contactá al administrador del sistema para asignar uno.
               </p>
-            ))}
+            ) : (
+              devices.map((d) => (
+                <p key={d.id} className="text-xs mt-1 truncate" style={{ color: 'var(--text-muted)' }}>
+                  {getCompanyDeviceName(d)} · {getCompanyDeviceModel(d)} · {formatLastCommunication(d)}
+                </p>
+              ))
+            )}
           </div>
         </div>
 
-        <div className="mb-8">
+        <div id="estado-relojes" className="mb-8">
           <DeviceStatusPanel
             devices={devices}
             canSync={
@@ -116,16 +145,16 @@ export default async function DashboardPage() {
                 <tr className="table-header-row text-xs uppercase">
                   <th className="px-6 py-4 text-left font-semibold">Usuario</th>
                   <th className="px-6 py-4 text-left font-semibold">Fecha y Hora</th>
-                  <th className="px-6 py-4 text-left font-semibold">Marcación del dispositivo</th>
-                  <th className="px-6 py-4 text-left font-semibold">Verificación</th>
-                  <th className="px-6 py-4 text-left font-semibold">Dispositivo</th>
+                  <th className="px-6 py-4 text-left font-semibold">Tipo de marcación del reloj</th>
+                  <th className="px-6 py-4 text-left font-semibold">Método de marcación</th>
+                  <th className="px-6 py-4 text-left font-semibold">Reloj</th>
                 </tr>
               </thead>
               <tbody>
                 {recent.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="px-6 py-10 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
-                      No hay registros aún. El reloj enviará datos cuando detecte fichajes.
+                      No hay fichadas para mostrar. Verificá que el reloj esté conectado o cambiá el rango de fechas.
                     </td>
                   </tr>
                 ) : (
@@ -140,7 +169,7 @@ export default async function DashboardPage() {
                         <StatusBadge status={r.status} label={r.devicePunchStateLabel} />
                       </td>
                       <td className="px-6 py-4" style={{ color: 'var(--text-muted)' }}>{VERIFY_LABELS[r.verifyType] ?? r.verifyType}</td>
-                      <td className="px-6 py-4 text-xs" style={{ color: 'var(--text-muted)' }}>{r.deviceSn}</td>
+                      <td className="px-6 py-4 text-xs" style={{ color: 'var(--text-muted)' }}>Reloj de asistencia</td>
                     </tr>
                   ))
                 )}
@@ -153,9 +182,9 @@ export default async function DashboardPage() {
   );
 }
 
-function StatCard({ label, value, color }: { label: string; value: number; color: string }) {
+function StatCard({ label, value, color, hint }: { label: string; value: number; color: string; hint?: string }) {
   return (
-    <div className="card rounded-xl p-6">
+    <div className="card rounded-xl p-6" title={hint}>
       <p className="text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>{label}</p>
       <p className={`text-3xl font-bold ${color}`}>{value}</p>
     </div>
@@ -168,5 +197,17 @@ function InfoCard({ label, value }: { label: string; value: string }) {
       <p className="text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>{label}</p>
       <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{value}</p>
     </div>
+  );
+}
+
+function ChecklistLink({ href, label }: { href: string; label: string }) {
+  return (
+    <Link
+      href={href}
+      className="rounded-lg px-3 py-2 text-sm font-medium transition-colors"
+      style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
+    >
+      {label}
+    </Link>
   );
 }

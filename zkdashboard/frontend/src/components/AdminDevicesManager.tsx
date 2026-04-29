@@ -11,6 +11,7 @@ import {
   getDeviceCommandsAction,
   retryDeviceCommandAction,
 } from '@/app/(protected)/admin/devices/actions';
+import { getDeviceCommandLabel, getDeviceCommandStatusLabel, humanizeActionError } from '@/lib/ux-labels';
 
 type BannerState = { type: 'success' | 'error'; text: string } | null;
 
@@ -42,7 +43,7 @@ const COMMANDS = [
   { type: 'attendance_sync', label: 'Sincronizar fichadas',  description: 'Solicita al reloj que envíe todos los registros de asistencia pendientes.' },
   { type: 'set_time',        label: 'Sincronizar hora',      description: 'Envía la hora actual del servidor al reloj para corregir desfasajes.' },
   { type: 'check',           label: 'Verificar conexión',    description: 'Envía un ping al reloj para confirmar que responde al protocolo ADMS.' },
-  { type: 'query_attlog',    label: 'Consultar ATTLOG',      description: 'Solicita registros de asistencia por comando ADMS DATA QUERY ATTLOG.' },
+  { type: 'query_attlog',    label: 'Pedir fichadas',        description: 'Solicita al reloj que envíe sus registros de asistencia guardados.' },
   { type: 'reboot',          label: 'Reiniciar reloj',       description: 'Ordena al reloj que se reinicie. Puede tardar 1–2 minutos.' },
   { type: 'clear_attlog',    label: 'Borrar registros',      description: 'Elimina TODOS los registros de asistencia almacenados en el reloj. Irreversible.' },
 ];
@@ -87,13 +88,17 @@ function CommandsModal({ device, onClose }: { device: AdminDevice; onClose: () =
 
   const send = (commandType: string, label: string) => {
     if (commandType === 'clear_attlog') {
-      if (!confirm(`¿Seguro que querés borrar TODOS los registros del reloj ${device.serialNumber}? Esta acción es irreversible.`)) return;
+      const confirmation = window.prompt('⚠️ Vas a borrar los registros almacenados en el reloj físico. Esta acción no se puede deshacer. Las fichadas ya importadas al sistema no se eliminan. Escribí CONFIRMAR para continuar.');
+      if (confirmation !== 'CONFIRMAR') return;
+    }
+    if (commandType === 'reboot') {
+      if (!window.confirm('El reloj se va a reiniciar y puede tardar unos minutos en volver a conectarse. ¿Continuás?')) return;
     }
     setResult(null);
     setSentCmd(commandType);
     startTransition(async () => {
       const r = await sendDeviceCommandAction(device.id, commandType);
-      setResult({ type: r.error ? 'error' : 'success', text: r.error ?? `Comando "${label}" encolado. El reloj lo recibirá en el próximo heartbeat.` });
+      setResult({ type: r.error ? 'error' : 'success', text: r.error ? humanizeActionError(r.error) : `Comando "${label}" encolado. El reloj lo recibirá en la próxima comunicación.` });
       setSentCmd(null);
       loadHistory();
       router.refresh();
@@ -104,7 +109,7 @@ function CommandsModal({ device, onClose }: { device: AdminDevice; onClose: () =
     setResult(null);
     startTransition(async () => {
       const r = await retryDeviceCommandAction(device.id, command.id);
-      setResult({ type: r.error ? 'error' : 'success', text: r.error ?? `Comando #${command.id} reencolado.` });
+      setResult({ type: r.error ? 'error' : 'success', text: r.error ? humanizeActionError(r.error) : `Comando #${command.id} reencolado.` });
       loadHistory();
       router.refresh();
     });
@@ -162,18 +167,18 @@ function CommandsModal({ device, onClose }: { device: AdminDevice; onClose: () =
             {loadingHistory ? (
               <p className="px-4 py-4 text-sm" style={{ color: 'var(--text-muted)' }}>Cargando historial...</p>
             ) : commands.length === 0 ? (
-              <p className="px-4 py-4 text-sm" style={{ color: 'var(--text-muted)' }}>Todavía no hay comandos para este reloj.</p>
+              <p className="px-4 py-4 text-sm" style={{ color: 'var(--text-muted)' }}>Todavía no hay tareas enviadas a este reloj.</p>
             ) : (
               <div className="max-h-56 overflow-y-auto">
                 {commands.slice(0, 12).map((command) => (
                   <div key={command.id} className="flex items-start justify-between gap-3 px-4 py-3 text-xs" style={{ borderBottom: '1px solid var(--border)' }}>
                     <div className="min-w-0">
-                      <p className="font-medium" style={{ color: 'var(--text-primary)' }}>#{command.id} · {command.commandType}</p>
+                      <p className="font-medium" style={{ color: 'var(--text-primary)' }}>#{command.id} · {getDeviceCommandLabel(command.commandType)}</p>
                       <p className="truncate mt-0.5" style={{ color: 'var(--text-muted)' }}>{command.command}</p>
-                      <p className="mt-0.5" style={{ color: 'var(--text-muted)' }}>{formatDate(command.requestedAt)} · intento {command.attempts ?? 0}/{command.maxAttempts ?? 5}</p>
+                      <p className="mt-0.5" style={{ color: 'var(--text-muted)' }}>{formatDate(command.requestedAt)} · {command.attempts ?? 0} intentos realizados</p>
                     </div>
                     <div className="shrink-0 text-right">
-                      <p className="font-medium" style={{ color: 'var(--text-secondary)' }}>{command.status}</p>
+                      <p className="font-medium" style={{ color: 'var(--text-secondary)' }}>{getDeviceCommandStatusLabel(command.status)}</p>
                       {(command.status === 'failed' || command.status === 'expired') && (
                         <button type="button" onClick={() => retry(command)} className="mt-1 rounded-md px-2 py-1 text-[11px] font-medium" style={{ border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
                           Reintentar

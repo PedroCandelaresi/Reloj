@@ -1,7 +1,9 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
+import { ConfirmSubmitButton } from '@/components/ConfirmSubmitButton';
 import { ReportFilters } from '@/components/reports/ReportFilters';
+import { statusClassName, statusLabel } from '@/components/reports/report-utils';
 import {
   formatEmployeeName,
   getAttendanceDaySummaries,
@@ -11,6 +13,7 @@ import {
 } from '@/lib/api';
 import { formatArgentinaDateTime, todayArgentinaDateKey } from '@/lib/argentina-date';
 import { requireCurrentSession } from '@/lib/session';
+import { getAttendanceJustificationLabel, getJustificationLabel } from '@/lib/ux-labels';
 
 interface PageProps {
   searchParams: Promise<{
@@ -80,12 +83,12 @@ export default async function DaySummariesPage({ searchParams }: PageProps) {
               <input type="hidden" name="dateTo" value={dateTo} />
               <input type="hidden" name="employeeId" value={employeeId} />
               <input type="hidden" name="companyId" value={companyId} />
-              <button
-                type="submit"
+              <ConfirmSubmitButton
+                message="Se va a recalcular el período seleccionado. Esto puede tardar unos segundos. Usalo después de cambiar horarios, cargar feriados o corregir fichadas. ¿Continuás?"
                 className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700"
               >
                 Recalcular período
-              </button>
+              </ConfirmSubmitButton>
             </form>
           )}
         </div>
@@ -145,7 +148,7 @@ function DaySummariesTable({
             {rows.length === 0 ? (
               <tr>
                 <td colSpan={canCreateRequests ? 15 : 14} className="px-6 py-10 text-center" style={{ color: 'var(--text-muted)' }}>
-                  No hay summaries calculados para los filtros seleccionados
+                  Todavía no hay resultados calculados para este período. Recalculá el período para ver tardanzas, ausencias y horas trabajadas.
                 </td>
               </tr>
             ) : (
@@ -167,18 +170,24 @@ function DaySummariesTable({
                   <td className="px-6 py-4" style={{ color: 'var(--text-secondary)' }}>{row.earlyDepartureMinutes}</td>
                   <td className="px-6 py-4" style={{ color: 'var(--text-secondary)' }}>{row.overtimeMinutes}</td>
                   <td className="px-6 py-4">
-                    <span className="inline-flex rounded-full bg-slate-500/10 px-2.5 py-1 text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
-                      {row.status}
+                    <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${statusClassName(row.status)}`}>
+                      {statusLabel(row.status)}
                     </span>
-                    {row.justificationStatus === 'approved' && (
-                      <span className="mt-1 block text-xs font-medium" style={{ color: 'var(--brand-text)' }}>
-                        {row.isAbsent ? 'Ausente justificado' : row.lateMinutes > 0 ? 'Tardanza justificada' : 'Justificado'}
+                    {(row.isAbsent || row.lateMinutes > 0 || row.justificationStatus !== 'none') && (
+                      <span
+                        className="mt-1 block text-xs font-medium"
+                        style={{ color: row.justificationStatus === 'approved' ? 'var(--brand-text)' : 'var(--text-muted)' }}
+                      >
+                        {getAttendanceJustificationLabel({
+                          isAbsent: row.isAbsent,
+                          lateMinutes: row.lateMinutes,
+                          justificationStatus: row.justificationStatus,
+                        })}
                       </span>
                     )}
                   </td>
                   <td className="px-6 py-4 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                    {row.justificationStatus}
-                    {row.justificationRequestId ? <span className="block" style={{ color: 'var(--text-muted)' }}>{row.justificationRequestId}</span> : null}
+                    {getJustificationLabel(row.justificationStatus)}
                   </td>
                   <td className="px-6 py-4" style={{ color: 'var(--text-secondary)' }}>
                     {row.hasIncompleteRecord ? 'Sí' : 'No'}

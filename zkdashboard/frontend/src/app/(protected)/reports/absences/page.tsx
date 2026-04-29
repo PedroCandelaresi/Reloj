@@ -25,12 +25,12 @@ export default async function AbsencesPage({ searchParams }: PageProps) {
           <div>
             <Link href="/reports" className="mb-2 block text-sm font-medium" style={{ color: 'var(--brand-text)' }}>← Reportes</Link>
             <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Ausencias</h1>
-            <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>{rows.length} registro(s)</p>
+            <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>Días laborales sin fichadas. {rows.length} registro(s).</p>
           </div>
           <ExportButtons excelHref={exportAbsencesReport(params)} />
         </div>
         <ReportFilters action="/reports/absences" userOptions={userOptions} dateFrom={dateFrom} dateTo={dateTo} employeeId={employeeId} />
-        <Phase2ReportTable rows={rows} mode="absences" emptyMessage="No hay ausencias para los filtros seleccionados" canCreateRequests={canCreateRequests} />
+        <Phase2ReportTable rows={rows} mode="absences" emptyMessage="No hay ausencias para el período seleccionado." canCreateRequests={canCreateRequests} />
       </main>
     </>
   );

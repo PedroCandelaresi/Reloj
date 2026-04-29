@@ -22,9 +22,9 @@ export default async function LateArrivalsPage({ searchParams }: PageProps) {
   return (
     <>
       <main className="mx-auto max-w-7xl px-4 py-8 pt-32">
-        <ReportHeader title="Tardanzas" subtitle={`${rows.length} registro(s)`} excelHref={exportLateArrivalsReport(params)} />
+        <ReportHeader title="Tardanzas" subtitle={`Llegadas fuera del horario permitido. ${rows.length} registro(s).`} excelHref={exportLateArrivalsReport(params)} />
         <ReportFilters action="/reports/late-arrivals" userOptions={userOptions} dateFrom={dateFrom} dateTo={dateTo} employeeId={employeeId} />
-        <Phase2ReportTable rows={rows} mode="late" emptyMessage="No hay tardanzas para los filtros seleccionados" canCreateRequests={canCreateRequests} />
+        <Phase2ReportTable rows={rows} mode="late" emptyMessage="No hay tardanzas para el período seleccionado." canCreateRequests={canCreateRequests} />
       </main>
     </>
   );

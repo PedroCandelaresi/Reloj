@@ -1,4 +1,5 @@
 import type { MonthlySummaryReportRow } from '@/lib/api';
+import { getAttendanceJustificationLabel, getJustificationLabel } from '@/lib/ux-labels';
 import {
   formatDateTime,
   formatMinutes,
@@ -12,7 +13,7 @@ export function MonthlySummaryTable({ rows }: { rows: MonthlySummaryReportRow[] 
     <div className="space-y-5">
       {rows.length === 0 ? (
         <div className="card rounded-xl px-6 py-10 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
-          No hay empleados para los filtros seleccionados
+          Todavía no hay resultados calculados para este período. Recalculá el período para ver tardanzas, ausencias y horas trabajadas.
         </div>
       ) : (
         rows.map((row) => (
@@ -67,9 +68,17 @@ export function MonthlySummaryTable({ rows }: { rows: MonthlySummaryReportRow[] 
                         <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${statusClassName(day.status)}`}>
                           {statusLabel(day.status)}
                         </span>
-                        {day.justificationStatus === 'approved' && (
-                          <span className="mt-1 block text-xs font-medium" style={{ color: 'var(--brand-text)' }}>
-                            {day.isAbsent ? 'Ausente justificado' : day.lateMinutes > 0 ? 'Tardanza justificada' : 'Justificado'}
+                        {(day.isAbsent || day.lateMinutes > 0 || (day.justificationStatus && day.justificationStatus !== 'none')) && (
+                          <span
+                            className="mt-1 block text-xs font-medium"
+                            style={{ color: day.justificationStatus === 'approved' ? 'var(--brand-text)' : 'var(--text-muted)' }}
+                            title={getJustificationLabel(day.justificationStatus)}
+                          >
+                            {getAttendanceJustificationLabel({
+                              isAbsent: day.isAbsent,
+                              lateMinutes: day.lateMinutes,
+                              justificationStatus: day.justificationStatus,
+                            })}
                           </span>
                         )}
                         {(day.isHoliday || day.isWeekend || day.hasIncompleteRecord) && (

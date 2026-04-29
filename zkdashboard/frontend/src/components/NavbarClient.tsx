@@ -64,7 +64,7 @@ function getActiveCompanyName(user?: CurrentUserProfile | null) {
 
 function getNavigationItems(user?: CurrentUserProfile | null) {
   const commonItems = [
-    { href: '/dashboard', label: 'Dashboard' },
+    { href: '/dashboard', label: 'Panel' },
     { href: '/records', label: 'Fichadas' },
     { href: '/reports', label: 'Reportes' },
     { href: '/attendance/requests', label: 'Solicitudes' },

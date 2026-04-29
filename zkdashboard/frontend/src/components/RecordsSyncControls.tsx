@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react';
 import type { Device } from '@/lib/api';
 import type { DeviceSyncActionResult } from '@/app/(protected)/records/actions';
 import { requestDeviceForceSyncAction } from '@/app/(protected)/records/actions';
+import { formatLastCommunication, getCompanyDeviceName, getDeviceStatusLabel, humanizeActionError } from '@/lib/ux-labels';
 
 type BannerState =
   | { type: 'success' | 'error' | 'info'; text: string }
@@ -42,21 +43,25 @@ export function RecordsSyncControls({
   void activeDevices;
 
   const handleSync = () => {
+    if (!canSync) {
+      setBanner({ type: 'error', text: 'No tenés permisos para realizar esta acción. Podés consultar la información, pero no modificarla.' });
+      return;
+    }
     if (!selectedDevice || selectedDevice.isActive === false) {
-      setBanner({ type: 'error', text: 'No hay un dispositivo activo disponible para sincronizar.' });
+      setBanner({ type: 'error', text: 'No hay un reloj activo disponible para sincronizar.' });
       return;
     }
     setBanner(null);
     startTransition(() => {
       void requestDeviceForceSyncAction(selectedDevice.id)
         .then((result: DeviceSyncActionResult) => {
-          if (result.error) { setBanner({ type: 'error', text: result.error }); return; }
+          if (result.error) { setBanner({ type: 'error', text: humanizeActionError(result.error) }); return; }
           setBanner({
             type: result.duplicate ? 'info' : 'success',
             text: result.message || (result.duplicate ? 'Ya existía una sincronización pendiente para este reloj.' : 'Sincronización solicitada correctamente.'),
           });
         })
-        .catch(() => { setBanner({ type: 'error', text: 'No se pudo solicitar la sincronización del reloj.' }); });
+        .catch(() => { setBanner({ type: 'error', text: humanizeActionError('Failed to fetch') }); });
     });
   };
 
@@ -65,7 +70,7 @@ export function RecordsSyncControls({
       <section className="card rounded-xl p-4 mb-6">
         <h2 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Actualizar desde reloj</h2>
         <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>
-          Todavía no hay dispositivos registrados. El MB360 aparecerá acá cuando se conecte al endpoint ADMS.
+          Esta empresa no tiene relojes asignados. Contactá al administrador del sistema para asignar uno.
         </p>
       </section>
     );
@@ -77,7 +82,7 @@ export function RecordsSyncControls({
         <div className="flex-1">
           <h2 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Actualizar desde reloj</h2>
           <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-            La solicitud queda en cola en el backend y el MB360 la retira en su próximo heartbeat por ADMS.
+            Pedí al reloj que envíe las fichadas pendientes. Puede tardar unos minutos.
           </p>
         </div>
 
@@ -92,17 +97,16 @@ export function RecordsSyncControls({
             >
               {devices.map((device) => (
                 <option key={device.id} value={device.id} disabled={device.isActive === false}>
-                  {device.name || device.serialNumber}
+                  {getCompanyDeviceName(device)}
                   {' · '}
-                  {device.online ? 'online' : 'offline'}
+                  {getDeviceStatusLabel(device.computedState?.state || device.status)}
                   {device.isActive === false ? ' · inactivo' : ''}
                 </option>
               ))}
             </select>
             {selectedDevice && (
               <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                {selectedDevice.serialNumber} · {selectedDevice.ipAddress || 'sin IP'} · Último contacto{' '}
-                {formatLastSeen(selectedDevice.lastSeen)} · Pendientes {selectedDevice.pendingCommandsCount}
+                {formatLastCommunication(selectedDevice)} · Tareas pendientes {selectedDevice.pendingCommandsCount} · Última comunicación {formatLastSeen(selectedDevice.lastSeen)}
               </p>
             )}
           </div>
@@ -121,7 +125,7 @@ export function RecordsSyncControls({
 
       {!canSync && (
         <div className="mt-4 rounded-lg border px-4 py-3 text-sm" style={{ background: 'var(--amber-soft)', borderColor: 'rgba(251,191,36,0.3)', color: 'var(--amber-text)' }}>
-          Tu rol actual permite consultar registros, pero no solicitar sincronizaciones manuales.
+          No tenés permisos para realizar esta acción. Podés consultar la información, pero no modificarla.
         </div>
       )}
 

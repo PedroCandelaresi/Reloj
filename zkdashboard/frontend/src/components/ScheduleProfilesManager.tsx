@@ -8,6 +8,7 @@ import {
   saveScheduleProfileAction,
 } from '@/app/(protected)/settings/actions';
 import type { ScheduleProfile } from '@/lib/api';
+import { humanizeActionError } from '@/lib/ux-labels';
 
 type FormValues = {
   id: string;
@@ -116,7 +117,7 @@ export function ScheduleProfilesManager({ profiles }: { profiles: ScheduleProfil
     startTransition(() => {
       void saveScheduleProfileAction(form).then((result) => {
         if (result.error) {
-          setMessage({ type: 'error', text: result.error });
+          setMessage({ type: 'error', text: humanizeActionError(result.error) });
           return;
         }
 
@@ -132,14 +133,14 @@ export function ScheduleProfilesManager({ profiles }: { profiles: ScheduleProfil
 
   const handleDelete = (profile: ScheduleProfile) => {
     setMessage(null);
-    if (!window.confirm(`¿Eliminar el perfil ${profile.name}?`)) {
+    if (!window.confirm(`¿Eliminar el perfil ${profile.name}? Esto puede afectar empleados que tengan este horario asignado.`)) {
       return;
     }
 
     startTransition(() => {
       void deleteScheduleProfileAction(profile.id).then((result) => {
         if (result.error) {
-          setMessage({ type: 'error', text: result.error });
+          setMessage({ type: 'error', text: humanizeActionError(result.error) });
           return;
         }
 
@@ -178,7 +179,7 @@ export function ScheduleProfilesManager({ profiles }: { profiles: ScheduleProfil
               {profiles.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-4 py-8 text-center" style={{ color: 'var(--text-muted)' }}>
-                    Todavía no hay perfiles horarios.
+                    Todavía no hay perfiles horarios. Creá al menos uno para calcular tardanzas, ausencias y horas trabajadas.
                   </td>
                 </tr>
               ) : (

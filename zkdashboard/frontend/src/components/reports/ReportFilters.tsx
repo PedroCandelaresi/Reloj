@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { AttendanceUserOption, Device } from '@/lib/api';
 import { formatAttendanceUserOption } from '@/lib/format-employee';
+import { getCompanyDeviceName } from '@/lib/ux-labels';
 
 export function ReportFilters({
   action,
@@ -112,7 +113,7 @@ export function ReportFilters({
             <option value="">Todos</option>
             {devices.map((device) => (
               <option key={device.id} value={device.id}>
-                {device.alias || device.serialNumber}
+                {getCompanyDeviceName(device)}
               </option>
             ))}
           </select>
