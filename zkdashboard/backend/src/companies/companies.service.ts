@@ -16,12 +16,15 @@ import { CreateScheduleProfileDto } from './dto/create-schedule-profile.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
 import { UpdateCompanySettingsDto } from './dto/update-company-settings.dto';
 import { UpdateScheduleProfileDto } from './dto/update-schedule-profile.dto';
+import { UpdateScheduleProfileDayRulesDto } from './dto/update-schedule-profile-day-rules.dto';
 import { AssignCompanyUserDto } from './dto/assign-company-user.dto';
 import { UpdateCompanyUserDto } from './dto/update-company-user.dto';
 import { CompanyMembership } from './company-membership.entity';
 import { Company } from './company.entity';
+import { ScheduleProfileDayRule, ScheduleProfileSeason } from './schedule-profile-day-rule.entity';
 import { ScheduleProfile } from './schedule-profile.entity';
 import { normalizeCuit } from './validation/cuit.util';
+import { dayNumberFromWorkDayCode } from './schedule-resolution.util';
 
 function trimRequired(value: string): string {
   return value.trim();
@@ -45,6 +48,8 @@ export class CompaniesService {
     private readonly membershipsRepo: Repository<CompanyMembership>,
     @InjectRepository(ScheduleProfile)
     private readonly scheduleProfilesRepo: Repository<ScheduleProfile>,
+    @InjectRepository(ScheduleProfileDayRule)
+    private readonly scheduleProfileDayRulesRepo: Repository<ScheduleProfileDayRule>,
     @InjectRepository(AdminUser)
     private readonly usersRepo: Repository<AdminUser>,
     @InjectRepository(Employee)
@@ -138,6 +143,26 @@ export class CompaniesService {
       workDays: profile.workDays ?? null,
       breakMinutes: profile.breakMinutes ?? 0,
       overtimeAfterMinutes: profile.overtimeAfterMinutes ?? 0,
+      dayRules: (profile.dayRules ?? [])
+        .slice()
+        .sort((a, b) => a.season.localeCompare(b.season) || a.dayOfWeek - b.dayOfWeek)
+        .map((rule) => ({
+          id: rule.id,
+          scheduleProfileId: rule.scheduleProfileId,
+          dayOfWeek: rule.dayOfWeek,
+          season: rule.season,
+          isWorkday: rule.isWorkday,
+          entryTime: rule.entryTime,
+          exitTime: rule.exitTime,
+          breakMinutes: rule.breakMinutes ?? 0,
+          expectedMinutes: rule.expectedMinutes ?? null,
+          lateToleranceMinutes: rule.lateToleranceMinutes ?? null,
+          earlyDepartureToleranceMinutes: rule.earlyDepartureToleranceMinutes ?? null,
+          overtimeAfterMinutes: rule.overtimeAfterMinutes ?? null,
+          notes: rule.notes ?? null,
+          createdAt: rule.createdAt,
+          updatedAt: rule.updatedAt,
+        })),
       createdAt: profile.createdAt,
       updatedAt: profile.updatedAt,
     };
@@ -305,6 +330,7 @@ export class CompaniesService {
     const companyId = this.getScopedCompanyId(user);
     const profiles = await this.scheduleProfilesRepo.find({
       where: { companyId },
+      relations: { dayRules: true },
       order: {
         name: 'ASC',
         createdAt: 'ASC',
@@ -341,7 +367,9 @@ export class CompaniesService {
     });
 
     try {
-      return this.toScheduleProfile(await this.scheduleProfilesRepo.save(profile));
+      const saved = await this.scheduleProfilesRepo.save(profile);
+      await this.replaceDayRules(saved, dto.dayRules);
+      return this.toScheduleProfile(await this.loadScheduleProfile(saved.id, company.id));
     } catch (error) {
       if ((error as { code?: string }).code === '23505') {
         throw new ConflictException('Ya existe un perfil horario con ese nombre.');
@@ -356,7 +384,10 @@ export class CompaniesService {
     dto: UpdateScheduleProfileDto,
   ) {
     const companyId = this.getScopedCompanyId(user);
-    const profile = await this.scheduleProfilesRepo.findOneBy({ id: profileId, companyId });
+    const profile = await this.scheduleProfilesRepo.findOne({
+      where: { id: profileId, companyId },
+      relations: { dayRules: true },
+    });
     if (!profile) {
       throw new NotFoundException('Perfil horario no encontrado');
     }
@@ -382,7 +413,11 @@ export class CompaniesService {
     if (dto.overtimeAfterMinutes !== undefined) profile.overtimeAfterMinutes = dto.overtimeAfterMinutes;
 
     try {
-      return this.toScheduleProfile(await this.scheduleProfilesRepo.save(profile));
+      const saved = await this.scheduleProfilesRepo.save(profile);
+      if (dto.dayRules !== undefined) {
+        await this.replaceDayRules(saved, dto.dayRules);
+      }
+      return this.toScheduleProfile(await this.loadScheduleProfile(saved.id, companyId));
     } catch (error) {
       if ((error as { code?: string }).code === '23505') {
         throw new ConflictException('Ya existe un perfil horario con ese nombre.');
@@ -412,6 +447,114 @@ export class CompaniesService {
 
     await this.scheduleProfilesRepo.remove(profile);
     return { success: true as const };
+  }
+
+  async getScopedScheduleProfileDayRules(user: AuthenticatedUser, profileId: string) {
+    const companyId = this.getScopedCompanyId(user);
+    const profile = await this.loadScheduleProfile(profileId, companyId);
+    return this.toScheduleProfile(profile).dayRules;
+  }
+
+  async replaceScopedScheduleProfileDayRules(
+    user: AuthenticatedUser,
+    profileId: string,
+    rules: UpdateScheduleProfileDayRulesDto,
+  ) {
+    const companyId = this.getScopedCompanyId(user);
+    const profile = await this.loadScheduleProfile(profileId, companyId);
+    await this.replaceDayRules(profile, rules.rules);
+    return this.toScheduleProfile(await this.loadScheduleProfile(profileId, companyId)).dayRules;
+  }
+
+  private async loadScheduleProfile(profileId: string, companyId: string): Promise<ScheduleProfile> {
+    const profile = await this.scheduleProfilesRepo.findOne({
+      where: { id: profileId, companyId },
+      relations: { dayRules: true },
+    });
+    if (!profile) {
+      throw new NotFoundException('Perfil horario no encontrado');
+    }
+    return profile;
+  }
+
+  private async replaceDayRules(
+    profile: ScheduleProfile,
+    incomingRules: CreateScheduleProfileDto['dayRules'] | undefined,
+  ): Promise<void> {
+    if (incomingRules === undefined) {
+      return;
+    }
+
+    const rules = incomingRules.length ? incomingRules : this.buildDefaultDayRules(profile);
+    const seen = new Set<string>();
+    const entities = rules.map((rule) => {
+      const season = (rule.season ?? 'normal') as ScheduleProfileSeason;
+      const key = `${rule.dayOfWeek}:${season}`;
+      if (seen.has(key)) {
+        throw new BadRequestException('Hay reglas duplicadas para el mismo día y temporada.');
+      }
+      seen.add(key);
+
+      this.validateDayRule(rule);
+      const isWorkday = rule.isWorkday ?? true;
+      return this.scheduleProfileDayRulesRepo.create({
+        scheduleProfileId: profile.id,
+        dayOfWeek: rule.dayOfWeek,
+        season,
+        isWorkday,
+        entryTime: isWorkday ? rule.entryTime ?? null : null,
+        exitTime: isWorkday ? rule.exitTime ?? null : null,
+        breakMinutes: rule.breakMinutes ?? profile.breakMinutes ?? 0,
+        expectedMinutes: isWorkday ? rule.expectedMinutes ?? null : 0,
+        lateToleranceMinutes: rule.lateToleranceMinutes ?? null,
+        earlyDepartureToleranceMinutes: rule.earlyDepartureToleranceMinutes ?? null,
+        overtimeAfterMinutes: rule.overtimeAfterMinutes ?? null,
+        notes: rule.notes ?? null,
+      });
+    });
+
+    await this.scheduleProfileDayRulesRepo.delete({ scheduleProfileId: profile.id });
+    if (entities.length > 0) {
+      await this.scheduleProfileDayRulesRepo.save(entities);
+    }
+  }
+
+  private validateDayRule(rule: NonNullable<CreateScheduleProfileDto['dayRules']>[number]): void {
+    if (rule.dayOfWeek < 1 || rule.dayOfWeek > 7) {
+      throw new BadRequestException('El día de la semana debe estar entre 1 y 7.');
+    }
+    if (!['normal', 'summer', 'winter'].includes(rule.season ?? 'normal')) {
+      throw new BadRequestException('La temporada debe ser normal, verano o invierno.');
+    }
+    const isWorkday = rule.isWorkday ?? true;
+    if (isWorkday && (!rule.entryTime || !rule.exitTime)) {
+      throw new BadRequestException('Si el día es laborable, completá horario de entrada y salida.');
+    }
+    if (isWorkday && rule.entryTime && rule.exitTime && rule.exitTime < rule.entryTime) {
+      throw new BadRequestException('Los turnos nocturnos se implementarán en una etapa posterior.');
+    }
+  }
+
+  private buildDefaultDayRules(profile: ScheduleProfile): NonNullable<CreateScheduleProfileDto['dayRules']> {
+    const workDays = profile.workDays?.length ? profile.workDays : ['mon', 'tue', 'wed', 'thu', 'fri'];
+    const workDayNumbers = new Set(workDays.map(dayNumberFromWorkDayCode).filter((day): day is number => day !== null));
+
+    return Array.from({ length: 7 }, (_, index) => {
+      const dayOfWeek = index + 1;
+      const isWorkday = workDayNumbers.has(dayOfWeek);
+      return {
+        dayOfWeek,
+        season: 'normal' as const,
+        isWorkday,
+        entryTime: isWorkday ? profile.entryTime : null,
+        exitTime: isWorkday ? profile.exitTime : null,
+        breakMinutes: profile.breakMinutes ?? 0,
+        expectedMinutes: isWorkday ? profile.expectedMinutesPerDay ?? null : 0,
+        lateToleranceMinutes: profile.lateToleranceMinutes ?? 0,
+        earlyDepartureToleranceMinutes: profile.earlyDepartureToleranceMinutes ?? 0,
+        overtimeAfterMinutes: profile.overtimeAfterMinutes ?? 0,
+      };
+    });
   }
 
   async remove(id: string) {

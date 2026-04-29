@@ -10,7 +10,7 @@ import {
 import { Employee } from '../employees/employee.entity';
 import { Device } from '../devices/device.entity';
 import { Company } from '../companies/company.entity';
-import { ScheduleProfile } from '../companies/schedule-profile.entity';
+import { resolveScheduleForDate } from '../companies/schedule-resolution.util';
 import { Holiday } from './entities/holiday.entity';
 import { AuthenticatedUser } from '../auth/authenticated-user.interface';
 import { CompanyRole } from '../companies/company-role.enum';
@@ -37,17 +37,6 @@ export interface RecalculateResult {
   earlyDepartureDays: number;
   holidayDays: number;
   weekendDays: number;
-}
-
-interface ExpectedSchedule {
-  entryTime: string;
-  exitTime: string;
-  lateToleranceMinutes: number;
-  earlyDepartureToleranceMinutes: number;
-  expectedMinutes: number;
-  breakMinutes: number;
-  overtimeAfterMinutes: number;
-  workDays: string[];
 }
 
 export interface AttendanceDaySummaryView {
@@ -293,6 +282,7 @@ export class AttendanceCalculationService {
     const qb = this.employeesRepo
       .createQueryBuilder('employee')
       .leftJoinAndSelect('employee.scheduleProfile', 'scheduleProfile')
+      .leftJoinAndSelect('scheduleProfile.dayRules', 'scheduleProfileDayRules')
       .where('employee.company_id = :companyId', { companyId });
 
     if (employeeId) {
@@ -419,12 +409,12 @@ export class AttendanceCalculationService {
     );
     const primaryDevice = this.resolvePrimaryDevice(records, devicesById);
     const hasRecords = pairing.punchCount > 0;
-    const schedule = this.resolveExpectedSchedule(employee, company);
+    const schedule = resolveScheduleForDate(employee, summary.date, company);
     const isHoliday = Boolean(holiday && !holiday.isWorkable);
-    const isWorkDay = schedule ? this.isWorkDay(summary.date, schedule.workDays) : false;
-    const isWeekend = schedule ? !isWorkDay : this.isArgentinaWeekend(summary.date);
-    const expectedEntry = schedule ? this.dateTimeFor(summary.date, schedule.entryTime) : null;
-    const expectedExit = schedule ? this.dateTimeFor(summary.date, schedule.exitTime) : null;
+    const isWorkDay = schedule.isWorkday;
+    const isWeekend = !isWorkDay && this.isArgentinaWeekend(summary.date);
+    const expectedEntry = schedule.entryTime ? this.dateTimeFor(summary.date, schedule.entryTime) : null;
+    const expectedExit = schedule.exitTime ? this.dateTimeFor(summary.date, schedule.exitTime) : null;
     const workedMinutes = pairing.isIncomplete ? 0 : pairing.workedMinutes;
 
     summary.firstPunchAt = pairing.firstPunch;
@@ -439,23 +429,25 @@ export class AttendanceCalculationService {
     summary.isPresent = hasRecords;
     summary.hasIncompleteRecord = pairing.isIncomplete;
     summary.workedMinutes = workedMinutes;
-    summary.expectedMinutes = schedule?.expectedMinutes ?? 0;
-    summary.lateMinutes = this.calculateLateMinutes(pairing.firstPunch, expectedEntry, schedule?.lateToleranceMinutes ?? 0);
+    summary.expectedMinutes = isWorkDay && !isHoliday ? schedule.expectedMinutes : 0;
+    summary.lateMinutes = isWorkDay && !isHoliday
+      ? this.calculateLateMinutes(pairing.firstPunch, expectedEntry, schedule.lateToleranceMinutes)
+      : 0;
     summary.earlyDepartureMinutes =
-      pairing.isIncomplete
+      pairing.isIncomplete || !isWorkDay || isHoliday
         ? 0
-        : this.calculateEarlyDepartureMinutes(pairing.lastPunch, expectedExit, schedule?.earlyDepartureToleranceMinutes ?? 0);
+        : this.calculateEarlyDepartureMinutes(pairing.lastPunch, expectedExit, schedule.earlyDepartureToleranceMinutes);
     summary.overtimeMinutes =
-      schedule && schedule.expectedMinutes > 0
+      schedule.expectedMinutes > 0
         ? Math.max(workedMinutes - schedule.expectedMinutes - schedule.overtimeAfterMinutes, 0)
         : 0;
     summary.isHoliday = isHoliday;
     summary.isWeekend = !isHoliday && isWeekend;
-    summary.isAbsent = Boolean(schedule && isWorkDay && !isHoliday && !hasRecords);
+    summary.isAbsent = Boolean(isWorkDay && !isHoliday && !hasRecords);
     summary.status = this.resolveStatus({
       hasRecords,
       isIncomplete: pairing.isIncomplete,
-      hasSchedule: Boolean(schedule),
+      hasSchedule: schedule.source !== 'no_schedule',
       isAbsent: summary.isAbsent,
       isHoliday: summary.isHoliday,
       isWeekend: summary.isWeekend,
@@ -492,36 +484,6 @@ export class AttendanceCalculationService {
     summary.notes = snapshot.notes;
   }
 
-  private resolveExpectedSchedule(employee: Employee, company: Company | null): ExpectedSchedule | null {
-    const profile = employee.scheduleProfile as ScheduleProfile | null | undefined;
-    const entryTime = profile?.entryTime ?? employee.entryTime ?? company?.defaultEntryTime ?? null;
-    const exitTime = profile?.exitTime ?? employee.exitTime ?? company?.defaultExitTime ?? null;
-
-    if (!entryTime || !exitTime) {
-      return null;
-    }
-
-    const breakMinutes = profile?.breakMinutes ?? 0;
-    const expectedMinutes =
-      profile?.expectedMinutesPerDay ??
-      Math.max(this.minutesFromTime(exitTime) - this.minutesFromTime(entryTime) - breakMinutes, 0);
-
-    return {
-      entryTime,
-      exitTime,
-      lateToleranceMinutes: profile?.lateToleranceMinutes ?? 0,
-      earlyDepartureToleranceMinutes: profile?.earlyDepartureToleranceMinutes ?? 0,
-      expectedMinutes,
-      breakMinutes,
-      overtimeAfterMinutes: profile?.overtimeAfterMinutes ?? 0,
-      workDays: profile?.workDays?.length
-        ? profile.workDays
-        : company?.defaultWorkDays?.length
-          ? company.defaultWorkDays
-          : ['mon', 'tue', 'wed', 'thu', 'fri'],
-    };
-  }
-
   private resolveStatus(opts: {
     hasRecords: boolean;
     isIncomplete: boolean;
@@ -553,10 +515,6 @@ export class AttendanceCalculationService {
     return new Date(`${date}T${time}:00.000-03:00`);
   }
 
-  private isWorkDay(date: string, workDays: string[]): boolean {
-    return workDays.includes(this.dayCode(date));
-  }
-
   private isArgentinaWeekend(date: string): boolean {
     const code = this.dayCode(date);
     return code === 'sat' || code === 'sun';
@@ -565,11 +523,6 @@ export class AttendanceCalculationService {
   private dayCode(date: string): string {
     const day = new Date(`${date}T12:00:00.000-03:00`).getUTCDay();
     return ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][day];
-  }
-
-  private minutesFromTime(time: string): number {
-    const [hours, minutes] = time.split(':').map(Number);
-    return hours * 60 + minutes;
   }
 
   private resolvePrimaryDevice(

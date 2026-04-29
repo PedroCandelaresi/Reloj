@@ -1,5 +1,6 @@
-import { Transform } from 'class-transformer';
-import { IsArray, IsInt, IsNotEmpty, IsOptional, IsString, Matches, Max, MaxLength, Min } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import { IsArray, IsInt, IsNotEmpty, IsOptional, IsString, Matches, Max, MaxLength, Min, ValidateNested } from 'class-validator';
+import { ScheduleProfileDayRuleDto } from './schedule-profile-day-rule.dto';
 
 const TIME_24H_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
 const MONTH_DAY_PATTERN = /^(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
@@ -135,4 +136,10 @@ export class UpdateScheduleProfileDto {
   @Max(480)
   @IsOptional()
   overtimeAfterMinutes?: number;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ScheduleProfileDayRuleDto)
+  @IsOptional()
+  dayRules?: ScheduleProfileDayRuleDto[];
 }

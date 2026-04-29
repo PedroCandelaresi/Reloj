@@ -11,6 +11,7 @@ import {
 } from 'typeorm';
 import { Employee } from '../employees/employee.entity';
 import { Company } from './company.entity';
+import { ScheduleProfileDayRule } from './schedule-profile-day-rule.entity';
 
 @Entity('schedule_profiles')
 @Index('UQ_schedule_profiles_company_name', ['companyId', 'name'], { unique: true })
@@ -79,6 +80,9 @@ export class ScheduleProfile {
 
   @OneToMany(() => Employee, (employee) => employee.scheduleProfile)
   employees?: Employee[];
+
+  @OneToMany(() => ScheduleProfileDayRule, (rule) => rule.scheduleProfile, { cascade: true })
+  dayRules?: ScheduleProfileDayRule[];
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

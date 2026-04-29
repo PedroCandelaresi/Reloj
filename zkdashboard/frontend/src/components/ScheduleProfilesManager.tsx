@@ -1,14 +1,16 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useMemo, useState, useTransition } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   deleteScheduleProfileAction,
   saveScheduleProfileAction,
 } from '@/app/(protected)/settings/actions';
-import type { ScheduleProfile } from '@/lib/api';
+import type { ScheduleProfile, ScheduleProfileDayRule, ScheduleProfileSeason } from '@/lib/api';
 import { humanizeActionError } from '@/lib/ux-labels';
+
+type EditableDayRule = Omit<ScheduleProfileDayRule, 'id' | 'scheduleProfileId' | 'createdAt' | 'updatedAt'>;
 
 type FormValues = {
   id: string;
@@ -29,13 +31,99 @@ type FormValues = {
   breakMinutes: string;
   overtimeAfterMinutes: string;
   workDays: string[];
+  dayRules: EditableDayRule[];
 };
+
+const DAYS = [
+  { value: 1, code: 'mon', label: 'Lunes' },
+  { value: 2, code: 'tue', label: 'Martes' },
+  { value: 3, code: 'wed', label: 'Miércoles' },
+  { value: 4, code: 'thu', label: 'Jueves' },
+  { value: 5, code: 'fri', label: 'Viernes' },
+  { value: 6, code: 'sat', label: 'Sábado' },
+  { value: 7, code: 'sun', label: 'Domingo' },
+] as const;
+
+const SEASONS: Array<{ value: ScheduleProfileSeason; label: string }> = [
+  { value: 'normal', label: 'Normal' },
+  { value: 'summer', label: 'Verano' },
+  { value: 'winter', label: 'Invierno' },
+];
+
+const DEFAULT_WORK_DAYS = ['mon', 'tue', 'wed', 'thu', 'fri'];
+
+function minutesBetween(entryTime: string, exitTime: string, breakMinutes: number) {
+  if (!entryTime || !exitTime) return null;
+  const [entryHours, entryMinutes] = entryTime.split(':').map(Number);
+  const [exitHours, exitMinutes] = exitTime.split(':').map(Number);
+  const diff = exitHours * 60 + exitMinutes - (entryHours * 60 + entryMinutes) - breakMinutes;
+  return Math.max(diff, 0);
+}
+
+function makeRulesFromValues(values: {
+  entryTime: string;
+  exitTime: string;
+  lateToleranceMinutes: string;
+  earlyDepartureToleranceMinutes: string;
+  expectedMinutesPerDay: string;
+  breakMinutes: string;
+  overtimeAfterMinutes: string;
+  workDays: string[];
+}, season: ScheduleProfileSeason = 'normal'): EditableDayRule[] {
+  const breakMinutes = Number.parseInt(values.breakMinutes || '0', 10) || 0;
+  const expected = Number.parseInt(values.expectedMinutesPerDay || '', 10);
+  return DAYS.map((day) => {
+    const isWorkday = values.workDays.includes(day.code);
+    return {
+      dayOfWeek: day.value,
+      season,
+      isWorkday,
+      entryTime: isWorkday ? values.entryTime || null : null,
+      exitTime: isWorkday ? values.exitTime || null : null,
+      breakMinutes,
+      expectedMinutes: isWorkday ? (Number.isFinite(expected) ? expected : minutesBetween(values.entryTime, values.exitTime, breakMinutes)) : 0,
+      lateToleranceMinutes: Number.parseInt(values.lateToleranceMinutes || '0', 10) || 0,
+      earlyDepartureToleranceMinutes: Number.parseInt(values.earlyDepartureToleranceMinutes || '0', 10) || 0,
+      overtimeAfterMinutes: Number.parseInt(values.overtimeAfterMinutes || '0', 10) || 0,
+      notes: null,
+    };
+  });
+}
+
+function normalizeRules(profile: ScheduleProfile): EditableDayRule[] {
+  if (profile.dayRules?.length) {
+    return profile.dayRules.map((rule) => ({
+      dayOfWeek: rule.dayOfWeek,
+      season: rule.season,
+      isWorkday: rule.isWorkday,
+      entryTime: rule.entryTime,
+      exitTime: rule.exitTime,
+      breakMinutes: rule.breakMinutes ?? 0,
+      expectedMinutes: rule.expectedMinutes ?? null,
+      lateToleranceMinutes: rule.lateToleranceMinutes ?? profile.lateToleranceMinutes ?? 0,
+      earlyDepartureToleranceMinutes: rule.earlyDepartureToleranceMinutes ?? profile.earlyDepartureToleranceMinutes ?? 0,
+      overtimeAfterMinutes: rule.overtimeAfterMinutes ?? profile.overtimeAfterMinutes ?? 0,
+      notes: rule.notes ?? null,
+    }));
+  }
+
+  return makeRulesFromValues({
+    entryTime: profile.entryTime,
+    exitTime: profile.exitTime,
+    lateToleranceMinutes: String(profile.lateToleranceMinutes ?? 0),
+    earlyDepartureToleranceMinutes: String(profile.earlyDepartureToleranceMinutes ?? 0),
+    expectedMinutesPerDay: profile.expectedMinutesPerDay ? String(profile.expectedMinutesPerDay) : '',
+    breakMinutes: String(profile.breakMinutes ?? 0),
+    overtimeAfterMinutes: String(profile.overtimeAfterMinutes ?? 0),
+    workDays: profile.workDays?.length ? profile.workDays : DEFAULT_WORK_DAYS,
+  });
+}
 
 const EMPTY_FORM: FormValues = {
   id: '',
   name: '',
-  entryTime: '',
-  exitTime: '',
+  entryTime: '08:00',
+  exitTime: '17:00',
   summerEntryTime: '',
   summerExitTime: '',
   summerStart: '',
@@ -44,15 +132,26 @@ const EMPTY_FORM: FormValues = {
   winterExitTime: '',
   winterStart: '',
   winterEnd: '',
-  lateToleranceMinutes: '0',
-  earlyDepartureToleranceMinutes: '0',
+  lateToleranceMinutes: '10',
+  earlyDepartureToleranceMinutes: '5',
   expectedMinutesPerDay: '',
   breakMinutes: '0',
   overtimeAfterMinutes: '0',
-  workDays: ['mon', 'tue', 'wed', 'thu', 'fri'],
+  workDays: DEFAULT_WORK_DAYS,
+  dayRules: makeRulesFromValues({
+    entryTime: '08:00',
+    exitTime: '17:00',
+    lateToleranceMinutes: '10',
+    earlyDepartureToleranceMinutes: '5',
+    expectedMinutesPerDay: '',
+    breakMinutes: '0',
+    overtimeAfterMinutes: '0',
+    workDays: DEFAULT_WORK_DAYS,
+  }),
 };
 
 function toFormValues(profile: ScheduleProfile): FormValues {
+  const workDays = profile.workDays?.length ? profile.workDays : DEFAULT_WORK_DAYS;
   return {
     id: profile.id,
     name: profile.name,
@@ -71,37 +170,66 @@ function toFormValues(profile: ScheduleProfile): FormValues {
     expectedMinutesPerDay: profile.expectedMinutesPerDay ? String(profile.expectedMinutesPerDay) : '',
     breakMinutes: String(profile.breakMinutes ?? 0),
     overtimeAfterMinutes: String(profile.overtimeAfterMinutes ?? 0),
-    workDays: profile.workDays?.length ? profile.workDays : ['mon', 'tue', 'wed', 'thu', 'fri'],
+    workDays,
+    dayRules: normalizeRules(profile),
   };
+}
+
+function ensureSeasonRules(form: FormValues, season: ScheduleProfileSeason): EditableDayRule[] {
+  const existing = form.dayRules.filter((rule) => rule.season === season);
+  if (existing.length) return existing;
+
+  return makeRulesFromValues(form, season);
 }
 
 export function ScheduleProfilesManager({ profiles }: { profiles: ScheduleProfile[] }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [form, setForm] = useState<FormValues>(EMPTY_FORM);
+  const [activeSeason, setActiveSeason] = useState<ScheduleProfileSeason>('normal');
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const isEditing = Boolean(form.id);
+  const activeRules = useMemo(() => ensureSeasonRules(form, activeSeason), [activeSeason, form]);
 
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
     setForm((current) => ({ ...current, [name]: value }));
   };
 
-  const handleWorkDayChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const { value, checked } = event.target;
-    setForm((current) => ({
-      ...current,
-      workDays: checked
-        ? current.workDays.includes(value)
-          ? current.workDays
-          : [...current.workDays, value]
-        : current.workDays.filter((day) => day !== value),
-    }));
+  const updateRule = (dayOfWeek: number, patch: Partial<EditableDayRule>) => {
+    setForm((current) => {
+      const seasonRules = ensureSeasonRules(current, activeSeason);
+      const nextRules = current.dayRules.filter((rule) => rule.season !== activeSeason);
+      const updatedSeasonRules = seasonRules.map((rule) => {
+        if (rule.dayOfWeek !== dayOfWeek) return rule;
+        const merged = { ...rule, ...patch };
+        if (patch.isWorkday === false) {
+          merged.entryTime = null;
+          merged.exitTime = null;
+          merged.expectedMinutes = 0;
+        }
+        return merged;
+      });
+      return { ...current, dayRules: [...nextRules, ...updatedSeasonRules] };
+    });
+  };
+
+  const copyNormalToSeason = (season: Exclude<ScheduleProfileSeason, 'normal'>) => {
+    setForm((current) => {
+      const normalRules = ensureSeasonRules(current, 'normal');
+      const copied = normalRules.map((rule) => ({ ...rule, season }));
+      return {
+        ...current,
+        dayRules: [...current.dayRules.filter((rule) => rule.season !== season), ...copied],
+      };
+    });
+    setActiveSeason(season);
   };
 
   const resetForm = () => {
     setForm(EMPTY_FORM);
+    setActiveSeason('normal');
     setMessage(null);
   };
 
@@ -109,13 +237,39 @@ export function ScheduleProfilesManager({ profiles }: { profiles: ScheduleProfil
     event.preventDefault();
     setMessage(null);
 
-    if (!form.name.trim() || !form.entryTime || !form.exitTime) {
-      setMessage({ type: 'error', text: 'Completá nombre, entrada base y salida base.' });
+    if (!form.name.trim()) {
+      setMessage({ type: 'error', text: 'Completá el nombre del perfil.' });
       return;
     }
 
+    const allRules = SEASONS.flatMap((season) => ensureSeasonRules(form, season.value));
+    const invalidRule = allRules.find((rule) => rule.isWorkday && (!rule.entryTime || !rule.exitTime));
+    if (invalidRule) {
+      setMessage({ type: 'error', text: 'Los días laborables necesitan horario de entrada y salida.' });
+      return;
+    }
+
+    if (!window.confirm('Cambiar este perfil puede modificar los cálculos de asistencia. Después de guardar, recalculá los períodos afectados. ¿Continuás?')) {
+      return;
+    }
+    const normalWorkRule = allRules.find((rule) => rule.season === 'normal' && rule.isWorkday && rule.entryTime && rule.exitTime);
+
     startTransition(() => {
-      void saveScheduleProfileAction(form).then((result) => {
+      void saveScheduleProfileAction({
+        ...form,
+        entryTime: normalWorkRule?.entryTime ?? form.entryTime,
+        exitTime: normalWorkRule?.exitTime ?? form.exitTime,
+        lateToleranceMinutes: normalWorkRule?.lateToleranceMinutes ?? form.lateToleranceMinutes,
+        earlyDepartureToleranceMinutes: normalWorkRule?.earlyDepartureToleranceMinutes ?? form.earlyDepartureToleranceMinutes,
+        expectedMinutesPerDay: normalWorkRule?.expectedMinutes ?? form.expectedMinutesPerDay,
+        breakMinutes: normalWorkRule?.breakMinutes ?? form.breakMinutes,
+        overtimeAfterMinutes: normalWorkRule?.overtimeAfterMinutes ?? form.overtimeAfterMinutes,
+        dayRules: allRules,
+        workDays: allRules
+          .filter((rule) => rule.season === 'normal' && rule.isWorkday)
+          .map((rule) => DAYS.find((day) => day.value === rule.dayOfWeek)?.code)
+          .filter((code): code is string => Boolean(code)),
+      }).then((result) => {
         if (result.error) {
           setMessage({ type: 'error', text: humanizeActionError(result.error) });
           return;
@@ -123,9 +277,10 @@ export function ScheduleProfilesManager({ profiles }: { profiles: ScheduleProfil
 
         setMessage({
           type: 'success',
-          text: isEditing ? 'Perfil actualizado correctamente.' : 'Perfil creado correctamente.',
+          text: isEditing ? 'Perfil actualizado. Recalculá los períodos afectados para actualizar reportes.' : 'Perfil creado correctamente.',
         });
         setForm(EMPTY_FORM);
+        setActiveSeason('normal');
         router.refresh();
       });
     });
@@ -144,9 +299,7 @@ export function ScheduleProfilesManager({ profiles }: { profiles: ScheduleProfil
           return;
         }
 
-        if (form.id === profile.id) {
-          setForm(EMPTY_FORM);
-        }
+        if (form.id === profile.id) resetForm();
         setMessage({ type: 'success', text: 'Perfil eliminado correctamente.' });
         router.refresh();
       });
@@ -157,69 +310,46 @@ export function ScheduleProfilesManager({ profiles }: { profiles: ScheduleProfil
     <section className="card rounded-xl">
       <div className="px-6 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
         <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Perfiles de horario</h2>
-        <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-          Creá perfiles para grupos de empleados y ajustá variaciones de verano o invierno.
+        <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
+          Definí los días y horarios de trabajo. El sistema usa estos datos para calcular tardanzas, ausencias, horas trabajadas y cierre mensual.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_420px] gap-6 p-6">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="table-header-row text-xs uppercase">
-                <th className="px-4 py-3 text-left">Perfil</th>
-                <th className="px-4 py-3 text-left">Base</th>
-                <th className="px-4 py-3 text-left">Verano</th>
-                <th className="px-4 py-3 text-left">Invierno</th>
-                <th className="px-4 py-3 text-left">Reglas</th>
-                <th className="px-4 py-3 text-right">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {profiles.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center" style={{ color: 'var(--text-muted)' }}>
-                    Todavía no hay perfiles horarios. Creá al menos uno para calcular tardanzas, ausencias y horas trabajadas.
-                  </td>
-                </tr>
-              ) : (
-                profiles.map((profile) => (
-                  <tr key={profile.id} className="transition-colors border-t" style={{ borderColor: 'var(--border)' }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--row-hover)')}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = '')}
-                  >
-                    <td className="px-4 py-3 font-medium" style={{ color: 'var(--text-primary)' }}>{profile.name}</td>
-                    <td className="px-4 py-3" style={{ color: 'var(--text-secondary)' }}>{profile.entryTime} - {profile.exitTime}</td>
-                    <td className="px-4 py-3" style={{ color: 'var(--text-secondary)' }}>
-                      {profile.summerEntryTime && profile.summerExitTime ? `${profile.summerEntryTime} - ${profile.summerExitTime}` : '—'}
-                      {profile.summerStart && profile.summerEnd ? ` · ${profile.summerStart} a ${profile.summerEnd}` : ''}
-                    </td>
-                    <td className="px-4 py-3" style={{ color: 'var(--text-secondary)' }}>
-                      {profile.winterEntryTime && profile.winterExitTime ? `${profile.winterEntryTime} - ${profile.winterExitTime}` : '—'}
-                      {profile.winterStart && profile.winterEnd ? ` · ${profile.winterStart} a ${profile.winterEnd}` : ''}
-                    </td>
-                    <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                      Tol. entrada {profile.lateToleranceMinutes ?? 0}m · Tol. salida {profile.earlyDepartureToleranceMinutes ?? 0}m
-                      <br />
-                      Esperado {profile.expectedMinutesPerDay ?? 'calc.'}m · Descanso {profile.breakMinutes ?? 0}m
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex justify-end gap-2">
-                        <button type="button" onClick={() => { setForm(toFormValues(profile)); setMessage(null); }}
-                          className="font-medium transition-colors" style={{ color: 'var(--brand-text)' }}>
-                          Editar
-                        </button>
-                        <button type="button" onClick={() => handleDelete(profile)} disabled={isPending}
-                          className="font-medium transition-colors disabled:opacity-60" style={{ color: 'var(--danger-text)' }}>
-                          Eliminar
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+      <div className="grid grid-cols-1 gap-6 p-6 xl:grid-cols-[minmax(0,0.9fr)_minmax(560px,1.1fr)]">
+        <div className="space-y-3">
+          {profiles.length === 0 ? (
+            <div className="rounded-xl px-4 py-8 text-center" style={{ border: '1px dashed var(--border)', color: 'var(--text-muted)' }}>
+              No hay perfiles de horario cargados. Creá un perfil para que el sistema pueda calcular asistencia.
+            </div>
+          ) : (
+            profiles.map((profile) => (
+              <div key={profile.id} className="rounded-xl p-4" style={{ border: '1px solid var(--border)', background: 'var(--surface-raised)' }}>
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>{profile.name}</h3>
+                    <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
+                      Base {profile.entryTime} - {profile.exitTime} · {profile.dayRules?.length ? 'Horario por día configurado' : 'Perfil simple'}
+                    </p>
+                  </div>
+                  <div className="flex gap-3 text-sm">
+                    <button type="button" onClick={() => { setForm(toFormValues(profile)); setActiveSeason('normal'); setMessage(null); }}
+                      className="font-medium" style={{ color: 'var(--brand-text)' }}>
+                      Editar
+                    </button>
+                    <button type="button" onClick={() => handleDelete(profile)} disabled={isPending}
+                      className="font-medium disabled:opacity-60" style={{ color: 'var(--danger-text)' }}>
+                      Eliminar
+                    </button>
+                  </div>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+                  <span>Normal: {profile.dayRules?.filter((rule) => rule.season === 'normal' && rule.isWorkday).length || profile.workDays?.length || 5} días laborables</span>
+                  <span>Descanso: {profile.breakMinutes ?? 0} min</span>
+                  <span>Tolerancia: {profile.lateToleranceMinutes ?? 0} min</span>
+                </div>
+              </div>
+            ))
+          )}
         </div>
 
         <form onSubmit={handleSubmit} className="rounded-xl p-4 space-y-4" style={{ border: '1px solid var(--border)', background: 'var(--surface-raised)' }}>
@@ -227,8 +357,8 @@ export function ScheduleProfilesManager({ profiles }: { profiles: ScheduleProfil
             <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>
               {isEditing ? 'Editar perfil' : 'Nuevo perfil'}
             </h3>
-            <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-              Las fechas de temporada usan formato MM-DD, por ejemplo 12-01.
+            <p className="mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
+              Podés configurar horarios distintos por día. Si no configurás verano o invierno, se usará el horario normal.
             </p>
           </div>
 
@@ -243,78 +373,65 @@ export function ScheduleProfilesManager({ profiles }: { profiles: ScheduleProfil
           )}
 
           <label className="block text-sm">
-            <span className="font-medium" style={{ color: 'var(--text-secondary)' }}>Nombre</span>
+            <span className="font-medium" style={{ color: 'var(--text-secondary)' }}>Nombre del perfil</span>
             <input name="name" value={form.name} onChange={handleChange} required
               className="mt-1 w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
               style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
             />
           </label>
 
-          <div className="grid grid-cols-2 gap-3">
-            <TimeInput label="Entrada base" name="entryTime" value={form.entryTime} onChange={handleChange} required />
-            <TimeInput label="Salida base" name="exitTime" value={form.exitTime} onChange={handleChange} required />
+          <div className="rounded-lg p-3" style={{ background: 'var(--blue-soft)', border: '1px solid rgba(59,130,246,0.2)' }}>
+            <p className="text-xs" style={{ color: 'var(--blue-text)' }}>
+              El reloj solo registra fichadas. Estos horarios se aplican en el sistema para calcular tardanzas, ausencias y horas.
+            </p>
           </div>
 
-          <div className="rounded-lg p-3 space-y-3" style={{ background: 'var(--blue-soft)', border: '1px solid rgba(59,130,246,0.2)' }}>
-            <p className="text-xs font-semibold uppercase" style={{ color: 'var(--blue-text)' }}>Verano</p>
-            <div className="grid grid-cols-2 gap-3">
-              <TimeInput label="Entrada" name="summerEntryTime" value={form.summerEntryTime} onChange={handleChange} />
-              <TimeInput label="Salida" name="summerExitTime" value={form.summerExitTime} onChange={handleChange} />
-              <MonthDayInput label="Desde" name="summerStart" value={form.summerStart} onChange={handleChange} />
-              <MonthDayInput label="Hasta" name="summerEnd" value={form.summerEnd} onChange={handleChange} />
-            </div>
+          <div className="flex flex-wrap gap-2">
+            {SEASONS.map((season) => (
+              <button key={season.value} type="button" onClick={() => setActiveSeason(season.value)}
+                className="rounded-lg px-3 py-2 text-sm font-medium"
+                style={activeSeason === season.value
+                  ? { background: 'var(--brand-soft)', color: 'var(--brand-text)', border: '1px solid rgba(31,199,119,0.35)' }
+                  : { background: 'var(--surface)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
+                {season.label}
+              </button>
+            ))}
+            <button type="button" onClick={() => copyNormalToSeason('summer')}
+              className="rounded-lg px-3 py-2 text-sm" style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
+              Copiar normal a verano
+            </button>
+            <button type="button" onClick={() => copyNormalToSeason('winter')}
+              className="rounded-lg px-3 py-2 text-sm" style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
+              Copiar normal a invierno
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            {activeRules.slice().sort((a, b) => a.dayOfWeek - b.dayOfWeek).map((rule) => (
+              <DayRuleEditor key={`${rule.season}-${rule.dayOfWeek}`} rule={rule} onChange={(patch) => updateRule(rule.dayOfWeek, patch)} />
+            ))}
           </div>
 
           <div className="rounded-lg p-3 space-y-3" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-            <p className="text-xs font-semibold uppercase" style={{ color: 'var(--text-secondary)' }}>Invierno</p>
-            <div className="grid grid-cols-2 gap-3">
-              <TimeInput label="Entrada" name="winterEntryTime" value={form.winterEntryTime} onChange={handleChange} />
-              <TimeInput label="Salida" name="winterExitTime" value={form.winterExitTime} onChange={handleChange} />
-              <MonthDayInput label="Desde" name="winterStart" value={form.winterStart} onChange={handleChange} />
-              <MonthDayInput label="Hasta" name="winterEnd" value={form.winterEnd} onChange={handleChange} />
-            </div>
-          </div>
-
-          <div className="rounded-lg p-3 space-y-3" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-            <p className="text-xs font-semibold uppercase" style={{ color: 'var(--text-secondary)' }}>Reglas RRHH</p>
-            <div className="grid grid-cols-2 gap-3">
-              <NumberInput label="Tol. llegada tarde (min)" name="lateToleranceMinutes" value={form.lateToleranceMinutes} onChange={handleChange} />
-              <NumberInput label="Tol. salida temprana (min)" name="earlyDepartureToleranceMinutes" value={form.earlyDepartureToleranceMinutes} onChange={handleChange} />
-              <NumberInput label="Minutos esperados" name="expectedMinutesPerDay" value={form.expectedMinutesPerDay} onChange={handleChange} />
-              <NumberInput label="Descanso (min)" name="breakMinutes" value={form.breakMinutes} onChange={handleChange} />
-              <NumberInput label="Extra después de (min)" name="overtimeAfterMinutes" value={form.overtimeAfterMinutes} onChange={handleChange} />
-            </div>
-            <div>
-              <p className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>Días laborales</p>
-              <div className="grid grid-cols-4 gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                {[
-                  ['mon', 'Lun'],
-                  ['tue', 'Mar'],
-                  ['wed', 'Mié'],
-                  ['thu', 'Jue'],
-                  ['fri', 'Vie'],
-                  ['sat', 'Sáb'],
-                  ['sun', 'Dom'],
-                ].map(([value, label]) => (
-                  <label key={value} className="inline-flex items-center gap-2">
-                    <input type="checkbox" value={value} checked={form.workDays.includes(value)} onChange={handleWorkDayChange} />
-                    {label}
-                  </label>
-                ))}
-              </div>
+            <p className="text-xs font-semibold uppercase" style={{ color: 'var(--text-secondary)' }}>Fechas de temporada</p>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
+              <MonthDayInput label="Verano desde" name="summerStart" value={form.summerStart} onChange={handleChange} />
+              <MonthDayInput label="Verano hasta" name="summerEnd" value={form.summerEnd} onChange={handleChange} />
+              <MonthDayInput label="Invierno desde" name="winterStart" value={form.winterStart} onChange={handleChange} />
+              <MonthDayInput label="Invierno hasta" name="winterEnd" value={form.winterEnd} onChange={handleChange} />
             </div>
           </div>
 
           <div className="flex justify-end gap-2">
             {isEditing && (
               <button type="button" onClick={resetForm} disabled={isPending}
-                className="rounded-lg px-4 py-2 text-sm transition-colors"
+                className="rounded-lg px-4 py-2 text-sm"
                 style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
                 Cancelar
               </button>
             )}
             <button type="submit" disabled={isPending}
-              className="rounded-lg bg-blue-600 hover:bg-blue-700 px-4 py-2 text-sm font-medium text-white disabled:opacity-60 transition-colors">
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-60">
               {isPending ? 'Guardando...' : isEditing ? 'Guardar perfil' : 'Crear perfil'}
             </button>
           </div>
@@ -324,26 +441,65 @@ export function ScheduleProfilesManager({ profiles }: { profiles: ScheduleProfil
   );
 }
 
-function TimeInput({
-  label,
-  name,
-  value,
+function DayRuleEditor({
+  rule,
   onChange,
-  required = false,
 }: {
-  label: string;
-  name: keyof FormValues;
-  value: string;
-  onChange: (event: ChangeEvent<HTMLInputElement>) => void;
-  required?: boolean;
+  rule: EditableDayRule;
+  onChange: (patch: Partial<EditableDayRule>) => void;
 }) {
+  const day = DAYS.find((candidate) => candidate.value === rule.dayOfWeek);
   return (
-    <label className="block text-sm">
-      <span className="font-medium" style={{ color: 'var(--text-secondary)' }}>{label}</span>
-      <input
-        type="text" name={name} value={value} onChange={onChange} required={required}
-        placeholder="HH:MM" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$" inputMode="numeric"
-        className="mt-1 w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+    <div className="rounded-lg p-3" style={{ border: '1px solid var(--border)', background: 'var(--surface)' }}>
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-[120px_120px_repeat(5,minmax(90px,1fr))]">
+        <label className="flex items-center gap-2 text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+          <input type="checkbox" checked={rule.isWorkday} onChange={(event) => onChange({ isWorkday: event.target.checked })} />
+          {day?.label ?? rule.dayOfWeek}
+        </label>
+        <span className="self-center text-xs" style={{ color: rule.isWorkday ? 'var(--brand-text)' : 'var(--text-muted)' }}>
+          {rule.isWorkday ? 'Trabaja este día' : 'No trabaja'}
+        </span>
+        <SmallTimeInput label="Entrada" value={rule.entryTime ?? ''} disabled={!rule.isWorkday} onChange={(value) => onChange({ entryTime: value || null })} />
+        <SmallTimeInput label="Salida" value={rule.exitTime ?? ''} disabled={!rule.isWorkday} onChange={(value) => onChange({ exitTime: value || null })} />
+        <SmallNumberInput label="Pausa" value={rule.breakMinutes} disabled={!rule.isWorkday} onChange={(value) => onChange({ breakMinutes: value })} />
+        <SmallNumberInput label="Jornada esperada" value={rule.expectedMinutes ?? 0} disabled={!rule.isWorkday} onChange={(value) => onChange({ expectedMinutes: value })} />
+        <SmallNumberInput label="Tol. tardanza" value={rule.lateToleranceMinutes ?? 0} disabled={!rule.isWorkday} onChange={(value) => onChange({ lateToleranceMinutes: value })} />
+      </div>
+      <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-[repeat(2,minmax(140px,1fr))_minmax(180px,2fr)]">
+        <SmallNumberInput label="Tol. salida temprana" value={rule.earlyDepartureToleranceMinutes ?? 0} disabled={!rule.isWorkday} onChange={(value) => onChange({ earlyDepartureToleranceMinutes: value })} />
+        <SmallNumberInput label="Horas extra a partir de" value={rule.overtimeAfterMinutes ?? 0} disabled={!rule.isWorkday} onChange={(value) => onChange({ overtimeAfterMinutes: value })} />
+        <label className="block text-xs">
+          <span style={{ color: 'var(--text-muted)' }}>Notas</span>
+          <input value={rule.notes ?? ''} disabled={!rule.isWorkday} onChange={(event) => onChange({ notes: event.target.value || null })}
+            className="mt-1 w-full rounded-lg px-2 py-2 text-sm disabled:opacity-60"
+            style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
+          />
+        </label>
+      </div>
+    </div>
+  );
+}
+
+function SmallTimeInput({ label, value, disabled, onChange }: { label: string; value: string; disabled?: boolean; onChange: (value: string) => void }) {
+  return (
+    <label className="block text-xs">
+      <span style={{ color: 'var(--text-muted)' }}>{label}</span>
+      <input value={value} disabled={disabled} onChange={(event) => onChange(event.target.value)}
+        placeholder="HH:MM" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$"
+        className="mt-1 w-full rounded-lg px-2 py-2 text-sm disabled:opacity-60"
+        style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
+      />
+    </label>
+  );
+}
+
+function SmallNumberInput({ label, value, disabled, onChange }: { label: string; value: number; disabled?: boolean; onChange: (value: number) => void }) {
+  return (
+    <label className="block text-xs">
+      <span style={{ color: 'var(--text-muted)' }}>{label}</span>
+      <input type="number" min="0" value={value} disabled={disabled}
+        onChange={(event) => onChange(Number.parseInt(event.target.value || '0', 10) || 0)}
+        className="mt-1 w-full rounded-lg px-2 py-2 text-sm disabled:opacity-60"
         style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
       />
     </label>
@@ -365,33 +521,6 @@ function MonthDayInput({
     <label className="block text-sm">
       <span className="font-medium" style={{ color: 'var(--text-secondary)' }}>{label}</span>
       <input name={name} value={value} onChange={onChange} placeholder="MM-DD" pattern="^(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$"
-        className="mt-1 w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-        style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
-      />
-    </label>
-  );
-}
-
-function NumberInput({
-  label,
-  name,
-  value,
-  onChange,
-}: {
-  label: string;
-  name: keyof FormValues;
-  value: string;
-  onChange: (event: ChangeEvent<HTMLInputElement>) => void;
-}) {
-  return (
-    <label className="block text-sm">
-      <span className="font-medium" style={{ color: 'var(--text-secondary)' }}>{label}</span>
-      <input
-        type="number"
-        min="0"
-        name={name}
-        value={value}
-        onChange={onChange}
         className="mt-1 w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
         style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
       />

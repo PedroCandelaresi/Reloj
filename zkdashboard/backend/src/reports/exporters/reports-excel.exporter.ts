@@ -15,6 +15,7 @@ import {
   ManualPunchReportRow,
 } from '../services/hr-control-reports.service';
 import { MonthlyClosingReport } from '../services/monthly-closing.service';
+import { getEmployeeDisplayName } from '../../employees/employee-name.util';
 
 @Injectable()
 export class ReportsExcelExporter {
@@ -453,7 +454,7 @@ export class ReportsExcelExporter {
   }
 
   private employeeName(employee: { nombre: string; apellido: string }): string {
-    return [employee.apellido, employee.nombre].filter(Boolean).join(', ') || 'Sin nombre';
+    return getEmployeeDisplayName(employee) || 'Sin nombre';
   }
 
   private requestStatusLabel(status: string | null): string {

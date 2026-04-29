@@ -8,14 +8,19 @@ export const STATUS_LABELS: Record<number, string> = {
 };
 
 export function formatEmployeeName(employee?: {
+  id?: string | null;
   nombre?: string | null;
   apellido?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  name?: string | null;
+  document?: string | null;
 } | null) {
-  const apellido = employee?.apellido?.trim() ?? '';
-  const nombre = employee?.nombre?.trim() ?? '';
+  const apellido = (employee?.apellido ?? employee?.lastName ?? '').trim();
+  const nombre = (employee?.nombre ?? employee?.firstName ?? '').trim();
   const fullName = [apellido, nombre].filter(Boolean).join(', ');
 
-  return fullName || null;
+  return fullName || employee?.name?.trim() || employee?.document?.trim() || employee?.id?.trim() || null;
 }
 
 export function formatAttendanceUser(record: {

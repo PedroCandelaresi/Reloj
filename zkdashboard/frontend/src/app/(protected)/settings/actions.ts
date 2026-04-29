@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import {
   createScheduleProfile,
   deleteScheduleProfile,
+  type ScheduleProfileDayRule,
   updateCompanySettings,
   updateScheduleProfile,
 } from '@/lib/api';
@@ -59,6 +60,7 @@ export async function saveScheduleProfileAction(input: {
   breakMinutes?: number | string | null;
   overtimeAfterMinutes?: number | string | null;
   workDays?: string[] | null;
+  dayRules?: Omit<ScheduleProfileDayRule, 'id' | 'scheduleProfileId' | 'createdAt' | 'updatedAt'>[];
 }): Promise<CompanySettingsActionResult> {
   const numberOrDefault = (value: number | string | null | undefined, fallback: number) => {
     const parsed = Number.parseInt(String(value ?? ''), 10);
@@ -86,6 +88,7 @@ export async function saveScheduleProfileAction(input: {
     breakMinutes: numberOrDefault(input.breakMinutes, 0),
     overtimeAfterMinutes: numberOrDefault(input.overtimeAfterMinutes, 0),
     workDays: input.workDays?.length ? input.workDays : null,
+    dayRules: input.dayRules,
   };
 
   try {

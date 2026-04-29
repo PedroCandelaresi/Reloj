@@ -13,6 +13,7 @@ import { getCompanyScope } from '../auth/company-scope.util';
 import { CompanyRole } from '../companies/company-role.enum';
 import { Company } from '../companies/company.entity';
 import { Employee } from '../employees/employee.entity';
+import { getEmployeeDeviceName, getEmployeeDisplayName } from '../employees/employee-name.util';
 import {
   isSensitiveAdmsTable,
   logSecurity,
@@ -123,6 +124,9 @@ export interface DeviceUserReconciliationRow {
     lastSeenAt: Date;
   } | null;
   employee: DeviceEmployeeSyncRecord | null;
+  employeeName: string | null;
+  systemEmployeeName: string | null;
+  deviceEmployeeName: string | null;
   status: DeviceUserMatchStatus;
 }
 
@@ -504,6 +508,8 @@ export class DevicesService {
             employeeId: employee.id,
             nombre: employee.nombre,
             apellido: employee.apellido,
+            displayName: getEmployeeDisplayName(employee),
+            deviceName: getEmployeeDeviceName(employee),
           },
           attempts: 0,
           maxAttempts: 5,
@@ -1457,29 +1463,39 @@ export class DevicesService {
       .split(/\r?\n/)
       .map((line) => line.trim())
       .filter(Boolean)
-      .map((line) => {
-        const row: Record<string, string> = {};
-        for (const part of line.split(/\t|&/)) {
-          const separatorIndex = part.indexOf('=');
-          if (separatorIndex <= 0) continue;
-          const key = part.slice(0, separatorIndex).trim().toUpperCase();
-          const value = part.slice(separatorIndex + 1).trim();
-          if (key) row[key] = value;
-        }
-
-        if (Object.keys(row).length > 0) {
-          return row;
-        }
-
-        const fields = line.split(/\s+/).filter(Boolean);
-        if (fields.length >= 2) {
-          row.PIN = fields[0];
-          row.NAME = fields.slice(1).join(' ');
-        }
-
-        return row;
-      })
+      .map((line) => this.parseUserInfoLine(line))
       .filter((row) => Object.keys(row).length > 0);
+  }
+
+  private parseUserInfoLine(line: string): Record<string, string> {
+    const row: Record<string, string> = {};
+    const normalizedLine = line.replace(/&/g, '\t');
+    const keyValuePattern = /(?:^|[\t ]+)([A-Za-z][A-Za-z0-9_]*)=/g;
+    const matches = Array.from(normalizedLine.matchAll(keyValuePattern));
+
+    for (let index = 0; index < matches.length; index += 1) {
+      const match = matches[index];
+      const key = match[1]?.trim().toUpperCase();
+      if (!key) continue;
+
+      const valueStart = (match.index ?? 0) + match[0].length;
+      const nextMatch = matches[index + 1];
+      const valueEnd = nextMatch?.index ?? normalizedLine.length;
+      const value = normalizedLine.slice(valueStart, valueEnd).trim();
+      row[key] = value;
+    }
+
+    if (Object.keys(row).length > 0) {
+      return row;
+    }
+
+    const fields = line.split(/\s+/).filter(Boolean);
+    if (fields.length >= 2) {
+      row.PIN = fields[0];
+      row.NAME = fields.slice(1).join(' ');
+    }
+
+    return row;
   }
 
   private getFirstValue(row: Record<string, string>, keys: string[]): string | null {
@@ -1566,6 +1582,9 @@ export class DevicesService {
             companyId: employee.companyId,
           }
         : null,
+      employeeName: employee ? getEmployeeDisplayName(employee) : null,
+      systemEmployeeName: employee ? getEmployeeDisplayName(employee) : null,
+      deviceEmployeeName: snapshot?.name?.trim() || null,
       status,
     };
   }
@@ -1576,11 +1595,15 @@ export class DevicesService {
       return false;
     }
 
+    const displayName = this.normalizeNameForMatch(getEmployeeDisplayName(employee));
+    const deviceFullName = this.normalizeNameForMatch(getEmployeeDeviceName(employee));
     const apellidoNombre = this.normalizeNameForMatch(`${employee.apellido} ${employee.nombre}`);
     const nombreApellido = this.normalizeNameForMatch(`${employee.nombre} ${employee.apellido}`);
     const commaName = this.normalizeNameForMatch(`${employee.apellido}, ${employee.nombre}`);
 
     return (
+      normalizedDeviceName === displayName ||
+      normalizedDeviceName === deviceFullName ||
       normalizedDeviceName === apellidoNombre ||
       normalizedDeviceName === nombreApellido ||
       normalizedDeviceName === commaName
@@ -1770,10 +1793,11 @@ export class DevicesService {
 
   private buildUpdateUserInfoCommand(employee: DeviceEmployeeSyncRecord): string {
     const pin = this.sanitizeAdmsValue(employee.id, 24);
-    const name = this.sanitizeAdmsValue(
-      `${employee.apellido} ${employee.nombre}`.trim() || employee.id,
-      48,
-    );
+    const name = this.sanitizeAdmsValue(getEmployeeDeviceName(employee), 48);
+
+    if (!name) {
+      throw new BadRequestException('El empleado no tiene nombre cargado para enviarlo al reloj.');
+    }
 
     return `DATA UPDATE USERINFO PIN=${pin}\tName=${name}\tPri=0\tPasswd=\tCard=\tGrp=1\tTZ=0000000000000000`;
   }

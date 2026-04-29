@@ -334,6 +334,9 @@ export interface DeviceUserReconciliationRow {
     lastSeenAt: string;
   } | null;
   employee: (EmployeeSummary & { companyId?: string | null }) | null;
+  employeeName?: string | null;
+  systemEmployeeName?: string | null;
+  deviceEmployeeName?: string | null;
   status: DeviceUserMatchStatus;
 }
 
@@ -494,8 +497,29 @@ export interface ScheduleProfile {
   workDays: string[] | null;
   breakMinutes: number;
   overtimeAfterMinutes: number;
+  dayRules: ScheduleProfileDayRule[];
   createdAt: string;
   updatedAt: string;
+}
+
+export type ScheduleProfileSeason = 'normal' | 'summer' | 'winter';
+
+export interface ScheduleProfileDayRule {
+  id?: string;
+  scheduleProfileId?: string;
+  dayOfWeek: number;
+  season: ScheduleProfileSeason;
+  isWorkday: boolean;
+  entryTime: string | null;
+  exitTime: string | null;
+  breakMinutes: number;
+  expectedMinutes: number | null;
+  lateToleranceMinutes: number | null;
+  earlyDepartureToleranceMinutes: number | null;
+  overtimeAfterMinutes: number | null;
+  notes?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface ScheduleProfileInput {
@@ -516,6 +540,7 @@ export interface ScheduleProfileInput {
   workDays?: string[] | null;
   breakMinutes?: number;
   overtimeAfterMinutes?: number;
+  dayRules?: Omit<ScheduleProfileDayRule, 'id' | 'scheduleProfileId' | 'createdAt' | 'updatedAt'>[];
 }
 
 export interface AssignAdminDeviceCompanyInput {

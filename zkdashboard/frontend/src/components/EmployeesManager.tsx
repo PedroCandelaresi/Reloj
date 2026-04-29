@@ -20,6 +20,7 @@ import {
   syncDeviceEmployeeUserAction,
   updateEmployeeAction,
 } from '@/app/(protected)/employees/actions';
+import { formatEmployeeName } from '@/lib/format-employee';
 import { getCompanyDeviceName, humanizeActionError } from '@/lib/ux-labels';
 
 type FormMode = 'create' | 'edit';
@@ -539,10 +540,10 @@ export function EmployeesManagerContent({
                       <tr key={`${row.status}-${row.pin}`} className="border-t" style={{ borderColor: 'var(--border)' }}>
                         <td className="break-words px-4 py-4 font-medium" style={{ color: 'var(--text-primary)' }}>{row.pin}</td>
                         <td className="break-words px-4 py-4" style={{ color: 'var(--text-secondary)' }}>
-                          {row.deviceUser?.name || '—'}
+                          {row.deviceUser ? (row.deviceUser.name || 'Sin nombre informado') : '—'}
                         </td>
                         <td className="break-words px-4 py-4" style={{ color: 'var(--text-secondary)' }}>
-                          {row.employee ? `${row.employee.apellido}, ${row.employee.nombre}` : '—'}
+                          {row.systemEmployeeName || formatEmployeeName(row.employee) || '—'}
                         </td>
                         <td className="px-4 py-4" style={{ color: 'var(--text-muted)' }}>
                           {RECONCILIATION_STATUS_LABELS[row.status]}

@@ -18,6 +18,7 @@ import { AssignCompanyUserDto } from './dto/assign-company-user.dto';
 import { CreateScheduleProfileDto } from './dto/create-schedule-profile.dto';
 import { UpdateCompanySettingsDto } from './dto/update-company-settings.dto';
 import { UpdateScheduleProfileDto } from './dto/update-schedule-profile.dto';
+import { UpdateScheduleProfileDayRulesDto } from './dto/update-schedule-profile-day-rules.dto';
 import { UpdateCompanyUserDto } from './dto/update-company-user.dto';
 import { CompaniesService } from './companies.service';
 
@@ -69,6 +70,23 @@ export class CompanyUsersController {
     @Body() dto: UpdateScheduleProfileDto,
   ) {
     return this.companies.updateScopedScheduleProfile(user, profileId, dto);
+  }
+
+  @Get('schedule-profiles/:profileId/day-rules')
+  listScheduleProfileDayRules(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('profileId', new ParseUUIDPipe()) profileId: string,
+  ) {
+    return this.companies.getScopedScheduleProfileDayRules(user, profileId);
+  }
+
+  @Put('schedule-profiles/:profileId/day-rules')
+  updateScheduleProfileDayRules(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('profileId', new ParseUUIDPipe()) profileId: string,
+    @Body() dto: UpdateScheduleProfileDayRulesDto,
+  ) {
+    return this.companies.replaceScopedScheduleProfileDayRules(user, profileId, dto);
   }
 
   @Delete('schedule-profiles/:profileId')

@@ -10,6 +10,7 @@ import { AttendanceRequestAttachment } from '../../attendance/entities/attendanc
 import { AuthenticatedUser } from '../../auth/authenticated-user.interface';
 import { Company } from '../../companies/company.entity';
 import { Employee } from '../../employees/employee.entity';
+import { getEmployeeDisplayName } from '../../employees/employee-name.util';
 import { MonthlySummaryDto } from '../dto/monthly-summary.dto';
 import { parseArgentinaDateEnd, parseArgentinaDateStart } from '../utils/argentina-date.util';
 import { eachDate, monthDateRange } from './report-date.util';
@@ -497,7 +498,7 @@ export class MonthlyClosingService {
   }
 
   private employeeName(employee: Employee): string {
-    return [employee.apellido, employee.nombre].filter(Boolean).join(', ') || employee.id;
+    return getEmployeeDisplayName(employee) || employee.id;
   }
 
   private companyName(company: Company | null): string {

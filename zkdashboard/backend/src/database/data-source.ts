@@ -11,6 +11,7 @@ import { InboundRequest } from '../adms/inbound-request.entity';
 import { CompanyMembership } from '../companies/company-membership.entity';
 import { Company } from '../companies/company.entity';
 import { ScheduleProfile } from '../companies/schedule-profile.entity';
+import { ScheduleProfileDayRule } from '../companies/schedule-profile-day-rule.entity';
 import { Device } from '../devices/device.entity';
 import { DeviceCommand } from '../devices/device-command.entity';
 import { DeviceUserSnapshot } from '../devices/device-user-snapshot.entity';
@@ -29,6 +30,7 @@ export const DATABASE_ENTITIES = [
   Company,
   CompanyMembership,
   ScheduleProfile,
+  ScheduleProfileDayRule,
   Device,
   DeviceCommand,
   DeviceUserSnapshot,
