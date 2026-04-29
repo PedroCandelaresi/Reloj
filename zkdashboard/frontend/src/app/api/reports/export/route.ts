@@ -32,6 +32,22 @@ const REPORTS: Record<string, { path: string; filename: string }> = {
     path: '/reports/worked-hours',
     filename: 'horas-trabajadas-resumen.xlsx',
   },
+  'manual-punches': {
+    path: '/reports/manual-punches',
+    filename: 'fichadas-manuales.xlsx',
+  },
+  'corrected-punches': {
+    path: '/reports/corrected-punches',
+    filename: 'fichadas-corregidas.xlsx',
+  },
+  'employees-without-schedule': {
+    path: '/reports/employees-without-schedule',
+    filename: 'empleados-sin-horario.xlsx',
+  },
+  'employees-without-punches': {
+    path: '/reports/employees-without-punches',
+    filename: 'empleados-sin-fichadas.xlsx',
+  },
 };
 
 export async function GET(req: NextRequest) {

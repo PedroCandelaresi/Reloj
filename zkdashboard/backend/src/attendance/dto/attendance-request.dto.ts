@@ -53,6 +53,10 @@ export class CreateAttendanceRequestDto {
   @IsIn(['manual_punch', 'punch_correction', 'absence_justification', 'late_justification'])
   type: AttendanceRequestType;
 
+  @IsUUID()
+  @IsOptional()
+  justificationTypeId?: string;
+
   @IsDateString()
   date: string;
 
@@ -118,6 +122,16 @@ export class AttendanceAuditLogQueryDto {
   @IsUUID()
   @IsOptional()
   requestId?: string;
+
+  @IsUUID()
+  @IsOptional()
+  companyId?: string;
+}
+
+export class AttendanceJustificationTypesQueryDto {
+  @IsIn(['absence', 'late', 'early_departure', 'manual_punch', 'punch_correction', 'general'])
+  @IsOptional()
+  appliesTo?: string;
 
   @IsUUID()
   @IsOptional()

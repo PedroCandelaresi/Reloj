@@ -6,7 +6,7 @@ import { exportAbsencesReport, getAbsencesReport, getDistinctUsers } from '@/lib
 import { todayArgentinaDateKey } from '@/lib/argentina-date';
 import { requireCurrentSession } from '@/lib/session';
 
-interface PageProps { searchParams: Promise<{ dateFrom?: string; dateTo?: string; employeeId?: string }> }
+interface PageProps { searchParams: Promise<{ dateFrom?: string; dateTo?: string; employeeId?: string; justification?: string }> }
 
 export default async function AbsencesPage({ searchParams }: PageProps) {
   const user = await requireCurrentSession();
@@ -14,7 +14,8 @@ export default async function AbsencesPage({ searchParams }: PageProps) {
   const dateFrom = sp.dateFrom || todayArgentinaDateKey();
   const dateTo = sp.dateTo || dateFrom;
   const employeeId = sp.employeeId || '';
-  const params = { dateFrom, dateTo, employeeId };
+  const justification = sp.justification || 'all';
+  const params = { dateFrom, dateTo, employeeId, justification };
   const canCreateRequests = user.isSuperAdmin || user.companyRole === 'company_admin' || user.companyRole === 'operator';
   const [rows, userOptions] = await Promise.all([getAbsencesReport(params), getDistinctUsers()]);
 
@@ -29,7 +30,15 @@ export default async function AbsencesPage({ searchParams }: PageProps) {
           </div>
           <ExportButtons excelHref={exportAbsencesReport(params)} />
         </div>
-        <ReportFilters action="/reports/absences" userOptions={userOptions} dateFrom={dateFrom} dateTo={dateTo} employeeId={employeeId} />
+        <ReportFilters
+          action="/reports/absences"
+          userOptions={userOptions}
+          dateFrom={dateFrom}
+          dateTo={dateTo}
+          employeeId={employeeId}
+          justification={justification}
+          showJustificationFilter
+        />
         <Phase2ReportTable rows={rows} mode="absences" emptyMessage="No hay ausencias para el período seleccionado." canCreateRequests={canCreateRequests} />
       </main>
     </>

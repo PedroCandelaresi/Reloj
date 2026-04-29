@@ -27,6 +27,11 @@ export function MonthlySummaryTable({ rows }: { rows: MonthlySummaryReportRow[] 
               </div>
               <div className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
                 <Metric label="Días con fichadas" value={String(row.daysWithRecords)} />
+                <Metric
+                  label="Presentismo"
+                  value={formatAttendancePercentage(row.attendancePercentage)}
+                  title="Porcentaje de días laborales en los que el empleado registró asistencia."
+                />
                 <Metric label="Presentes" value={String(row.presentDays)} />
                 <Metric label="Ausentes" value={String(row.absentDays)} />
                 <Metric label="Feriados" value={String(row.holidayDays)} />
@@ -90,6 +95,16 @@ export function MonthlySummaryTable({ rows }: { rows: MonthlySummaryReportRow[] 
                             ].filter(Boolean).join(' · ')}
                           </span>
                         )}
+                        {day.justificationTypeName && (
+                          <span className="mt-1 block text-xs" style={{ color: 'var(--text-muted)' }}>
+                            Tipo: {day.justificationTypeName}
+                          </span>
+                        )}
+                        {(day.attachmentCount ?? 0) > 0 && (
+                          <span className="mt-1 block text-xs" style={{ color: 'var(--text-muted)' }}>
+                            {day.attachmentCount} adjunto(s)
+                          </span>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -103,11 +118,17 @@ export function MonthlySummaryTable({ rows }: { rows: MonthlySummaryReportRow[] 
   );
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
+function Metric({ label, value, title }: { label: string; value: string; title?: string }) {
   return (
-    <div>
+    <div title={title}>
       <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{label}</p>
       <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>{value}</p>
     </div>
   );
+}
+
+function formatAttendancePercentage(value: number | null | undefined) {
+  if (value === null) return 'Sin días laborales';
+  if (value === undefined) return '-';
+  return `${value}%`;
 }

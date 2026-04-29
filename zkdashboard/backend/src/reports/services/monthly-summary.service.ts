@@ -3,6 +3,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Between, In, Repository } from 'typeorm';
 import { AuthenticatedUser } from '../../auth/authenticated-user.interface';
 import { AttendanceDaySummary } from '../../attendance/entities/attendance-day-summary.entity';
+import { AttendanceRequest } from '../../attendance/entities/attendance-request.entity';
+import { AttendanceJustificationType } from '../../attendance/entities/attendance-justification-type.entity';
+import { AttendanceRequestAttachment } from '../../attendance/entities/attendance-request-attachment.entity';
 import { Employee } from '../../employees/employee.entity';
 import { MonthlySummaryDto } from '../dto/monthly-summary.dto';
 import {
@@ -23,6 +26,10 @@ export class MonthlySummaryService {
     private readonly queries: ReportQueryService,
     @InjectRepository(AttendanceDaySummary)
     private readonly summariesRepo: Repository<AttendanceDaySummary>,
+    @InjectRepository(AttendanceRequest)
+    private readonly requestsRepo: Repository<AttendanceRequest>,
+    @InjectRepository(AttendanceRequestAttachment)
+    private readonly attachmentsRepo: Repository<AttendanceRequestAttachment>,
   ) {}
 
   async getReport(filters: MonthlySummaryDto, user: AuthenticatedUser): Promise<MonthlySummaryReport> {
@@ -141,13 +148,13 @@ export class MonthlySummaryService {
     });
   }
 
-  private buildFromSummaries(
+  private async buildFromSummaries(
     employees: Employee[],
     summaries: AttendanceDaySummary[],
     dates: string[],
     year: number,
     month: number,
-  ): MonthlySummaryReport {
+  ): Promise<MonthlySummaryReport> {
     const summariesByEmployee = new Map<string, Map<string, AttendanceDaySummary>>();
     for (const summary of summaries) {
       const employeeSummaries = summariesByEmployee.get(summary.employeeId) ?? new Map<string, AttendanceDaySummary>();
@@ -155,6 +162,7 @@ export class MonthlySummaryService {
       summariesByEmployee.set(summary.employeeId, employeeSummaries);
     }
 
+    const requestMeta = await this.getRequestMeta(summaries.map((summary) => summary.justificationRequestId).filter(Boolean) as string[]);
     const rows: MonthlySummaryRow[] = employees.map((employee) => {
       const employeeSummaries = summariesByEmployee.get(employee.id);
       const days: MonthlySummaryDay[] = dates.map((date, index) => {
@@ -181,16 +189,33 @@ export class MonthlySummaryService {
           isWeekend: summary.isWeekend,
           hasIncompleteRecord: summary.hasIncompleteRecord,
           justificationStatus: summary.justificationStatus,
+          justificationTypeName: summary.justificationRequestId
+            ? requestMeta.get(summary.justificationRequestId)?.justificationTypeName ?? null
+            : null,
+          attachmentCount: summary.justificationRequestId
+            ? requestMeta.get(summary.justificationRequestId)?.attachmentCount ?? 0
+            : 0,
           status: summary.status,
         };
       });
       const totalWorkedMinutes = days.reduce((total, day) => total + day.workedMinutes, 0);
+      const workDaysCount = days.filter((day) => !day.isWeekend && !day.isHoliday).length;
+      const presentDaysCount = days.filter((day) => !day.isWeekend && !day.isHoliday && day.punchCount > 0).length;
+      const absentDaysCount = days.filter((day) => !day.isWeekend && !day.isHoliday && (day.isAbsent || day.status === 'absent')).length;
+      const justifiedAbsentDaysCount = days.filter(
+        (day) => !day.isWeekend && !day.isHoliday && (day.isAbsent || day.status === 'absent') && day.justificationStatus === 'approved',
+      ).length;
 
       return {
         employee: toReportEmployee(employee),
         userId: employee.id,
         year,
         month,
+        workDaysCount,
+        presentDaysCount,
+        absentDaysCount,
+        justifiedAbsentDaysCount,
+        attendancePercentage: workDaysCount > 0 ? Math.round((presentDaysCount / workDaysCount) * 10000) / 100 : null,
         daysWithRecords: days.filter((day) => day.punchCount > 0).length,
         presentDays: days.filter((day) => day.status === 'present' || day.status === 'calculated').length,
         absentDays: days.filter((day) => day.isAbsent || day.status === 'absent').length,
@@ -241,7 +266,37 @@ export class MonthlySummaryService {
       isWeekend: false,
       hasIncompleteRecord: false,
       justificationStatus: 'none',
+      justificationTypeName: null,
+      attachmentCount: 0,
       status: 'no_records',
     };
+  }
+
+  private async getRequestMeta(requestIds: string[]): Promise<Map<string, { justificationTypeName: string | null; attachmentCount: number }>> {
+    if (requestIds.length === 0) return new Map();
+    const requests = await this.requestsRepo
+      .createQueryBuilder('request')
+      .leftJoin(AttendanceJustificationType, 'type', 'type.id = request.justification_type_id')
+      .select('request.id', 'id')
+      .addSelect('type.name', 'justificationTypeName')
+      .where('request.id IN (:...requestIds)', { requestIds })
+      .getRawMany();
+    const counts = await this.attachmentsRepo
+      .createQueryBuilder('attachment')
+      .select('attachment.attendance_request_id', 'requestId')
+      .addSelect('COUNT(*)', 'count')
+      .where('attachment.attendance_request_id IN (:...requestIds)', { requestIds })
+      .groupBy('attachment.attendance_request_id')
+      .getRawMany();
+    const countByRequest = new Map(counts.map((row) => [String(row.requestId), Number(row.count)]));
+    return new Map(
+      requests.map((row) => [
+        String(row.id),
+        {
+          justificationTypeName: row.justificationTypeName ?? null,
+          attachmentCount: countByRequest.get(String(row.id)) ?? 0,
+        },
+      ]),
+    );
   }
 }

@@ -1,10 +1,22 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, EntityManager, QueryFailedError, Repository } from 'typeorm';
+import { promises as fs } from 'fs';
+import * as path from 'path';
+import { randomUUID } from 'crypto';
 import { AttendanceRecord } from './attendance.entity';
 import { AttendanceCalculationService } from './attendance-calculation.service';
 import { AttendanceAuditLog, AttendanceAuditAction } from './entities/attendance-audit-log.entity';
 import { AttendanceDaySummary } from './entities/attendance-day-summary.entity';
+import { AttendanceJustificationType, AttendanceJustificationAppliesTo } from './entities/attendance-justification-type.entity';
+import { AttendanceRequestAttachment } from './entities/attendance-request-attachment.entity';
 import {
   AttendancePunchType,
   AttendanceRequest,
@@ -12,6 +24,7 @@ import {
 } from './entities/attendance-request.entity';
 import {
   AttendanceAuditLogQueryDto,
+  AttendanceJustificationTypesQueryDto,
   AttendanceRequestsQueryDto,
   CreateAttendanceRequestDto,
   ReviewAttendanceRequestDto,
@@ -29,11 +42,15 @@ import {
 
 export interface AttendanceRequestView extends AttendanceRequest {
   employee: Pick<Employee, 'id' | 'nombre' | 'apellido'> | null;
+  justificationType: Pick<AttendanceJustificationType, 'id' | 'code' | 'name' | 'requiresAttachment'> | null;
+  attachmentCount: number;
 }
 
 export interface AttendanceAuditLogView extends AttendanceAuditLog {
   employee: Pick<Employee, 'id' | 'nombre' | 'apellido'> | null;
 }
+
+export type AttendanceRequestAttachmentView = Omit<AttendanceRequestAttachment, 'storagePath'>;
 
 interface RecalculateTask {
   companyId: string;
@@ -41,12 +58,23 @@ interface RecalculateTask {
   date: string;
 }
 
+const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
+const MAX_ATTACHMENTS_PER_REQUEST = 5;
+const ALLOWED_ATTACHMENT_MIME_TYPES = new Set(['application/pdf', 'image/jpeg', 'image/png']);
+const ALLOWED_ATTACHMENT_EXTENSIONS = new Set(['.pdf', '.jpg', '.jpeg', '.png']);
+
 @Injectable()
 export class AttendanceRequestsService {
+  private readonly logger = new Logger(AttendanceRequestsService.name);
+
   constructor(
     private readonly dataSource: DataSource,
     @InjectRepository(AttendanceRequest)
     private readonly requestsRepo: Repository<AttendanceRequest>,
+    @InjectRepository(AttendanceJustificationType)
+    private readonly justificationTypesRepo: Repository<AttendanceJustificationType>,
+    @InjectRepository(AttendanceRequestAttachment)
+    private readonly attachmentsRepo: Repository<AttendanceRequestAttachment>,
     @InjectRepository(AttendanceAuditLog)
     private readonly auditRepo: Repository<AttendanceAuditLog>,
     @InjectRepository(AttendanceRecord)
@@ -63,6 +91,7 @@ export class AttendanceRequestsService {
     const qb = this.requestsRepo
       .createQueryBuilder('request')
       .leftJoinAndMapOne('request.employee', Employee, 'employee', 'employee.id = request.employee_id')
+      .leftJoinAndMapOne('request.justificationType', AttendanceJustificationType, 'justificationType', 'justificationType.id = request.justification_type_id')
       .where('request.date >= :dateFrom', { dateFrom })
       .andWhere('request.date <= :dateTo', { dateTo });
 
@@ -81,7 +110,7 @@ export class AttendanceRequestsService {
 
     qb.orderBy('request.created_at', 'DESC');
     const requests = await qb.getMany();
-    return requests.map((request) => this.toRequestView(request));
+    return this.toRequestViews(requests);
   }
 
   async create(user: AuthenticatedUser, dto: CreateAttendanceRequestDto): Promise<AttendanceRequestView> {
@@ -91,6 +120,7 @@ export class AttendanceRequestsService {
       : this.resolveWritableCompanyId(user, dto.companyId);
     const employee = await this.getEmployeeOrFail(companyId, dto.employeeId);
     this.validateCreatePayload(dto);
+    await this.validateJustificationType(companyId, dto.type, dto.justificationTypeId);
 
     let targetRecord: AttendanceRecord | null = null;
     if (dto.type === 'punch_correction') {
@@ -111,6 +141,7 @@ export class AttendanceRequestsService {
       requestedByUserId: user.id,
       reviewedByUserId: null,
       type: dto.type,
+      justificationTypeId: dto.justificationTypeId ?? null,
       status: 'pending',
       date: requestDate,
       punchTime,
@@ -144,6 +175,29 @@ export class AttendanceRequestsService {
     return this.findOneView(saved.id);
   }
 
+  async listJustificationTypes(
+    user: AuthenticatedUser,
+    query: AttendanceJustificationTypesQueryDto,
+  ): Promise<AttendanceJustificationType[]> {
+    const companyId = this.resolveReadableCompanyId(user, query.companyId);
+    const qb = this.justificationTypesRepo
+      .createQueryBuilder('type')
+      .where('type.is_active = true')
+      .andWhere('(type.company_id IS NULL OR type.company_id = :companyId)', { companyId });
+
+    if (query.appliesTo) {
+      qb.andWhere('(type.applies_to = :appliesTo OR type.applies_to = :general)', {
+        appliesTo: query.appliesTo,
+        general: 'general',
+      });
+    }
+
+    return qb
+      .orderBy('type.company_id', 'ASC', 'NULLS FIRST')
+      .addOrderBy('type.name', 'ASC')
+      .getMany();
+  }
+
   async approve(user: AuthenticatedUser, id: string, dto: ReviewAttendanceRequestDto): Promise<AttendanceRequestView> {
     this.assertCanReview(user);
     const recalculateTasks = await this.dataSource.transaction(async (manager) => {
@@ -152,6 +206,7 @@ export class AttendanceRequestsService {
         throw new BadRequestException('La solicitud ya fue revisada.');
       }
 
+      await this.assertRequiredAttachment(request, manager);
       const tasks = await this.applyApprovedRequest(request, user.id, manager);
       request.status = 'approved';
       request.reviewedByUserId = user.id;
@@ -260,6 +315,100 @@ export class AttendanceRequestsService {
     qb.orderBy('audit.created_at', 'DESC');
     const logs = await qb.getMany();
     return logs.map((log) => this.toAuditView(log));
+  }
+
+  async listAttachments(user: AuthenticatedUser, requestId: string): Promise<AttendanceRequestAttachmentView[]> {
+    const request = await this.findReadableRequest(user, requestId);
+    const attachments = await this.attachmentsRepo.find({
+      where: { companyId: request.companyId, attendanceRequestId: request.id },
+      order: { createdAt: 'ASC' },
+    });
+    return attachments.map((attachment) => this.toAttachmentView(attachment));
+  }
+
+  async uploadAttachment(
+    user: AuthenticatedUser,
+    requestId: string,
+    file: { originalname: string; mimetype: string; size: number; buffer?: Buffer; path?: string } | undefined,
+  ): Promise<AttendanceRequestAttachment> {
+    if (!file) {
+      throw new BadRequestException('No se recibió ningún archivo.');
+    }
+    const request = await this.findAttachableRequest(user, requestId);
+    const fileBuffer = await this.getUploadBuffer(file);
+    await this.validateAttachment(file, fileBuffer, request);
+
+    const baseDir = this.attachmentsBaseDir();
+    const relativeDir = path.join(request.companyId, request.id);
+    const targetDir = this.safeResolve(baseDir, relativeDir);
+    await fs.mkdir(targetDir, { recursive: true });
+
+    const ext = path.extname(file.originalname).toLowerCase();
+    const storedName = `${randomUUID()}${ext}`;
+    const storagePath = this.safeResolve(targetDir, storedName);
+    await fs.writeFile(storagePath, fileBuffer);
+
+    try {
+      return await this.attachmentsRepo.save(
+        this.attachmentsRepo.create({
+          companyId: request.companyId,
+          attendanceRequestId: request.id,
+          uploadedByUserId: user.id,
+          originalName: path.basename(file.originalname),
+          storedName,
+          mimeType: file.mimetype,
+          sizeBytes: file.size,
+          storagePath,
+        }),
+      );
+    } catch (error) {
+      await fs.unlink(storagePath).catch((unlinkError) => {
+        this.logger.warn(`No se pudo limpiar archivo de adjunto tras error de DB. attachmentName=${storedName} error=${this.errorMessage(unlinkError)}`);
+      });
+      throw error;
+    }
+  }
+
+  async getAttachmentForDownload(
+    user: AuthenticatedUser,
+    requestId: string,
+    attachmentId: string,
+  ): Promise<AttendanceRequestAttachment> {
+    const request = await this.findReadableRequest(user, requestId);
+    const attachment = await this.attachmentsRepo.findOneBy({
+      id: attachmentId,
+      attendanceRequestId: request.id,
+      companyId: request.companyId,
+    });
+    if (!attachment) {
+      throw new NotFoundException('Adjunto no encontrado.');
+    }
+    this.safeResolve(this.attachmentsBaseDir(), path.relative(this.attachmentsBaseDir(), attachment.storagePath));
+    return attachment;
+  }
+
+  async deleteAttachment(user: AuthenticatedUser, requestId: string, attachmentId: string): Promise<{ success: true }> {
+    const request = await this.findAttachableRequest(user, requestId);
+    const attachment = await this.attachmentsRepo.findOneBy({
+      id: attachmentId,
+      attendanceRequestId: request.id,
+      companyId: request.companyId,
+    });
+    if (!attachment) {
+      throw new NotFoundException('Adjunto no encontrado.');
+    }
+    try {
+      await fs.unlink(attachment.storagePath);
+    } catch (error) {
+      if (this.isFileNotFoundError(error)) {
+        this.logger.warn(`Archivo físico de adjunto no encontrado al eliminar. attachmentId=${attachment.id}`);
+      } else {
+        this.logger.warn(`No se pudo eliminar archivo físico de adjunto. attachmentId=${attachment.id} error=${this.errorMessage(error)}`);
+        throw new InternalServerErrorException('No se pudo eliminar el archivo físico. Intentá nuevamente o contactá soporte.');
+      }
+    }
+    await this.attachmentsRepo.delete({ id: attachment.id });
+    return { success: true };
   }
 
   private async applyApprovedRequest(
@@ -465,6 +614,19 @@ export class AttendanceRequestsService {
     return { companyId: user.companyId, dateFrom, dateTo };
   }
 
+  private resolveReadableCompanyId(user: AuthenticatedUser, requestedCompanyId?: string): string | null {
+    if (user.isSuperAdmin) {
+      return requestedCompanyId || null;
+    }
+    if (!user.companyId) {
+      throw new ForbiddenException('El usuario no tiene una empresa activa asignada.');
+    }
+    if (requestedCompanyId && requestedCompanyId !== user.companyId) {
+      throw new ForbiddenException('No podés consultar otra empresa.');
+    }
+    return user.companyId;
+  }
+
   private resolveWritableCompanyId(user: AuthenticatedUser, requestedCompanyId?: string): string {
     if (user.isSuperAdmin) {
       if (!requestedCompanyId) {
@@ -512,6 +674,30 @@ export class AttendanceRequestsService {
     return request;
   }
 
+  private async findReadableRequest(user: AuthenticatedUser, id: string): Promise<AttendanceRequest> {
+    const request = await this.requestsRepo.findOneBy({ id });
+    if (!request) throw new NotFoundException('Solicitud no encontrada.');
+    if (user.isSuperAdmin) return request;
+    if (!user.companyId || request.companyId !== user.companyId) {
+      throw new ForbiddenException('No tenés permisos para ver este adjunto.');
+    }
+    return request;
+  }
+
+  private async findAttachableRequest(user: AuthenticatedUser, id: string): Promise<AttendanceRequest> {
+    const request = await this.findReadableRequest(user, id);
+    if (request.status !== 'pending') {
+      throw new BadRequestException('Solo se pueden adjuntar archivos a solicitudes pendientes.');
+    }
+    if (user.isSuperAdmin || user.companyRole === CompanyRole.COMPANY_ADMIN) {
+      return request;
+    }
+    if (user.companyRole === CompanyRole.OPERATOR && request.requestedByUserId === user.id) {
+      return request;
+    }
+    throw new ForbiddenException('No tenés permisos para adjuntar archivos a esta solicitud.');
+  }
+
   private async findCancellableRequest(
     user: AuthenticatedUser,
     id: string,
@@ -538,6 +724,52 @@ export class AttendanceRequestsService {
       throw new BadRequestException('El empleado no tiene empresa asignada.');
     }
     return employee.companyId;
+  }
+
+  private async validateJustificationType(
+    companyId: string,
+    requestType: AttendanceRequestType,
+    justificationTypeId?: string,
+  ): Promise<void> {
+    if (!justificationTypeId) return;
+    const type = await this.justificationTypesRepo.findOneBy({ id: justificationTypeId, isActive: true });
+    if (!type || (type.companyId && type.companyId !== companyId)) {
+      throw new BadRequestException('El tipo de justificación no está disponible para esta empresa.');
+    }
+    const appliesTo = this.appliesToFromRequestType(requestType);
+    if (type.appliesTo !== appliesTo && type.appliesTo !== 'general') {
+      throw new BadRequestException('El tipo de justificación no corresponde a esta solicitud.');
+    }
+  }
+
+  private async assertRequiredAttachment(request: AttendanceRequest, manager: EntityManager): Promise<void> {
+    if (!request.justificationTypeId) return;
+    const type = await manager.getRepository(AttendanceJustificationType).findOneBy({
+      id: request.justificationTypeId,
+      isActive: true,
+    });
+    if (!type?.requiresAttachment) return;
+
+    const attachmentCount = await manager.getRepository(AttendanceRequestAttachment).countBy({
+      companyId: request.companyId,
+      attendanceRequestId: request.id,
+    });
+    if (attachmentCount === 0) {
+      throw new BadRequestException('Este tipo de justificación requiere al menos un adjunto.');
+    }
+  }
+
+  private appliesToFromRequestType(type: AttendanceRequestType): AttendanceJustificationAppliesTo {
+    switch (type) {
+      case 'absence_justification':
+        return 'absence';
+      case 'late_justification':
+        return 'late';
+      case 'manual_punch':
+        return 'manual_punch';
+      case 'punch_correction':
+        return 'punch_correction';
+    }
   }
 
   private async getTargetRecordOrFail(
@@ -583,18 +815,47 @@ export class AttendanceRequestsService {
     const request = await this.requestsRepo
       .createQueryBuilder('request')
       .leftJoinAndMapOne('request.employee', Employee, 'employee', 'employee.id = request.employee_id')
+      .leftJoinAndMapOne('request.justificationType', AttendanceJustificationType, 'justificationType', 'justificationType.id = request.justification_type_id')
       .where('request.id = :id', { id })
       .getOne();
     if (!request) throw new NotFoundException('Solicitud no encontrada.');
-    return this.toRequestView(request);
+    const [view] = await this.toRequestViews([request]);
+    return view;
   }
 
   private toRequestView(request: AttendanceRequest): AttendanceRequestView {
     const employee = (request as AttendanceRequest & { employee?: Employee | null }).employee;
+    const justificationType = (request as AttendanceRequest & { justificationType?: AttendanceJustificationType | null }).justificationType;
+    const attachmentCount = (request as AttendanceRequest & { attachmentCount?: number }).attachmentCount ?? 0;
     return {
       ...request,
       employee: employee ? { id: employee.id, nombre: employee.nombre, apellido: employee.apellido } : null,
+      justificationType: justificationType
+        ? {
+            id: justificationType.id,
+            code: justificationType.code,
+            name: justificationType.name,
+            requiresAttachment: justificationType.requiresAttachment,
+          }
+        : null,
+      attachmentCount,
     };
+  }
+
+  private async toRequestViews(requests: AttendanceRequest[]): Promise<AttendanceRequestView[]> {
+    if (requests.length === 0) return [];
+    const counts = await this.attachmentsRepo
+      .createQueryBuilder('attachment')
+      .select('attachment.attendance_request_id', 'requestId')
+      .addSelect('COUNT(*)', 'count')
+      .where('attachment.attendance_request_id IN (:...requestIds)', { requestIds: requests.map((request) => request.id) })
+      .groupBy('attachment.attendance_request_id')
+      .getRawMany();
+    const countsByRequest = new Map(counts.map((row) => [String(row.requestId), Number(row.count)]));
+    return requests.map((request) => {
+      (request as AttendanceRequest & { attachmentCount?: number }).attachmentCount = countsByRequest.get(request.id) ?? 0;
+      return this.toRequestView(request);
+    });
   }
 
   private toAuditView(log: AttendanceAuditLog): AttendanceAuditLogView {
@@ -602,6 +863,20 @@ export class AttendanceRequestsService {
     return {
       ...log,
       employee: employee ? { id: employee.id, nombre: employee.nombre, apellido: employee.apellido } : null,
+    };
+  }
+
+  private toAttachmentView(attachment: AttendanceRequestAttachment): AttendanceRequestAttachmentView {
+    return {
+      id: attachment.id,
+      companyId: attachment.companyId,
+      attendanceRequestId: attachment.attendanceRequestId,
+      uploadedByUserId: attachment.uploadedByUserId,
+      originalName: attachment.originalName,
+      storedName: attachment.storedName,
+      mimeType: attachment.mimeType,
+      sizeBytes: attachment.sizeBytes,
+      createdAt: attachment.createdAt,
     };
   }
 
@@ -634,6 +909,7 @@ export class AttendanceRequestsService {
       id: request.id,
       type: request.type,
       status: request.status,
+      justificationTypeId: request.justificationTypeId,
       employeeId: request.employeeId,
       date: request.date,
       punchTime: request.punchTime,
@@ -707,5 +983,67 @@ export class AttendanceRequestsService {
     }
     const driverError = error.driverError as { code?: string } | undefined;
     return driverError?.code === '23505';
+  }
+
+  private async validateAttachment(
+    file: { originalname: string; mimetype: string; size: number },
+    buffer: Buffer,
+    request: AttendanceRequest,
+  ): Promise<void> {
+    if (file.size > MAX_ATTACHMENT_BYTES) {
+      throw new BadRequestException('El archivo supera el tamaño permitido.');
+    }
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (!ALLOWED_ATTACHMENT_EXTENSIONS.has(ext) || !ALLOWED_ATTACHMENT_MIME_TYPES.has(file.mimetype)) {
+      throw new BadRequestException('Formato no permitido. Usá PDF, JPG o PNG.');
+    }
+    if (!this.hasAllowedMagicBytes(buffer)) {
+      throw new BadRequestException('El contenido del archivo no coincide con un PDF, JPG o PNG válido.');
+    }
+    const count = await this.attachmentsRepo.countBy({
+      companyId: request.companyId,
+      attendanceRequestId: request.id,
+    });
+    if (count >= MAX_ATTACHMENTS_PER_REQUEST) {
+      throw new BadRequestException('La solicitud ya tiene el máximo de adjuntos permitido.');
+    }
+  }
+
+  private attachmentsBaseDir(): string {
+    return path.resolve(process.env.ATTENDANCE_ATTACHMENTS_DIR || '/home/reloj/attachments');
+  }
+
+  private async getUploadBuffer(file: { buffer?: Buffer; path?: string }): Promise<Buffer> {
+    if (file.buffer) return file.buffer;
+    if (file.path) return fs.readFile(file.path);
+    throw new BadRequestException('No se pudo leer el archivo adjunto.');
+  }
+
+  private hasAllowedMagicBytes(buffer: Buffer): boolean {
+    if (buffer.length >= 4 && buffer.subarray(0, 4).equals(Buffer.from('%PDF'))) {
+      return true;
+    }
+    if (buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
+      return true;
+    }
+    const pngSignature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    return buffer.length >= pngSignature.length && buffer.subarray(0, pngSignature.length).equals(pngSignature);
+  }
+
+  private isFileNotFoundError(error: unknown): boolean {
+    return typeof error === 'object' && error !== null && (error as { code?: string }).code === 'ENOENT';
+  }
+
+  private errorMessage(error: unknown): string {
+    return error instanceof Error ? error.message : String(error);
+  }
+
+  private safeResolve(baseDir: string, relativePath: string): string {
+    const resolvedBase = path.resolve(baseDir);
+    const resolvedPath = path.resolve(resolvedBase, relativePath);
+    if (resolvedPath !== resolvedBase && !resolvedPath.startsWith(`${resolvedBase}${path.sep}`)) {
+      throw new ForbiddenException('No tenés permisos para ver este adjunto.');
+    }
+    return resolvedPath;
   }
 }

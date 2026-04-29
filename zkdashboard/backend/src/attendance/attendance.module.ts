@@ -3,6 +3,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AttendanceRecord } from './attendance.entity';
 import { AttendanceDaySummary } from './entities/attendance-day-summary.entity';
 import { AttendanceRequest } from './entities/attendance-request.entity';
+import { AttendanceJustificationType } from './entities/attendance-justification-type.entity';
+import { AttendanceRequestAttachment } from './entities/attendance-request-attachment.entity';
 import { AttendanceAuditLog } from './entities/attendance-audit-log.entity';
 import { Holiday } from './entities/holiday.entity';
 import { AttendanceService } from './attendance.service';
@@ -28,6 +30,8 @@ import { ScheduleProfile } from '../companies/schedule-profile.entity';
       AttendanceRecord,
       AttendanceDaySummary,
       AttendanceRequest,
+      AttendanceJustificationType,
+      AttendanceRequestAttachment,
       AttendanceAuditLog,
       Holiday,
       Employee,

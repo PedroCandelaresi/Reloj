@@ -6,7 +6,7 @@ import { exportLateArrivalsReport, getDistinctUsers, getLateArrivalsReport } fro
 import { todayArgentinaDateKey } from '@/lib/argentina-date';
 import { requireCurrentSession } from '@/lib/session';
 
-interface PageProps { searchParams: Promise<{ dateFrom?: string; dateTo?: string; employeeId?: string; minLateMinutes?: string }> }
+interface PageProps { searchParams: Promise<{ dateFrom?: string; dateTo?: string; employeeId?: string; minLateMinutes?: string; justification?: string }> }
 
 export default async function LateArrivalsPage({ searchParams }: PageProps) {
   const user = await requireCurrentSession();
@@ -14,8 +14,9 @@ export default async function LateArrivalsPage({ searchParams }: PageProps) {
   const dateFrom = sp.dateFrom || todayArgentinaDateKey();
   const dateTo = sp.dateTo || dateFrom;
   const employeeId = sp.employeeId || '';
+  const justification = sp.justification || 'all';
   const minLateMinutes = sp.minLateMinutes || '';
-  const params = { dateFrom, dateTo, employeeId, minLateMinutes };
+  const params = { dateFrom, dateTo, employeeId, minLateMinutes, justification };
   const canCreateRequests = user.isSuperAdmin || user.companyRole === 'company_admin' || user.companyRole === 'operator';
   const [rows, userOptions] = await Promise.all([getLateArrivalsReport(params), getDistinctUsers()]);
 
@@ -23,7 +24,15 @@ export default async function LateArrivalsPage({ searchParams }: PageProps) {
     <>
       <main className="mx-auto max-w-7xl px-4 py-8 pt-32">
         <ReportHeader title="Tardanzas" subtitle={`Llegadas fuera del horario permitido. ${rows.length} registro(s).`} excelHref={exportLateArrivalsReport(params)} />
-        <ReportFilters action="/reports/late-arrivals" userOptions={userOptions} dateFrom={dateFrom} dateTo={dateTo} employeeId={employeeId} />
+        <ReportFilters
+          action="/reports/late-arrivals"
+          userOptions={userOptions}
+          dateFrom={dateFrom}
+          dateTo={dateTo}
+          employeeId={employeeId}
+          justification={justification}
+          showJustificationFilter
+        />
         <Phase2ReportTable rows={rows} mode="late" emptyMessage="No hay tardanzas para el período seleccionado." canCreateRequests={canCreateRequests} />
       </main>
     </>

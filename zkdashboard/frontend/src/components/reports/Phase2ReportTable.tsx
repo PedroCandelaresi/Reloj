@@ -71,8 +71,18 @@ export function Phase2ReportTable({
                         {getAttendanceJustificationLabel({
                           isAbsent: mode === 'absences',
                           lateMinutes: row.lateMinutes,
-                          justificationStatus: 'none',
+                          justificationStatus: row.justificationStatus ?? 'none',
                         })}
+                      </span>
+                    )}
+                    {row.justificationTypeName && (
+                      <span className="mt-1 block text-xs" style={{ color: 'var(--text-muted)' }}>
+                        Tipo: {row.justificationTypeName}
+                      </span>
+                    )}
+                    {(row.attachmentCount ?? 0) > 0 && (
+                      <span className="mt-1 block text-xs" style={{ color: 'var(--text-muted)' }}>
+                        {row.attachmentCount} adjunto(s)
                       </span>
                     )}
                   </td>

@@ -54,6 +54,44 @@ async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+async function apiFetchForm<T>(path: string, formData: FormData, init: RequestInit = {}): Promise<T> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get('token')?.value;
+  const headers = new Headers(init.headers);
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+  const res = await fetch(`${API}${path}`, {
+    ...init,
+    method: init.method ?? 'POST',
+    body: formData,
+    headers,
+    cache: 'no-store',
+  });
+
+  if (!res.ok) {
+    const body = await res.text();
+    let message = body || `API error ${res.status}: ${path}`;
+    if (body) {
+      try {
+        const payload = JSON.parse(body);
+        if (typeof payload.message === 'string') {
+          message = payload.message;
+        } else if (Array.isArray(payload.message) && payload.message.length > 0) {
+          message = payload.message.join(', ');
+        } else if (typeof payload.error === 'string') {
+          message = payload.error;
+        }
+      } catch {
+        message = body;
+      }
+    }
+    throw new Error(message);
+  }
+
+  return res.json() as Promise<T>;
+}
+
 export interface EmployeeSummary {
   id: string;
   nombre: string;
@@ -591,6 +629,8 @@ export interface MonthlySummaryDay {
   isWeekend: boolean;
   hasIncompleteRecord: boolean;
   justificationStatus?: 'none' | 'pending' | 'approved' | 'rejected';
+  justificationTypeName?: string | null;
+  attachmentCount?: number;
   status: MonthlySummaryStatus;
 }
 
@@ -599,6 +639,11 @@ export interface MonthlySummaryReportRow {
   userId: string;
   year: number;
   month: number;
+  workDaysCount?: number;
+  presentDaysCount?: number;
+  absentDaysCount?: number;
+  justifiedAbsentDaysCount?: number;
+  attendancePercentage?: number | null;
   daysWithRecords: number;
   presentDays: number;
   absentDays: number;
@@ -632,6 +677,7 @@ export interface ReportFilterParams {
   userId?: string;
   deviceId?: string;
   companyId?: string;
+  justification?: 'all' | 'justified' | 'unjustified' | 'pending' | string;
 }
 
 export interface MonthlySummaryParams {
@@ -684,6 +730,9 @@ export interface AttendanceRequest {
   employeeId: string;
   employee: EmployeeSummary | null;
   requestedByUserId: number;
+  justificationTypeId: string | null;
+  justificationType: AttendanceJustificationType | null;
+  attachmentCount: number;
   reviewedByUserId: number | null;
   type: AttendanceRequestType;
   status: AttendanceRequestStatus;
@@ -704,6 +753,7 @@ export interface AttendanceRequestInput {
   companyId?: string;
   employeeId: string;
   type: AttendanceRequestType;
+  justificationTypeId?: string;
   date: string;
   punchTime?: string;
   punchType?: AttendancePunchType;
@@ -733,6 +783,32 @@ export interface AttendanceAuditLog {
   oldValue: Record<string, unknown> | null;
   newValue: Record<string, unknown> | null;
   performedByUserId: number;
+  createdAt: string;
+}
+
+export interface AttendanceJustificationType {
+  id: string;
+  companyId: string | null;
+  code: string;
+  name: string;
+  description: string | null;
+  appliesTo: 'absence' | 'late' | 'early_departure' | 'manual_punch' | 'punch_correction' | 'general';
+  isPaid: boolean;
+  requiresAttachment: boolean;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AttendanceRequestAttachment {
+  id: string;
+  companyId: string;
+  attendanceRequestId: string;
+  uploadedByUserId: number;
+  originalName: string;
+  storedName: string;
+  mimeType: string;
+  sizeBytes: number;
   createdAt: string;
 }
 
@@ -793,7 +869,58 @@ export interface Phase2ReportRow {
   expectedMinutes: number;
   overtimeMinutes: number;
   status: string;
+  justificationStatus?: 'none' | 'pending' | 'approved' | 'rejected';
+  justificationTypeName?: string | null;
+  attachmentCount?: number;
   reason?: string;
+}
+
+export interface ManualPunchReportRow {
+  employee: EmployeeSummary | null;
+  employeeId: string;
+  punchTime: string;
+  punchType: string | null;
+  reason: string | null;
+  createdBy: string | null;
+  createdAt: string;
+  source: 'manual';
+  requestId: string | null;
+  requestStatus: string | null;
+  justificationTypeName: string | null;
+  attachmentCount: number;
+}
+
+export interface CorrectedPunchReportRow {
+  employee: EmployeeSummary | null;
+  employeeId: string | null;
+  originalDate: string | null;
+  correctedDate: string | null;
+  oldValue: string | null;
+  newValue: string | null;
+  reason: string | null;
+  correctedBy: string | null;
+  correctedAt: string;
+  requestId: string | null;
+  requestStatus: string | null;
+  justificationTypeName: string | null;
+  attachmentCount: number;
+}
+
+export interface EmployeeWithoutScheduleReportRow {
+  employee: EmployeeSummary | null;
+  employeeId: string;
+  document: string;
+  status: 'Activo';
+  reason: string;
+}
+
+export interface EmployeeWithoutPunchesReportRow {
+  employee: EmployeeSummary | null;
+  employeeId: string;
+  document: string;
+  dateFrom: string;
+  dateTo: string;
+  punchCount: 0;
 }
 
 export const VERIFY_LABELS: Record<number, string> = {
@@ -1166,6 +1293,10 @@ export function getAttendanceRequests(params: AttendanceRequestsParams = {}) {
   return apiFetch<AttendanceRequest[]>(`/attendance/requests${buildReportQuery(params)}`);
 }
 
+export function getAttendanceJustificationTypes(params: { appliesTo?: string; companyId?: string } = {}) {
+  return apiFetch<AttendanceJustificationType[]>(`/attendance/justification-types${buildReportQuery(params)}`);
+}
+
 export function createAttendanceRequest(input: AttendanceRequestInput) {
   return apiFetch<AttendanceRequest>('/attendance/requests', {
     method: 'POST',
@@ -1190,6 +1321,20 @@ export function rejectAttendanceRequest(id: string, reviewNotes: string) {
 export function cancelAttendanceRequest(id: string) {
   return apiFetch<AttendanceRequest>(`/attendance/requests/${id}/cancel`, {
     method: 'PUT',
+  });
+}
+
+export function getAttendanceRequestAttachments(id: string) {
+  return apiFetch<AttendanceRequestAttachment[]>(`/attendance/requests/${id}/attachments`);
+}
+
+export function uploadAttendanceRequestAttachment(id: string, formData: FormData) {
+  return apiFetchForm<AttendanceRequestAttachment>(`/attendance/requests/${id}/attachments`, formData);
+}
+
+export function deleteAttendanceRequestAttachment(id: string, attachmentId: string) {
+  return apiFetch<{ success: true }>(`/attendance/requests/${id}/attachments/${attachmentId}`, {
+    method: 'DELETE',
   });
 }
 
@@ -1227,6 +1372,38 @@ export function getWorkedHoursReport(params: ReportFilterParams = {}) {
 
 export function exportWorkedHoursReport(params: ReportFilterParams = {}) {
   return `/api/reports/export${buildReportQuery({ ...params, report: 'worked-hours' })}`;
+}
+
+export function getManualPunchesReport(params: ReportFilterParams = {}) {
+  return apiFetch<ManualPunchReportRow[]>(`/reports/manual-punches${buildReportQuery(params)}`);
+}
+
+export function exportManualPunchesReport(params: ReportFilterParams = {}) {
+  return `/api/reports/export${buildReportQuery({ ...params, report: 'manual-punches' })}`;
+}
+
+export function getCorrectedPunchesReport(params: ReportFilterParams = {}) {
+  return apiFetch<CorrectedPunchReportRow[]>(`/reports/corrected-punches${buildReportQuery(params)}`);
+}
+
+export function exportCorrectedPunchesReport(params: ReportFilterParams = {}) {
+  return `/api/reports/export${buildReportQuery({ ...params, report: 'corrected-punches' })}`;
+}
+
+export function getEmployeesWithoutScheduleReport(params: ReportFilterParams = {}) {
+  return apiFetch<EmployeeWithoutScheduleReportRow[]>(`/reports/employees-without-schedule${buildReportQuery(params)}`);
+}
+
+export function exportEmployeesWithoutScheduleReport(params: ReportFilterParams = {}) {
+  return `/api/reports/export${buildReportQuery({ ...params, report: 'employees-without-schedule' })}`;
+}
+
+export function getEmployeesWithoutPunchesReport(params: ReportFilterParams = {}) {
+  return apiFetch<EmployeeWithoutPunchesReportRow[]>(`/reports/employees-without-punches${buildReportQuery(params)}`);
+}
+
+export function exportEmployeesWithoutPunchesReport(params: ReportFilterParams = {}) {
+  return `/api/reports/export${buildReportQuery({ ...params, report: 'employees-without-punches' })}`;
 }
 
 export function getHolidays(params: { year?: string | number; month?: string | number; companyId?: string } = {}) {

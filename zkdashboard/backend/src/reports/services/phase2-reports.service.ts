@@ -2,6 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AttendanceDaySummary } from '../../attendance/entities/attendance-day-summary.entity';
+import { AttendanceRequest } from '../../attendance/entities/attendance-request.entity';
+import { AttendanceJustificationType } from '../../attendance/entities/attendance-justification-type.entity';
+import { AttendanceRequestAttachment } from '../../attendance/entities/attendance-request-attachment.entity';
 import { Employee } from '../../employees/employee.entity';
 import { AuthenticatedUser } from '../../auth/authenticated-user.interface';
 import { ReportFiltersDto } from '../dto/report-filters.dto';
@@ -24,6 +27,9 @@ export interface Phase2ReportRow {
   expectedMinutes: number;
   overtimeMinutes: number;
   status: string;
+  justificationStatus: 'none' | 'pending' | 'approved' | 'rejected';
+  justificationTypeName: string | null;
+  attachmentCount: number;
   reason?: string;
 }
 
@@ -32,12 +38,17 @@ export class Phase2ReportsService {
   constructor(
     @InjectRepository(AttendanceDaySummary)
     private readonly summariesRepo: Repository<AttendanceDaySummary>,
+    @InjectRepository(AttendanceRequest)
+    private readonly requestsRepo: Repository<AttendanceRequest>,
+    @InjectRepository(AttendanceRequestAttachment)
+    private readonly attachmentsRepo: Repository<AttendanceRequestAttachment>,
   ) {}
 
   lateArrivals(filters: ReportFiltersDto, user: AuthenticatedUser): Promise<Phase2ReportRow[]> {
     return this.getRows(filters, user, (qb) => {
       const minLate = Number.parseInt(filters.minLateMinutes || '1', 10);
       qb.andWhere('summary.late_minutes >= :minLate', { minLate: Number.isFinite(minLate) ? minLate : 1 });
+      this.applyJustificationFilter(qb, filters.justification);
     });
   }
 
@@ -50,6 +61,7 @@ export class Phase2ReportsService {
   absences(filters: ReportFiltersDto, user: AuthenticatedUser): Promise<Phase2ReportRow[]> {
     return this.getRows(filters, user, (qb) => {
       qb.andWhere('summary.is_absent = true');
+      this.applyJustificationFilter(qb, filters.justification);
     }, 'no_records_workday');
   }
 
@@ -88,9 +100,12 @@ export class Phase2ReportsService {
       .addOrderBy('summary.employee_id', 'ASC')
       .getMany();
 
+    const requestMeta = await this.getRequestMeta(summaries.map((summary) => summary.justificationRequestId).filter(Boolean) as string[]);
+
     return summaries.map((summary) => {
       const employee = (summary as AttendanceDaySummary & { employee?: Employee | null }).employee ?? null;
       const schedule = employee?.scheduleProfile;
+      const meta = summary.justificationRequestId ? requestMeta.get(summary.justificationRequestId) : undefined;
       return {
         employee: employee ? { id: employee.id, nombre: employee.nombre, apellido: employee.apellido } : null,
         employeeId: summary.employeeId,
@@ -107,8 +122,60 @@ export class Phase2ReportsService {
         expectedMinutes: summary.expectedMinutes,
         overtimeMinutes: summary.overtimeMinutes,
         status: summary.status,
+        justificationStatus: summary.justificationStatus ?? 'none',
+        justificationTypeName: meta?.justificationTypeName ?? null,
+        attachmentCount: meta?.attachmentCount ?? 0,
         reason,
       };
     });
+  }
+
+  private async getRequestMeta(requestIds: string[]): Promise<Map<string, { justificationTypeName: string | null; attachmentCount: number }>> {
+    if (requestIds.length === 0) return new Map();
+    const requests = await this.requestsRepo
+      .createQueryBuilder('request')
+      .leftJoin(AttendanceJustificationType, 'type', 'type.id = request.justification_type_id')
+      .select('request.id', 'id')
+      .addSelect('type.name', 'justificationTypeName')
+      .where('request.id IN (:...requestIds)', { requestIds })
+      .getRawMany();
+    const counts = await this.attachmentsRepo
+      .createQueryBuilder('attachment')
+      .select('attachment.attendance_request_id', 'requestId')
+      .addSelect('COUNT(*)', 'count')
+      .where('attachment.attendance_request_id IN (:...requestIds)', { requestIds })
+      .groupBy('attachment.attendance_request_id')
+      .getRawMany();
+    const countByRequest = new Map(counts.map((row) => [String(row.requestId), Number(row.count)]));
+    return new Map(
+      requests.map((row) => [
+        String(row.id),
+        {
+          justificationTypeName: row.justificationTypeName ?? null,
+          attachmentCount: countByRequest.get(String(row.id)) ?? 0,
+        },
+      ]),
+    );
+  }
+
+  private applyJustificationFilter(
+    qb: ReturnType<Repository<AttendanceDaySummary>['createQueryBuilder']>,
+    justification?: ReportFiltersDto['justification'],
+  ): void {
+    switch (justification) {
+      case 'justified':
+        qb.andWhere('summary.justification_status = :justificationStatus', { justificationStatus: 'approved' });
+        break;
+      case 'pending':
+        qb.andWhere('summary.justification_status = :justificationStatus', { justificationStatus: 'pending' });
+        break;
+      case 'unjustified':
+        qb.andWhere('(summary.justification_status IS NULL OR summary.justification_status IN (:...unjustifiedStatuses))', {
+          unjustifiedStatuses: ['none', 'rejected'],
+        });
+        break;
+      default:
+        break;
+    }
   }
 }

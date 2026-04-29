@@ -1,6 +1,7 @@
 import { AttendanceRequestsManager } from '@/components/AttendanceRequestsManager';
 import {
   getAttendanceAuditLog,
+  getAttendanceJustificationTypes,
   getAttendanceRequests,
   getDistinctUsers,
   type AttendanceRequestStatus,
@@ -41,6 +42,7 @@ export default async function AttendanceRequestsPage({ searchParams }: PageProps
     getAttendanceAuditLog({ dateFrom: params.dateFrom, dateTo: params.dateTo, employeeId: params.employeeId }),
     getDistinctUsers(),
   ]);
+  const justificationTypes = await getAttendanceJustificationTypes();
 
   return (
     <>
@@ -105,6 +107,7 @@ export default async function AttendanceRequestsPage({ searchParams }: PageProps
           requests={requests}
           auditLogs={auditLogs}
           userOptions={userOptions}
+          justificationTypes={justificationTypes}
           user={user}
           initialForm={{
             employeeId: sp.employeeId ?? '',
@@ -115,6 +118,7 @@ export default async function AttendanceRequestsPage({ searchParams }: PageProps
             targetAttendanceRecordId: sp.targetAttendanceRecordId ?? '',
             newPunchTime: sp.newPunchTime ?? '',
             reason: '',
+            justificationTypeId: '',
             autoApprove: false,
           }}
           fromReport={sp.fromReport === '1'}

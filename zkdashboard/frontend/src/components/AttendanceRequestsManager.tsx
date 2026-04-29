@@ -7,12 +7,16 @@ import {
   approveAttendanceRequestAction,
   cancelAttendanceRequestAction,
   createAttendanceRequestAction,
+  deleteAttendanceRequestAttachmentAction,
   rejectAttendanceRequestAction,
+  uploadAttendanceRequestAttachmentAction,
 } from '@/app/(protected)/attendance/requests/actions';
 import {
   type AttendanceAuditLog,
+  type AttendanceJustificationType,
   type AttendancePunchType,
   type AttendanceRequest,
+  type AttendanceRequestAttachment,
   type AttendanceRequestInput,
   type AttendanceRequestType,
   type AttendanceUserOption,
@@ -31,6 +35,7 @@ type FormValues = {
   targetAttendanceRecordId: string;
   newPunchTime: string;
   reason: string;
+  justificationTypeId: string;
   autoApprove: boolean;
 };
 
@@ -43,6 +48,7 @@ const EMPTY_FORM: FormValues = {
   targetAttendanceRecordId: '',
   newPunchTime: '',
   reason: '',
+  justificationTypeId: '',
   autoApprove: false,
 };
 
@@ -79,6 +85,7 @@ export function AttendanceRequestsManager({
   requests,
   auditLogs,
   userOptions,
+  justificationTypes,
   user,
   initialForm,
   fromReport,
@@ -86,6 +93,7 @@ export function AttendanceRequestsManager({
   requests: AttendanceRequest[];
   auditLogs: AttendanceAuditLog[];
   userOptions: AttendanceUserOption[];
+  justificationTypes: AttendanceJustificationType[];
   user: CurrentUserProfile;
   initialForm?: FormValues;
   fromReport?: boolean;
@@ -93,6 +101,8 @@ export function AttendanceRequestsManager({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [form, setForm] = useState<FormValues>(initialForm ?? EMPTY_FORM);
+  const [attachments, setAttachments] = useState<File[]>([]);
+  const [attachmentsByRequest, setAttachmentsByRequest] = useState<Record<string, AttendanceRequestAttachment[]>>({});
   const [reviewNotesById, setReviewNotesById] = useState<Record<string, string>>({});
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const writable = canCreate(user);
@@ -100,7 +110,11 @@ export function AttendanceRequestsManager({
 
   const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = event.target;
-    setForm((current) => ({ ...current, [name]: value }));
+    setForm((current) => ({
+      ...current,
+      [name]: value,
+      ...(name === 'type' ? { justificationTypeId: '' } : {}),
+    }));
   };
 
   const handleAutoApprove = (event: ChangeEvent<HTMLInputElement>) => {
@@ -125,8 +139,9 @@ export function AttendanceRequestsManager({
       employeeId: form.employeeId,
       type: form.type,
       date: form.date,
+      justificationTypeId: form.justificationTypeId || undefined,
       reason: form.reason,
-      autoApprove: reviewer && form.autoApprove,
+      autoApprove: reviewer && form.autoApprove && attachments.length === 0,
       punchType: form.type === 'manual_punch' ? form.punchType : undefined,
       punchTime: form.type === 'manual_punch' ? form.punchTime : undefined,
       targetAttendanceRecordId: form.type === 'punch_correction' ? Number(form.targetAttendanceRecordId) : undefined,
@@ -135,18 +150,71 @@ export function AttendanceRequestsManager({
 
     startTransition(() => {
       void createAttendanceRequestAction(payload)
-        .then((result) => {
+        .then(async (result) => {
           if (result.error) {
             setMessage({ type: 'error', text: humanizeActionError(result.error) });
             return;
           }
+          if (result.requestId && attachments.length > 0) {
+            const uploaded = await uploadSelectedAttachments(result.requestId, attachments);
+            if (!uploaded) return;
+            if (reviewer && form.autoApprove) {
+              const approveResult = await approveAttendanceRequestAction(result.requestId, 'Aprobación automática al crear.');
+              if (approveResult.error) {
+                setMessage({ type: 'error', text: humanizeActionError(approveResult.error) });
+                return;
+              }
+            }
+          }
           setForm(EMPTY_FORM);
+          setAttachments([]);
           setMessage({ type: 'success', text: 'Solicitud creada correctamente.' });
           router.refresh();
         })
         .catch(() => setMessage({ type: 'error', text: humanizeActionError('Failed to fetch') }));
     });
   };
+
+  const uploadSelectedAttachments = async (requestId: string, files: File[]) => {
+    for (const file of files) {
+      const formData = new FormData();
+      formData.append('file', file);
+      const result = await uploadAttendanceRequestAttachmentAction(requestId, formData);
+      if (result.error) {
+        setMessage({ type: 'error', text: humanizeActionError(result.error) });
+        return false;
+      }
+    }
+    router.refresh();
+    return true;
+  };
+
+  const loadAttachments = (requestId: string) => {
+    fetch(`/api/attendance/requests/${requestId}/attachments`)
+      .then((res) => res.ok ? res.json() : Promise.reject())
+      .then((data: AttendanceRequestAttachment[]) => setAttachmentsByRequest((current) => ({ ...current, [requestId]: data })))
+      .catch(() => setMessage({ type: 'error', text: 'No se pudieron cargar los adjuntos.' }));
+  };
+
+  const deleteAttachment = (requestId: string, attachmentId: string) => {
+    if (!window.confirm('Vas a eliminar este adjunto de la solicitud. ¿Continuás?')) return;
+    startTransition(() => {
+      void deleteAttendanceRequestAttachmentAction(requestId, attachmentId)
+        .then((result) => {
+          if (result.error) {
+            setMessage({ type: 'error', text: humanizeActionError(result.error) });
+            return;
+          }
+          loadAttachments(requestId);
+          router.refresh();
+        });
+    });
+  };
+
+  const visibleJustificationTypes = justificationTypes.filter((type) => {
+    const appliesTo = requestTypeToAppliesTo(form.type);
+    return type.appliesTo === appliesTo || type.appliesTo === 'general';
+  });
 
   const review = (id: string, action: 'approve' | 'reject' | 'cancel') => {
     setMessage(null);
@@ -226,6 +294,14 @@ export function AttendanceRequestsManager({
                 ))}
               </select>
             </Field>
+            <Field label="Tipo de justificación" help={visibleJustificationTypes.length === 0 ? 'No hay tipos de justificación activos.' : 'Elegí una categoría para facilitar el cierre mensual.'}>
+              <select name="justificationTypeId" value={form.justificationTypeId} onChange={handleChange} className="input-field w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                <option value="">Sin tipo</option>
+                {visibleJustificationTypes.map((type) => (
+                  <option key={type.id} value={type.id}>{type.name}</option>
+                ))}
+              </select>
+            </Field>
             <Field label="Fecha">
               <input type="date" name="date" value={form.date} onChange={handleChange} required className="input-field w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
             </Field>
@@ -260,6 +336,15 @@ export function AttendanceRequestsManager({
               <span className="font-medium" style={{ color: 'var(--text-secondary)' }}>Motivo</span>
               <textarea name="reason" value={form.reason} onChange={handleChange} required rows={3} className="input-field w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 mt-1" />
             </label>
+            <Field label="Adjuntar certificado o comprobante" help="Ejemplo: certificado médico, autorización, constancia. PDF, JPG o PNG hasta 5 MB.">
+              <input
+                type="file"
+                multiple
+                accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                onChange={(event) => setAttachments(Array.from(event.target.files ?? []).slice(0, 5))}
+                className="input-field w-full rounded-lg px-3 py-2 text-sm"
+              />
+            </Field>
             {reviewer && (
               <label className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
                 <input type="checkbox" checked={form.autoApprove} onChange={handleAutoApprove} />
@@ -312,6 +397,8 @@ export function AttendanceRequestsManager({
                   <td className="px-6 py-4" style={{ color: 'var(--text-secondary)' }}>{STATUS_LABELS[request.status]}</td>
                   <td className="px-6 py-4" style={{ color: 'var(--text-secondary)' }}>
                     <p>{request.reason}</p>
+                    {request.justificationType && <p className="mt-1 text-xs">Tipo: {request.justificationType.name}</p>}
+                    {request.attachmentCount > 0 && <p className="mt-1 text-xs">{request.attachmentCount} adjunto(s)</p>}
                     {request.punchTime && <p className="mt-1 text-xs">Fichada: {formatArgentinaDateTime(request.punchTime)}</p>}
                     {request.newPunchTime && <p className="mt-1 text-xs">Nueva hora: {formatArgentinaDateTime(request.newPunchTime)}</p>}
                     {request.targetAttendanceRecordId && <p className="mt-1 text-xs">Registro #{request.targetAttendanceRecordId}</p>}
@@ -342,9 +429,25 @@ export function AttendanceRequestsManager({
                             </button>
                           )}
                         </div>
+                        <AttachmentsBlock
+                          request={request}
+                          attachments={attachmentsByRequest[request.id]}
+                          onLoad={() => loadAttachments(request.id)}
+                          onDelete={(attachmentId) => deleteAttachment(request.id, attachmentId)}
+                          canDelete={request.status === 'pending' && (reviewer || request.requestedByUserId === user.id)}
+                        />
                       </div>
                     ) : (
-                      <span style={{ color: 'var(--text-muted)' }}>{request.reviewNotes || '-'}</span>
+                      <div className="space-y-2">
+                        <span style={{ color: 'var(--text-muted)' }}>{request.reviewNotes || '-'}</span>
+                        <AttachmentsBlock
+                          request={request}
+                          attachments={attachmentsByRequest[request.id]}
+                          onLoad={() => loadAttachments(request.id)}
+                          onDelete={(attachmentId) => deleteAttachment(request.id, attachmentId)}
+                          canDelete={false}
+                        />
+                      </div>
                     )}
                   </td>
                 </tr>
@@ -395,4 +498,75 @@ function Field({ label, children, help }: { label: string; children: ReactNode; 
       {help && <span className="mt-1 block text-xs" style={{ color: 'var(--text-muted)' }}>{help}</span>}
     </label>
   );
+}
+
+function AttachmentsBlock({
+  request,
+  attachments,
+  onLoad,
+  onDelete,
+  canDelete,
+}: {
+  request: AttendanceRequest;
+  attachments?: AttendanceRequestAttachment[];
+  onLoad: () => void;
+  onDelete: (attachmentId: string) => void;
+  canDelete: boolean;
+}) {
+  if (request.attachmentCount === 0 && !attachments) {
+    return <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Esta solicitud no tiene adjuntos.</p>;
+  }
+
+  if (!attachments) {
+    return (
+      <button type="button" onClick={onLoad} className="text-xs font-medium" style={{ color: 'var(--brand-text)' }}>
+        Ver adjuntos
+      </button>
+    );
+  }
+
+  if (attachments.length === 0) {
+    return <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Esta solicitud no tiene adjuntos.</p>;
+  }
+
+  return (
+    <div className="space-y-1">
+      {attachments.map((attachment) => (
+        <div key={attachment.id} className="flex flex-wrap items-center gap-2 text-xs">
+          <a
+            href={`/api/attendance/requests/${request.id}/attachments/${attachment.id}/download`}
+            className="font-medium"
+            style={{ color: 'var(--brand-text)' }}
+          >
+            {attachment.originalName}
+          </a>
+          <span style={{ color: 'var(--text-muted)' }}>{formatBytes(attachment.sizeBytes)}</span>
+          {canDelete && (
+            <button type="button" onClick={() => onDelete(attachment.id)} className="font-medium" style={{ color: 'var(--danger-text)' }}>
+              Eliminar
+            </button>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function requestTypeToAppliesTo(type: AttendanceRequestType) {
+  switch (type) {
+    case 'absence_justification':
+      return 'absence';
+    case 'late_justification':
+      return 'late';
+    case 'manual_punch':
+      return 'manual_punch';
+    case 'punch_correction':
+      return 'punch_correction';
+  }
+}
+
+function formatBytes(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${Math.round((bytes / 1024 / 1024) * 10) / 10} MB`;
 }

@@ -9,6 +9,7 @@ import { DailyPresenceService } from './services/daily-presence.service';
 import { IncompleteRecordsService } from './services/incomplete-records.service';
 import { MonthlySummaryService } from './services/monthly-summary.service';
 import { Phase2ReportsService } from './services/phase2-reports.service';
+import { HrControlReportsService } from './services/hr-control-reports.service';
 import { ReportsExcelExporter } from './exporters/reports-excel.exporter';
 
 @Controller('reports')
@@ -19,6 +20,7 @@ export class ReportsController {
     private readonly incompleteRecords: IncompleteRecordsService,
     private readonly monthlySummary: MonthlySummaryService,
     private readonly phase2: Phase2ReportsService,
+    private readonly hrControl: HrControlReportsService,
     private readonly excel: ReportsExcelExporter,
   ) {}
 
@@ -127,6 +129,62 @@ export class ReportsController {
     const rows = await this.phase2.workedHours(filters, user);
     if (filters.format === 'excel') {
       this.sendExcel(res, await this.excel.phase2Rows('Horas trabajadas', rows), 'horas-trabajadas-resumen.xlsx');
+      return;
+    }
+    res.json(rows);
+  }
+
+  @Get('manual-punches')
+  async getManualPunches(
+    @Query() filters: ReportFiltersDto,
+    @CurrentUser() user: AuthenticatedUser,
+    @Res() res: Response,
+  ) {
+    const rows = await this.hrControl.manualPunches(filters, user);
+    if (filters.format === 'excel') {
+      this.sendExcel(res, await this.excel.manualPunches(rows), 'fichadas-manuales.xlsx');
+      return;
+    }
+    res.json(rows);
+  }
+
+  @Get('corrected-punches')
+  async getCorrectedPunches(
+    @Query() filters: ReportFiltersDto,
+    @CurrentUser() user: AuthenticatedUser,
+    @Res() res: Response,
+  ) {
+    const rows = await this.hrControl.correctedPunches(filters, user);
+    if (filters.format === 'excel') {
+      this.sendExcel(res, await this.excel.correctedPunches(rows), 'fichadas-corregidas.xlsx');
+      return;
+    }
+    res.json(rows);
+  }
+
+  @Get('employees-without-schedule')
+  async getEmployeesWithoutSchedule(
+    @Query() filters: ReportFiltersDto,
+    @CurrentUser() user: AuthenticatedUser,
+    @Res() res: Response,
+  ) {
+    const rows = await this.hrControl.employeesWithoutSchedule(filters, user);
+    if (filters.format === 'excel') {
+      this.sendExcel(res, await this.excel.employeesWithoutSchedule(rows), 'empleados-sin-horario.xlsx');
+      return;
+    }
+    res.json(rows);
+  }
+
+  @Get('employees-without-punches')
+  async getEmployeesWithoutPunches(
+    @Query() filters: ReportFiltersDto,
+    @CurrentUser() user: AuthenticatedUser,
+    @Res() res: Response,
+  ) {
+    const rows = await this.hrControl.employeesWithoutPunches(filters, user);
+    if (filters.format === 'excel') {
+      this.sendExcel(res, await this.excel.employeesWithoutPunches(rows), 'empleados-sin-fichadas.xlsx');
       return;
     }
     res.json(rows);

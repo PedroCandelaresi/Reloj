@@ -5,12 +5,15 @@ import {
   approveAttendanceRequest,
   cancelAttendanceRequest,
   createAttendanceRequest,
+  deleteAttendanceRequestAttachment,
   rejectAttendanceRequest,
   type AttendanceRequestInput,
+  uploadAttendanceRequestAttachment,
 } from '@/lib/api';
 
 export interface AttendanceRequestActionResult {
   ok?: true;
+  requestId?: string;
   error?: string;
 }
 
@@ -20,13 +23,33 @@ function getErrorMessage(error: unknown, fallback: string) {
 
 export async function createAttendanceRequestAction(input: AttendanceRequestInput): Promise<AttendanceRequestActionResult> {
   try {
-    await createAttendanceRequest(input);
+    const request = await createAttendanceRequest(input);
     revalidatePath('/attendance/requests');
     revalidatePath('/reports/day-summaries');
     revalidatePath('/reports/monthly-summary');
-    return { ok: true };
+    return { ok: true, requestId: request.id };
   } catch (error) {
     return { error: getErrorMessage(error, 'No se pudo crear la solicitud.') };
+  }
+}
+
+export async function uploadAttendanceRequestAttachmentAction(id: string, formData: FormData): Promise<AttendanceRequestActionResult> {
+  try {
+    await uploadAttendanceRequestAttachment(id, formData);
+    revalidatePath('/attendance/requests');
+    return { ok: true };
+  } catch (error) {
+    return { error: getErrorMessage(error, 'No se pudo subir el adjunto.') };
+  }
+}
+
+export async function deleteAttendanceRequestAttachmentAction(id: string, attachmentId: string): Promise<AttendanceRequestActionResult> {
+  try {
+    await deleteAttendanceRequestAttachment(id, attachmentId);
+    revalidatePath('/attendance/requests');
+    return { ok: true };
+  } catch (error) {
+    return { error: getErrorMessage(error, 'No se pudo eliminar el adjunto.') };
   }
 }
 

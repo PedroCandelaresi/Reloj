@@ -12,6 +12,8 @@ export function ReportFilters({
   employeeId,
   deviceId,
   companyId,
+  justification,
+  showJustificationFilter = false,
   month,
   year,
   mode = 'range',
@@ -24,6 +26,8 @@ export function ReportFilters({
   employeeId?: string;
   deviceId?: string;
   companyId?: string;
+  justification?: string;
+  showJustificationFilter?: boolean;
   month?: string;
   year?: string;
   mode?: 'range' | 'month';
@@ -116,6 +120,23 @@ export function ReportFilters({
                 {getCompanyDeviceName(device)}
               </option>
             ))}
+          </select>
+        </div>
+      )}
+
+      {showJustificationFilter && (
+        <div>
+          <label className="mb-1 block text-xs" style={{ color: 'var(--text-muted)' }}>Justificación</label>
+          <select
+            name="justification"
+            defaultValue={justification || 'all'}
+            className="min-w-48 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
+          >
+            <option value="all">Todas</option>
+            <option value="justified">Justificadas</option>
+            <option value="unjustified">Sin justificar</option>
+            <option value="pending">Pendientes de revisión</option>
           </select>
         </div>
       )}

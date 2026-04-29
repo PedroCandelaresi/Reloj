@@ -80,6 +80,8 @@ export interface MonthlySummaryDay {
   isWeekend: boolean;
   hasIncompleteRecord: boolean;
   justificationStatus?: 'none' | 'pending' | 'approved' | 'rejected';
+  justificationTypeName?: string | null;
+  attachmentCount?: number;
   status: MonthlySummaryStatus;
 }
 
@@ -88,6 +90,11 @@ export interface MonthlySummaryRow {
   userId: string;
   year: number;
   month: number;
+  workDaysCount?: number;
+  presentDaysCount?: number;
+  absentDaysCount?: number;
+  justifiedAbsentDaysCount?: number;
+  attendancePercentage?: number | null;
   daysWithRecords: number;
   presentDays: number;
   absentDays: number;

@@ -40,6 +40,9 @@ export class AttendanceRequest {
   @Column()
   type: AttendanceRequestType;
 
+  @Column({ name: 'justification_type_id', type: 'uuid', nullable: true })
+  justificationTypeId: string | null;
+
   @Column({ default: 'pending' })
   status: AttendanceRequestStatus;
 

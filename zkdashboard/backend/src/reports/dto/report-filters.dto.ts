@@ -40,4 +40,8 @@ export class ReportFiltersDto {
   @IsNumberString()
   @IsOptional()
   minLateMinutes?: string;
+
+  @IsIn(['all', 'justified', 'unjustified', 'pending'])
+  @IsOptional()
+  justification?: 'all' | 'justified' | 'unjustified' | 'pending';
 }
