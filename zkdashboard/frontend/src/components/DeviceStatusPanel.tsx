@@ -58,17 +58,17 @@ export function DeviceStatusPanel({
         </div>
       )}
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+      <div style={{ borderTop: '1px solid var(--border)' }}>
+        <table className="w-full table-fixed text-sm">
           <thead>
             <tr className="table-header-row text-xs uppercase">
-              <th className="px-6 py-4 text-left font-semibold">Reloj</th>
-              <th className="px-6 py-4 text-left font-semibold">Modelo</th>
-              <th className="px-6 py-4 text-left font-semibold">Estado del reloj</th>
-              <th className="px-6 py-4 text-left font-semibold">Última comunicación</th>
-              <th className="px-6 py-4 text-left font-semibold">Última sincronización</th>
-              <th className="px-6 py-4 text-left font-semibold">Tareas del reloj</th>
-              {canSync && <th className="px-6 py-4 text-right font-semibold">Acción</th>}
+              <th className="w-[18%] px-4 py-5 text-left font-semibold">Reloj</th>
+              <th className="w-[12%] px-4 py-5 text-left font-semibold">Modelo</th>
+              <th className="w-[15%] px-4 py-5 text-left font-semibold">Estado</th>
+              <th className="w-[18%] px-4 py-5 text-left font-semibold">Comunicación</th>
+              <th className="w-[17%] px-4 py-5 text-left font-semibold">Sincronización</th>
+              <th className="w-[10%] px-4 py-5 text-left font-semibold">Tareas</th>
+              {canSync && <th className="w-[10%] px-4 py-5 text-right font-semibold">Acción</th>}
             </tr>
           </thead>
           <tbody>
@@ -84,28 +84,28 @@ export function DeviceStatusPanel({
                   onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--row-hover)')}
                   onMouseLeave={(e) => (e.currentTarget.style.background = '')}
                 >
-                  <td className="px-6 py-4 font-medium" style={{ color: 'var(--text-primary)' }}>{getCompanyDeviceName(device)}</td>
-                  <td className="px-6 py-4" style={{ color: 'var(--text-secondary)' }}>{getCompanyDeviceModel(device)}</td>
-                  <td className="px-6 py-4">
+                  <td className="break-words px-4 py-5 font-medium" style={{ color: 'var(--text-primary)' }}>{getCompanyDeviceName(device)}</td>
+                  <td className="px-4 py-5" style={{ color: 'var(--text-secondary)' }}>{getCompanyDeviceModel(device)}</td>
+                  <td className="px-4 py-5">
                     <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${getDeviceStatusClasses(device.computedState?.state || device.status)}`}>
                       {getDeviceStatusLabel(device.computedState?.state || device.status)}
                     </span>
                   </td>
-                  <td className="px-6 py-4" style={{ color: 'var(--text-muted)' }}>{formatLastCommunication(device)}</td>
-                  <td className="px-6 py-4" style={{ color: 'var(--text-muted)' }}>{formatDate(device.lastSyncAt)}</td>
-                  <td className="px-6 py-4" style={{ color: 'var(--text-secondary)' }}>
+                  <td className="px-4 py-5" style={{ color: 'var(--text-muted)' }}>{formatLastCommunication(device)}</td>
+                  <td className="px-4 py-5" style={{ color: 'var(--text-muted)' }}>{formatDate(device.lastSyncAt)}</td>
+                  <td className="px-4 py-5" style={{ color: 'var(--text-secondary)' }}>
                     <p>{device.pendingCommandsCount} pendientes</p>
                     <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{device.failedCommandsCount ?? 0} fallidos</p>
                   </td>
                   {canSync && (
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-4 py-5 text-right">
                       <button
                         type="button"
                         onClick={() => forceSync(device)}
                         disabled={isPending || device.isActive === false}
                         className="rounded-lg bg-blue-600 hover:bg-blue-700 px-3 py-2 text-xs font-medium text-white disabled:opacity-60 transition-colors"
                       >
-                        Pedir fichadas ahora
+                        Pedir fichadas
                       </button>
                     </td>
                   )}

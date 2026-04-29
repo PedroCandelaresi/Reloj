@@ -48,7 +48,28 @@ export function getCompanyDeviceName(device: DeviceLike) {
 }
 
 export function getCompanyDeviceModel(device: DeviceLike) {
-  return device.model || device.modelName || device.deviceModel || 'Modelo no informado';
+  const explicitModel = device.model || device.modelName || device.deviceModel;
+  if (explicitModel) return formatDeviceModel(explicitModel);
+
+  const serialModel = inferModelFromSerial(device.serialNumber);
+  return serialModel || 'Modelo no informado';
+}
+
+function inferModelFromSerial(serialNumber?: string | null) {
+  if (!serialNumber) return null;
+  const normalized = serialNumber.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (normalized.includes('MB360')) return 'MB-360';
+  if (normalized.includes('MB460')) return 'MB-460';
+  if (normalized.includes('MB560')) return 'MB-560';
+  return null;
+}
+
+function formatDeviceModel(model: string) {
+  const normalized = model.trim();
+  if (/^MB\s*-?\s*360$/i.test(normalized)) return 'MB-360';
+  if (/^MB\s*-?\s*460$/i.test(normalized)) return 'MB-460';
+  if (/^MB\s*-?\s*560$/i.test(normalized)) return 'MB-560';
+  return normalized;
 }
 
 export function getDeviceStatusLabel(status?: DeviceStatus | string | null) {

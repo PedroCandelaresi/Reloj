@@ -34,6 +34,61 @@ const ROLE_LABELS: Record<string, string> = {
   read_only: 'Solo lectura',
 };
 
+function employeeLabel(employee?: CompanyUser['employee'] | Employee | null) {
+  if (!employee) return 'Sin empleado seleccionado';
+  return `${employee.apellido}, ${employee.nombre} · N° de usuario/DNI ${employee.id}`;
+}
+
+function userEmployeeLinkStatus(user: CompanyUser) {
+  const userEmployeeId = user.user?.employeeId ?? null;
+  const employeeId = user.employee?.id ?? null;
+  if (userEmployeeId && employeeId && userEmployeeId === employeeId) {
+    return {
+      label: 'Vínculo establecido',
+      detail: `El usuario ingresa asociado al DNI/N° ${employeeId}.`,
+      tone: 'success' as const,
+    };
+  }
+  if (employeeId && !userEmployeeId) {
+    return {
+      label: 'Empleado asignado',
+      detail: `Figura ${employeeId}, pero falta confirmar el vínculo del usuario.`,
+      tone: 'warning' as const,
+    };
+  }
+  if (userEmployeeId && !employeeId) {
+    return {
+      label: 'Revisar vínculo',
+      detail: `El usuario apunta al DNI/N° ${userEmployeeId}, pero no se encontró el empleado.`,
+      tone: 'warning' as const,
+    };
+  }
+  return {
+    label: 'Sin empleado vinculado',
+    detail: 'Este acceso no está asociado a un DNI/N° de empleado.',
+    tone: 'danger' as const,
+  };
+}
+
+function LinkStatusBadge({ status }: { status: ReturnType<typeof userEmployeeLinkStatus> }) {
+  const style =
+    status.tone === 'success'
+      ? { background: 'var(--brand-soft)', color: 'var(--brand-text)' }
+      : status.tone === 'warning'
+        ? { background: 'rgba(245,158,11,0.14)', color: '#b45309' }
+        : { background: 'var(--danger-soft)', color: 'var(--danger-text)' };
+  return (
+    <div>
+      <span className="inline-flex rounded-full px-2.5 py-1 text-xs font-medium" style={style}>
+        {status.label}
+      </span>
+      <p className="mt-1 text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+        {status.detail}
+      </p>
+    </div>
+  );
+}
+
 export function AdminCompanyDetailPanel({
   company,
   employees,
@@ -251,6 +306,9 @@ export function AdminCompanyDetailPanel({
               <p className="text-sm font-medium" style={{ color: 'var(--brand-text)' }}>
                 {editingUserId ? 'Editar acceso' : 'Crear acceso'}
               </p>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                El acceso queda vinculado al empleado seleccionado. Ese vínculo permite relacionar usuario, DNI/N° de usuario y permisos dentro de la empresa.
+              </p>
               {formError && (
                 <p className="text-sm" style={{ color: 'var(--danger-text)' }}>{formError}</p>
               )}
@@ -263,10 +321,15 @@ export function AdminCompanyDetailPanel({
                   <option value="">Seleccionar empleado...</option>
                   {employees.map((emp) => (
                     <option key={emp.id} value={emp.id}>
-                      {emp.apellido}, {emp.nombre} — {emp.id}
+                      {employeeLabel(emp)}
                     </option>
                   ))}
                 </select>
+              )}
+              {userForm.employeeId && (
+                <div className="rounded-lg border px-3 py-2 text-xs" style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
+                  Se va a vincular con: {employeeLabel(employees.find((employee) => employee.id === userForm.employeeId))}
+                </div>
               )}
               <div className="grid grid-cols-2 gap-3">
                 <input
@@ -321,6 +384,7 @@ export function AdminCompanyDetailPanel({
                 <tr className="text-xs uppercase" style={{ borderBottom: '1px solid var(--border)', color: 'var(--text-muted)' }}>
                   <th className="py-2 text-left">Usuario</th>
                   <th className="py-2 text-left">Empleado</th>
+                  <th className="py-2 text-left">Vínculo DNI/usuario</th>
                   <th className="py-2 text-left">Rol</th>
                   <th className="py-2 text-right">Acciones</th>
                 </tr>
@@ -329,7 +393,17 @@ export function AdminCompanyDetailPanel({
                 {users.map((u) => (
                   <tr key={u.id} className="border-t" style={{ borderColor: 'var(--border)' }}>
                     <td className="py-2.5 font-medium" style={{ color: 'var(--text-primary)' }}>{u.user?.username ?? '—'}</td>
-                    <td className="py-2.5" style={{ color: 'var(--text-muted)' }}>{u.employee ? `${u.employee.apellido}, ${u.employee.nombre}` : '—'}</td>
+                    <td className="py-2.5" style={{ color: 'var(--text-muted)' }}>
+                      {u.employee ? (
+                        <div>
+                          <p style={{ color: 'var(--text-secondary)' }}>{u.employee.apellido}, {u.employee.nombre}</p>
+                          <p className="text-xs">DNI/N°: {u.employee.id}</p>
+                        </div>
+                      ) : '—'}
+                    </td>
+                    <td className="py-2.5">
+                      <LinkStatusBadge status={userEmployeeLinkStatus(u)} />
+                    </td>
                     <td className="py-2.5">
                       <span className="inline-flex rounded-full px-2 py-0.5 text-xs font-medium" style={{ background: 'var(--blue-soft)', color: 'var(--blue-text)' }}>
                         {ROLE_LABELS[u.role] ?? u.role}

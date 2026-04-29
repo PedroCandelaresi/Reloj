@@ -358,7 +358,7 @@ export function EmployeesManagerContent({
           </div>
         )}
 
-        <div className="mx-6 mt-6 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <div className="px-6 py-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <label className="block max-w-md flex-1 text-sm">
             <span className="mb-1 block font-medium" style={{ color: 'var(--text-secondary)' }}>Buscar empleado</span>
             <input
@@ -374,15 +374,15 @@ export function EmployeesManagerContent({
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+        <div style={{ borderTop: '1px solid var(--border)' }}>
+          <table className="w-full table-fixed text-sm">
             <thead>
               <tr className="table-header-row text-xs uppercase">
-                <th className="px-6 py-4 text-left font-semibold">Empleado</th>
-                <th className="px-6 py-4 text-left font-semibold">Contacto</th>
-                <th className="px-6 py-4 text-left font-semibold">Horario</th>
-                <th className="px-6 py-4 text-left font-semibold">Perfil</th>
-                {canManage && <th className="px-6 py-4 text-right font-semibold">Acciones</th>}
+                <th className="w-[28%] px-6 py-5 text-left font-semibold">Empleado</th>
+                <th className="w-[25%] px-6 py-5 text-left font-semibold">Contacto</th>
+                <th className="w-[16%] px-6 py-5 text-left font-semibold">Horario</th>
+                <th className="w-[16%] px-6 py-5 text-left font-semibold">Perfil</th>
+                {canManage && <th className="w-[15%] px-6 py-5 text-right font-semibold">Acciones</th>}
               </tr>
             </thead>
             <tbody>
@@ -405,35 +405,35 @@ export function EmployeesManagerContent({
                     onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--row-hover)')}
                     onMouseLeave={(e) => (e.currentTarget.style.background = '')}
                   >
-                    <td className="px-6 py-4">
-                      <div className="font-medium" style={{ color: 'var(--text-primary)' }}>{employee.apellido}, {employee.nombre}</div>
+                    <td className="px-6 py-5 align-top">
+                      <div className="break-words font-medium" style={{ color: 'var(--text-primary)' }}>{employee.apellido}, {employee.nombre}</div>
                       <div className="mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>N° de usuario: {employee.id}</div>
                     </td>
-                    <td className="px-6 py-4" style={{ color: 'var(--text-secondary)' }}>
-                      <div>{employee.telefono || 'Sin teléfono'}</div>
-                      <div className="mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>{employee.email || 'Sin email'}</div>
+                    <td className="px-6 py-5 align-top" style={{ color: 'var(--text-secondary)' }}>
+                      <div className="break-words">{employee.telefono || 'Sin teléfono'}</div>
+                      <div className="mt-1 break-words text-xs" style={{ color: 'var(--text-muted)' }}>{employee.email || 'Sin email'}</div>
                     </td>
-                    <td className="px-6 py-4" style={{ color: 'var(--text-secondary)' }}>
+                    <td className="px-6 py-5 align-top" style={{ color: 'var(--text-secondary)' }}>
                       {employee.entryTime || employee.exitTime ? (
                         <span>{employee.entryTime || '--:--'} a {employee.exitTime || '--:--'}</span>
                       ) : (
                         <span style={{ color: 'var(--text-muted)' }}>Usa el perfil asignado</span>
                       )}
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-5 align-top">
                       {employee.scheduleProfile?.name ? (
-                        <span className="rounded-full px-3 py-1 text-xs font-medium" style={{ background: 'var(--brand-soft)', color: 'var(--brand-text)' }}>
+                        <span className="inline-flex max-w-full rounded-full px-3 py-1 text-xs font-medium" style={{ background: 'var(--brand-soft)', color: 'var(--brand-text)' }}>
                           {employee.scheduleProfile.name}
                         </span>
                       ) : (
-                        <span className="rounded-full px-3 py-1 text-xs font-medium" style={{ background: 'rgba(245,158,11,0.14)', color: '#b45309' }}>
+                        <span className="inline-flex rounded-full px-3 py-1 text-xs font-medium" style={{ background: 'rgba(245,158,11,0.14)', color: '#b45309' }}>
                           Sin horario
                         </span>
                       )}
                     </td>
                     {canManage && (
-                      <td className="px-6 py-4">
-                        <div className="flex flex-wrap justify-end gap-2">
+                      <td className="px-6 py-5 align-top">
+                        <div className="flex flex-col items-stretch gap-2 xl:flex-row xl:justify-end">
                           <button type="button" onClick={() => openEdit(employee)}
                             className="rounded-lg px-3 py-2 text-xs font-medium transition-colors" style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
                             Editar
@@ -510,15 +510,15 @@ export function EmployeesManagerContent({
               {isReconciliationLoading && <span>Cargando...</span>}
             </div>
 
-            <div className="mt-4 overflow-x-auto rounded-lg" style={{ border: '1px solid var(--border)' }}>
-              <table className="w-full text-sm">
+            <div className="mt-5 rounded-lg" style={{ border: '1px solid var(--border)' }}>
+              <table className="w-full table-fixed text-sm">
                 <thead>
                   <tr className="table-header-row text-xs uppercase">
-                    <th className="px-4 py-3 text-left font-semibold">N° de usuario</th>
-                    <th className="px-4 py-3 text-left font-semibold">Nombre en reloj</th>
-                    <th className="px-4 py-3 text-left font-semibold">Empleado del sistema</th>
-                    <th className="px-4 py-3 text-left font-semibold">Estado</th>
-                    <th className="px-4 py-3 text-right font-semibold">Acción</th>
+                    <th className="w-[18%] px-4 py-4 text-left font-semibold">N° de usuario</th>
+                    <th className="w-[22%] px-4 py-4 text-left font-semibold">Nombre en reloj</th>
+                    <th className="w-[24%] px-4 py-4 text-left font-semibold">Empleado del sistema</th>
+                    <th className="w-[18%] px-4 py-4 text-left font-semibold">Estado</th>
+                    <th className="w-[18%] px-4 py-4 text-right font-semibold">Acción</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -537,17 +537,17 @@ export function EmployeesManagerContent({
                   ) : (
                     reconciliationRows.map((row) => (
                       <tr key={`${row.status}-${row.pin}`} className="border-t" style={{ borderColor: 'var(--border)' }}>
-                        <td className="px-4 py-3 font-medium" style={{ color: 'var(--text-primary)' }}>{row.pin}</td>
-                        <td className="px-4 py-3" style={{ color: 'var(--text-secondary)' }}>
+                        <td className="break-words px-4 py-4 font-medium" style={{ color: 'var(--text-primary)' }}>{row.pin}</td>
+                        <td className="break-words px-4 py-4" style={{ color: 'var(--text-secondary)' }}>
                           {row.deviceUser?.name || '—'}
                         </td>
-                        <td className="px-4 py-3" style={{ color: 'var(--text-secondary)' }}>
+                        <td className="break-words px-4 py-4" style={{ color: 'var(--text-secondary)' }}>
                           {row.employee ? `${row.employee.apellido}, ${row.employee.nombre}` : '—'}
                         </td>
-                        <td className="px-4 py-3" style={{ color: 'var(--text-muted)' }}>
+                        <td className="px-4 py-4" style={{ color: 'var(--text-muted)' }}>
                           {RECONCILIATION_STATUS_LABELS[row.status]}
                         </td>
-                        <td className="px-4 py-3 text-right">
+                        <td className="px-4 py-4 text-right">
                           {row.status === 'system_only' && row.employee && canSyncDeviceUsers ? (
                             <button
                               type="button"
