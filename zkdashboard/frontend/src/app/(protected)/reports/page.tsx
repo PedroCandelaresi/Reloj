@@ -28,6 +28,11 @@ export default async function ReportsHubPage() {
             description="Totales del mes por empleado."
           />
           <ReportCard
+            href="/reports/monthly-closing"
+            title="Cierre mensual"
+            description="Resumen de asistencia para revisar el mes antes de liquidar sueldos."
+          />
+          <ReportCard
             href="/reports/day-summaries"
             title="Resumen diario calculado"
             description="Validación del motor diario con estado, fichadas y minutos estimados."

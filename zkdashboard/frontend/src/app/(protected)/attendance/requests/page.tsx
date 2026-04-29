@@ -9,6 +9,7 @@ import {
 } from '@/lib/api';
 import { todayArgentinaDateKey } from '@/lib/argentina-date';
 import { requireCurrentSession } from '@/lib/session';
+import { humanizeActionError } from '@/lib/ux-labels';
 
 interface PageProps {
   searchParams: Promise<{
@@ -37,12 +38,19 @@ export default async function AttendanceRequestsPage({ searchParams }: PageProps
     dateFrom: sp.dateFrom || today,
     dateTo: sp.dateTo || today,
   };
-  const [requests, auditLogs, userOptions] = await Promise.all([
+  const [requestsResult, auditLogsResult, userOptionsResult, justificationTypesResult] = await Promise.allSettled([
     getAttendanceRequests(params),
     getAttendanceAuditLog({ dateFrom: params.dateFrom, dateTo: params.dateTo, employeeId: params.employeeId }),
     getDistinctUsers(),
+    getAttendanceJustificationTypes(),
   ]);
-  const justificationTypes = await getAttendanceJustificationTypes();
+  const requests = requestsResult.status === 'fulfilled' ? requestsResult.value : [];
+  const auditLogs = auditLogsResult.status === 'fulfilled' ? auditLogsResult.value : [];
+  const userOptions = userOptionsResult.status === 'fulfilled' ? userOptionsResult.value : [];
+  const justificationTypes = justificationTypesResult.status === 'fulfilled' ? justificationTypesResult.value : [];
+  const loadErrors = [requestsResult, auditLogsResult, userOptionsResult, justificationTypesResult]
+    .filter((result): result is PromiseRejectedResult => result.status === 'rejected')
+    .map((result) => humanizeActionError(result.reason instanceof Error ? result.reason.message : String(result.reason)));
 
   return (
     <>
@@ -55,6 +63,13 @@ export default async function AttendanceRequestsPage({ searchParams }: PageProps
             Fichadas manuales, correcciones y justificaciones con auditoría.
           </p>
         </div>
+
+        {loadErrors.length > 0 && (
+          <div className="mb-5 rounded-lg border px-4 py-3 text-sm" style={{ background: 'rgba(239,68,68,0.10)', borderColor: 'rgba(239,68,68,0.25)', color: '#b91c1c' }}>
+            <p className="font-semibold">No se pudo cargar toda la información de solicitudes.</p>
+            <p className="mt-1">{loadErrors[0]}</p>
+          </div>
+        )}
 
         <form action="/attendance/requests" className="card mb-6 grid grid-cols-1 gap-4 p-5 md:grid-cols-5">
           <label className="text-sm">

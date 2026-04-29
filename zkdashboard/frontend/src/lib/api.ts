@@ -923,6 +923,88 @@ export interface EmployeeWithoutPunchesReportRow {
   punchCount: 0;
 }
 
+export type MonthlyClosingStatus = 'ok' | 'review_required' | 'incomplete_data';
+
+export interface MonthlyClosingDay {
+  employeeId: string;
+  employeeName: string;
+  document: string;
+  date: string;
+  dayStatus: string;
+  firstPunch: string | null;
+  lastPunch: string | null;
+  workedMinutes: number;
+  expectedMinutes: number;
+  lateMinutes: number;
+  earlyDepartureMinutes: number;
+  overtimeMinutes: number;
+  justificationStatus: 'none' | 'pending' | 'approved' | 'rejected';
+  justificationTypeName: string | null;
+  attachmentCount: number;
+  observation: string;
+}
+
+export interface MonthlyClosingReportRow {
+  employeeId: string;
+  employeeName: string;
+  document: string;
+  workDaysCount: number;
+  presentDaysCount: number;
+  workedDaysCount: number;
+  absentDaysCount: number;
+  justifiedAbsentDaysCount: number;
+  unjustifiedAbsentDaysCount: number;
+  lateDaysCount: number;
+  justifiedLateDaysCount: number;
+  unjustifiedLateDaysCount: number;
+  earlyDepartureDaysCount: number;
+  workedMinutes: number;
+  expectedMinutes: number;
+  overtimeMinutes: number;
+  manualPunchesCount: number;
+  correctedPunchesCount: number;
+  pendingJustificationsCount: number;
+  pendingAbsenceJustificationsCount: number;
+  pendingLateJustificationsCount: number;
+  attendancePercentage: number | null;
+  observations: string[];
+  status: MonthlyClosingStatus;
+  days: MonthlyClosingDay[];
+}
+
+export interface MonthlyClosingReport {
+  company: {
+    id: string | null;
+    name: string;
+  };
+  period: {
+    year: number;
+    month: number;
+    label: string;
+  };
+  coverage: {
+    source: 'summaries';
+    expectedDays: number;
+    calculatedDays: number;
+    expectedSummaryDays: number;
+    calculatedSummaryDays: number;
+    missingSummaryDays: number;
+    isComplete: boolean;
+    hasEmployees: boolean;
+  };
+  totals: {
+    employees: number;
+    workedDays: number;
+    justifiedAbsences: number;
+    unjustifiedAbsences: number;
+    lateDays: number;
+    earlyDepartureDays: number;
+    manualPunches: number;
+    correctedPunches: number;
+  };
+  rows: MonthlyClosingReportRow[];
+}
+
 export const VERIFY_LABELS: Record<number, string> = {
   0: 'Contraseña',
   1: 'Huella',
@@ -1276,6 +1358,14 @@ export function getMonthlySummaryReport(params: MonthlySummaryParams) {
 
 export function exportMonthlySummaryReport(params: MonthlySummaryParams) {
   return `/api/reports/export${buildReportQuery({ ...params, report: 'monthly-summary' })}`;
+}
+
+export function getMonthlyClosingReport(params: MonthlySummaryParams) {
+  return apiFetch<MonthlyClosingReport>(`/reports/monthly-closing${buildReportQuery(params)}`);
+}
+
+export function exportMonthlyClosingReport(params: MonthlySummaryParams) {
+  return `/api/reports/export${buildReportQuery({ ...params, report: 'monthly-closing' })}`;
 }
 
 export function getAttendanceDaySummaries(params: AttendanceSummaryParams) {

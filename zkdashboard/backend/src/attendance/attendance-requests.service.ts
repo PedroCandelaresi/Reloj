@@ -844,18 +844,27 @@ export class AttendanceRequestsService {
 
   private async toRequestViews(requests: AttendanceRequest[]): Promise<AttendanceRequestView[]> {
     if (requests.length === 0) return [];
-    const counts = await this.attachmentsRepo
-      .createQueryBuilder('attachment')
-      .select('attachment.attendance_request_id', 'requestId')
-      .addSelect('COUNT(*)', 'count')
-      .where('attachment.attendance_request_id IN (:...requestIds)', { requestIds: requests.map((request) => request.id) })
-      .groupBy('attachment.attendance_request_id')
-      .getRawMany();
+    const counts = await this.getAttachmentCountsForRequests(requests.map((request) => request.id));
     const countsByRequest = new Map(counts.map((row) => [String(row.requestId), Number(row.count)]));
     return requests.map((request) => {
       (request as AttendanceRequest & { attachmentCount?: number }).attachmentCount = countsByRequest.get(request.id) ?? 0;
       return this.toRequestView(request);
     });
+  }
+
+  private async getAttachmentCountsForRequests(requestIds: string[]): Promise<Array<{ requestId: string; count: string | number }>> {
+    try {
+      return await this.attachmentsRepo
+        .createQueryBuilder('attachment')
+        .select('attachment.attendance_request_id', 'requestId')
+        .addSelect('COUNT(*)', 'count')
+        .where('attachment.attendance_request_id IN (:...requestIds)', { requestIds })
+        .groupBy('attachment.attendance_request_id')
+        .getRawMany();
+    } catch (error) {
+      this.logger.warn(`No se pudo obtener el conteo de adjuntos para solicitudes. error=${this.errorMessage(error)}`);
+      return [];
+    }
   }
 
   private toAuditView(log: AttendanceAuditLog): AttendanceAuditLogView {

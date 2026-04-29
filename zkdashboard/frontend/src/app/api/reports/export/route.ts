@@ -16,6 +16,10 @@ const REPORTS: Record<string, { path: string; filename: string }> = {
     path: '/reports/monthly-summary',
     filename: 'resumen-mensual.xlsx',
   },
+  'monthly-closing': {
+    path: '/reports/monthly-closing',
+    filename: 'cierre-mensual.xlsx',
+  },
   'late-arrivals': {
     path: '/reports/late-arrivals',
     filename: 'tardanzas.xlsx',

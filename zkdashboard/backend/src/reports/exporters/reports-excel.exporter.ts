@@ -14,6 +14,7 @@ import {
   EmployeeWithoutScheduleReportRow,
   ManualPunchReportRow,
 } from '../services/hr-control-reports.service';
+import { MonthlyClosingReport } from '../services/monthly-closing.service';
 
 @Injectable()
 export class ReportsExcelExporter {
@@ -358,6 +359,99 @@ export class ReportsExcelExporter {
     return this.writeBuffer(wb);
   }
 
+  async monthlyClosing(report: MonthlyClosingReport): Promise<Buffer> {
+    const wb = new ExcelJS.Workbook();
+    const summary = wb.addWorksheet('Resumen');
+    summary.columns = [
+      { header: 'Empleado', key: 'employee', width: 28 },
+      { header: 'Documento / N° de usuario', key: 'document', width: 24 },
+      { header: 'Días laborales', key: 'workDaysCount', width: 16 },
+      { header: 'Días trabajados', key: 'workedDaysCount', width: 16 },
+      { header: 'Ausencias justificadas', key: 'justifiedAbsentDaysCount', width: 24 },
+      { header: 'Ausencias sin justificar', key: 'unjustifiedAbsentDaysCount', width: 24 },
+      { header: 'Tardanzas justificadas', key: 'justifiedLateDaysCount', width: 24 },
+      { header: 'Tardanzas sin justificar', key: 'unjustifiedLateDaysCount', width: 24 },
+      { header: 'Justificaciones pendientes', key: 'pendingJustificationsCount', width: 26 },
+      { header: 'Salidas tempranas', key: 'earlyDepartureDaysCount', width: 20 },
+      { header: 'Horas trabajadas', key: 'workedHours', width: 18 },
+      { header: 'Horas esperadas', key: 'expectedHours', width: 18 },
+      { header: 'Horas extra simples', key: 'overtimeHours', width: 20 },
+      { header: 'Presentismo %', key: 'attendancePercentage', width: 16 },
+      { header: 'Fichadas manuales', key: 'manualPunchesCount', width: 20 },
+      { header: 'Fichadas corregidas', key: 'correctedPunchesCount', width: 22 },
+      { header: 'Estado', key: 'status', width: 18 },
+      { header: 'Observaciones', key: 'observations', width: 60 },
+    ];
+
+    report.rows.forEach((row) => {
+      summary.addRow({
+        employee: row.employeeName,
+        document: row.document,
+        workDaysCount: row.workDaysCount,
+        workedDaysCount: row.workedDaysCount,
+        justifiedAbsentDaysCount: row.justifiedAbsentDaysCount,
+        unjustifiedAbsentDaysCount: row.unjustifiedAbsentDaysCount,
+        justifiedLateDaysCount: row.justifiedLateDaysCount,
+        unjustifiedLateDaysCount: row.unjustifiedLateDaysCount,
+        pendingJustificationsCount: row.pendingJustificationsCount,
+        earlyDepartureDaysCount: row.earlyDepartureDaysCount,
+        workedHours: this.minutesToHours(row.workedMinutes),
+        expectedHours: this.minutesToHours(row.expectedMinutes),
+        overtimeHours: this.minutesToHours(row.overtimeMinutes),
+        attendancePercentage: row.attendancePercentage === null ? 'Sin días laborales' : `${row.attendancePercentage}%`,
+        manualPunchesCount: row.manualPunchesCount,
+        correctedPunchesCount: row.correctedPunchesCount,
+        status: this.monthlyClosingStatusLabel(row.status),
+        observations: row.observations.join(' · '),
+      });
+    });
+    this.styleSheet(summary);
+
+    const detail = wb.addWorksheet('Detalle diario');
+    detail.columns = [
+      { header: 'Empleado', key: 'employee', width: 28 },
+      { header: 'Documento / N° de usuario', key: 'document', width: 24 },
+      { header: 'Fecha', key: 'date', width: 14 },
+      { header: 'Estado del día', key: 'dayStatus', width: 22 },
+      { header: 'Primera fichada', key: 'firstPunch', width: 22 },
+      { header: 'Última fichada', key: 'lastPunch', width: 22 },
+      { header: 'Horas trabajadas', key: 'workedHours', width: 18 },
+      { header: 'Horas esperadas', key: 'expectedHours', width: 18 },
+      { header: 'Tardanza', key: 'lateMinutes', width: 12 },
+      { header: 'Salida temprana', key: 'earlyDepartureMinutes', width: 18 },
+      { header: 'Hora extra simple', key: 'overtimeMinutes', width: 18 },
+      { header: 'Justificación', key: 'justificationStatus', width: 22 },
+      { header: 'Tipo de justificación', key: 'justificationTypeName', width: 28 },
+      { header: 'Adjuntos', key: 'attachmentCount', width: 12 },
+      { header: 'Observación', key: 'observation', width: 44 },
+    ];
+
+    report.rows.forEach((row) => {
+      row.days.forEach((day) => {
+        detail.addRow({
+          employee: day.employeeName,
+          document: day.document,
+          date: day.date,
+          dayStatus: day.dayStatus,
+          firstPunch: formatArgentinaDateTime(day.firstPunch),
+          lastPunch: formatArgentinaDateTime(day.lastPunch),
+          workedHours: this.minutesToHours(day.workedMinutes),
+          expectedHours: this.minutesToHours(day.expectedMinutes),
+          lateMinutes: day.lateMinutes,
+          earlyDepartureMinutes: day.earlyDepartureMinutes,
+          overtimeMinutes: day.overtimeMinutes,
+          justificationStatus: this.justificationLabel(day.justificationStatus),
+          justificationTypeName: day.justificationTypeName ?? '',
+          attachmentCount: day.attachmentCount,
+          observation: day.observation,
+        });
+      });
+    });
+    this.styleSheet(detail);
+
+    return this.writeBuffer(wb);
+  }
+
   private employeeName(employee: { nombre: string; apellido: string }): string {
     return [employee.apellido, employee.nombre].filter(Boolean).join(', ') || 'Sin nombre';
   }
@@ -401,6 +495,23 @@ export class ReportsExcelExporter {
       default:
         return 'Sin justificar';
     }
+  }
+
+  private monthlyClosingStatusLabel(status: string): string {
+    switch (status) {
+      case 'ok':
+        return 'OK';
+      case 'review_required':
+        return 'Revisar';
+      case 'incomplete_data':
+        return 'Datos incompletos';
+      default:
+        return status;
+    }
+  }
+
+  private minutesToHours(minutes: number): number {
+    return Math.round((minutes / 60) * 100) / 100;
   }
 
   private styleSheet(sheet: ExcelJS.Worksheet): void {

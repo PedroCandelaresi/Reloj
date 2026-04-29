@@ -16,8 +16,10 @@ import { PairingService } from './services/pairing.service';
 import { ReportQueryService } from './services/report-query.service';
 import { AttendanceDaySummary } from '../attendance/entities/attendance-day-summary.entity';
 import { ScheduleProfile } from '../companies/schedule-profile.entity';
+import { Company } from '../companies/company.entity';
 import { Phase2ReportsService } from './services/phase2-reports.service';
 import { HrControlReportsService } from './services/hr-control-reports.service';
+import { MonthlyClosingService } from './services/monthly-closing.service';
 
 @Module({
   imports: [
@@ -29,6 +31,7 @@ import { HrControlReportsService } from './services/hr-control-reports.service';
       AttendanceJustificationType,
       AttendanceRequestAttachment,
       Employee,
+      Company,
       ScheduleProfile,
       AdminUser,
     ]),
@@ -43,6 +46,7 @@ import { HrControlReportsService } from './services/hr-control-reports.service';
     ReportQueryService,
     Phase2ReportsService,
     HrControlReportsService,
+    MonthlyClosingService,
   ],
   exports: [PairingService],
 })

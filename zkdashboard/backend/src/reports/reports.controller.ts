@@ -10,6 +10,7 @@ import { IncompleteRecordsService } from './services/incomplete-records.service'
 import { MonthlySummaryService } from './services/monthly-summary.service';
 import { Phase2ReportsService } from './services/phase2-reports.service';
 import { HrControlReportsService } from './services/hr-control-reports.service';
+import { MonthlyClosingService } from './services/monthly-closing.service';
 import { ReportsExcelExporter } from './exporters/reports-excel.exporter';
 
 @Controller('reports')
@@ -21,6 +22,7 @@ export class ReportsController {
     private readonly monthlySummary: MonthlySummaryService,
     private readonly phase2: Phase2ReportsService,
     private readonly hrControl: HrControlReportsService,
+    private readonly monthlyClosing: MonthlyClosingService,
     private readonly excel: ReportsExcelExporter,
   ) {}
 
@@ -188,5 +190,19 @@ export class ReportsController {
       return;
     }
     res.json(rows);
+  }
+
+  @Get('monthly-closing')
+  async getMonthlyClosing(
+    @Query() filters: MonthlySummaryDto,
+    @CurrentUser() user: AuthenticatedUser,
+    @Res() res: Response,
+  ) {
+    const report = await this.monthlyClosing.getReport(filters, user);
+    if (filters.format === 'excel') {
+      this.sendExcel(res, await this.excel.monthlyClosing(report), 'cierre-mensual.xlsx');
+      return;
+    }
+    res.json(report);
   }
 }
