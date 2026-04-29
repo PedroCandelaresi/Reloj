@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
@@ -7,8 +8,10 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Employee } from './employee.entity';
+import { EmployeeTimeBankLedger } from './employee-time-bank-ledger.entity';
 import { ScheduleProfile } from '../companies/schedule-profile.entity';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
+import { TimeBankAdjustmentDto } from './dto/time-bank-adjustment.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
 import { AuthenticatedUser } from '../auth/authenticated-user.interface';
 import { getCompanyScope } from '../auth/company-scope.util';
@@ -21,6 +24,8 @@ export class EmployeesService {
     private readonly repo: Repository<Employee>,
     @InjectRepository(ScheduleProfile)
     private readonly scheduleProfilesRepo: Repository<ScheduleProfile>,
+    @InjectRepository(EmployeeTimeBankLedger)
+    private readonly timeBankLedgerRepo: Repository<EmployeeTimeBankLedger>,
     private readonly devices: DevicesService,
   ) {}
 
@@ -192,6 +197,75 @@ export class EmployeesService {
       },
       message: `Empleado ${employee.id} encolado para enviar al reloj.`,
     };
+  }
+
+  async getTimeBank(
+    employeeId: string,
+    user: AuthenticatedUser,
+    dateFrom?: string,
+    dateTo?: string,
+  ) {
+    const employee = await this.findOne(employeeId, user);
+    if (!employee.companyId) {
+      throw new BadRequestException('El empleado no tiene empresa asignada.');
+    }
+
+    const qb = this.timeBankLedgerRepo
+      .createQueryBuilder('movement')
+      .where('movement.company_id = :companyId', { companyId: employee.companyId })
+      .andWhere('movement.employee_id = :employeeId', { employeeId: employee.id });
+
+    if (dateFrom) qb.andWhere('movement.date >= :dateFrom', { dateFrom });
+    if (dateTo) qb.andWhere('movement.date <= :dateTo', { dateTo });
+
+    const movements = await qb.orderBy('movement.date', 'ASC').addOrderBy('movement.created_at', 'ASC').getMany();
+    const totalCreditMinutes = movements.filter((movement) => movement.minutes > 0).reduce((total, movement) => total + movement.minutes, 0);
+    const totalDebitMinutes = movements.filter((movement) => movement.minutes < 0).reduce((total, movement) => total + Math.abs(movement.minutes), 0);
+
+    return {
+      employee: {
+        id: employee.id,
+        nombre: employee.nombre,
+        apellido: employee.apellido,
+      },
+      movements: movements.map((movement) => ({
+        id: movement.id,
+        date: movement.date,
+        type: movement.type,
+        minutes: movement.minutes,
+        source: movement.source,
+        reason: movement.reason,
+        createdAt: movement.createdAt,
+      })),
+      totalCreditMinutes,
+      totalDebitMinutes,
+      balanceMinutes: totalCreditMinutes - totalDebitMinutes,
+    };
+  }
+
+  async createTimeBankAdjustment(
+    employeeId: string,
+    dto: TimeBankAdjustmentDto,
+    user: AuthenticatedUser,
+  ) {
+    const employee = await this.findOne(employeeId, user);
+    if (!employee.companyId) {
+      throw new BadRequestException('El empleado no tiene empresa asignada.');
+    }
+    const signedMinutes = dto.type === 'debit' ? -dto.minutes : dto.minutes;
+    const entry = this.timeBankLedgerRepo.create({
+      companyId: employee.companyId,
+      employeeId: employee.id,
+      date: dto.date,
+      attendanceDaySummaryId: null,
+      type: dto.type,
+      minutes: signedMinutes,
+      source: 'manual_adjustment',
+      reason: dto.reason ?? null,
+      createdByUserId: user.id,
+    });
+
+    return this.timeBankLedgerRepo.save(entry);
   }
 
   private async findScopedEmployee(

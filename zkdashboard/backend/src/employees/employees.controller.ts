@@ -8,12 +8,14 @@ import {
   ParseIntPipe,
   Post,
   Put,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/auth.guard';
 import { CompanyAdminGuard } from '../auth/guards/company-admin.guard';
 import { EmployeesService } from './employees.service';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
+import { TimeBankAdjustmentDto } from './dto/time-bank-adjustment.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { AuthenticatedUser } from '../auth/authenticated-user.interface';
@@ -28,6 +30,19 @@ export class EmployeesController {
     return this.employees.findAll(user);
   }
 
+  // Accesible a todos los roles autenticados (incluye read_only) porque el banco de horas
+  // es información de consulta/auditoría. El scope de empresa está protegido por findOne.
+  // Solo company_admin y super_admin pueden crear ajustes (ver endpoint POST de abajo).
+  @Get(':id/time-bank')
+  getTimeBank(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
+  ) {
+    return this.employees.getTimeBank(id, user, dateFrom, dateTo);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
     return this.employees.findOne(id, user);
@@ -37,6 +52,16 @@ export class EmployeesController {
   @UseGuards(CompanyAdminGuard)
   create(@Body() dto: CreateEmployeeDto, @CurrentUser() user: AuthenticatedUser) {
     return this.employees.create(dto, user);
+  }
+
+  @Post(':id/time-bank/adjustments')
+  @UseGuards(CompanyAdminGuard)
+  createTimeBankAdjustment(
+    @Param('id') id: string,
+    @Body() dto: TimeBankAdjustmentDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.employees.createTimeBankAdjustment(id, dto, user);
   }
 
   @Post('device-sync/:deviceId/import')

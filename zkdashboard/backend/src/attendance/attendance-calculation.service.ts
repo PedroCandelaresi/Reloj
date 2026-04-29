@@ -10,8 +10,9 @@ import {
 import { Employee } from '../employees/employee.entity';
 import { Device } from '../devices/device.entity';
 import { Company } from '../companies/company.entity';
-import { resolveScheduleForDate } from '../companies/schedule-resolution.util';
+import { ResolvedScheduleForDate, resolveScheduleForDate } from '../companies/schedule-resolution.util';
 import { Holiday } from './entities/holiday.entity';
+import { EmployeeTimeBankLedger } from '../employees/employee-time-bank-ledger.entity';
 import { AuthenticatedUser } from '../auth/authenticated-user.interface';
 import { CompanyRole } from '../companies/company-role.enum';
 import { PairingService } from '../reports/services/pairing.service';
@@ -86,6 +87,8 @@ export class AttendanceCalculationService {
     private readonly companiesRepo: Repository<Company>,
     @InjectRepository(Holiday)
     private readonly holidaysRepo: Repository<Holiday>,
+    @InjectRepository(EmployeeTimeBankLedger)
+    private readonly timeBankLedgerRepo: Repository<EmployeeTimeBankLedger>,
     private readonly pairing: PairingService,
   ) {}
 
@@ -178,7 +181,6 @@ export class AttendanceCalculationService {
       const employeeGroups = recordGroups.get(employee.id);
 
       for (const date of dates) {
-        const records = employeeGroups?.get(date) ?? [];
         const key = this.summaryKey(employee.id, date);
         const summary =
           existing.get(key) ??
@@ -195,7 +197,7 @@ export class AttendanceCalculationService {
         }
 
         const approvedJustification = this.approvedJustificationSnapshot(summary);
-        this.applyRecordsToSummary(summary, records, devicesById, employee, company, holidays.get(date) ?? null);
+        this.applyRecordsToSummary(summary, employeeGroups, devicesById, employee, company, holidays.get(date) ?? null);
         this.restoreApprovedJustification(summary, approvedJustification);
         if (summary.isAbsent) absentDays += 1;
         if (summary.hasIncompleteRecord) incompleteDays += 1;
@@ -208,7 +210,8 @@ export class AttendanceCalculationService {
     }
 
     if (toSave.length > 0) {
-      await this.summariesRepo.save(toSave);
+      const savedSummaries = await this.summariesRepo.save(toSave);
+      await this.syncAutomaticTimeBank(savedSummaries, employees);
     }
 
     return {
@@ -283,6 +286,7 @@ export class AttendanceCalculationService {
       .createQueryBuilder('employee')
       .leftJoinAndSelect('employee.scheduleProfile', 'scheduleProfile')
       .leftJoinAndSelect('scheduleProfile.dayRules', 'scheduleProfileDayRules')
+      .leftJoinAndSelect('scheduleProfileDayRules.intervals', 'scheduleProfileDayRuleIntervals')
       .where('employee.company_id = :companyId', { companyId });
 
     if (employeeId) {
@@ -307,8 +311,8 @@ export class AttendanceCalculationService {
       .createQueryBuilder('record')
       .where('record.company_id = :companyId', { companyId })
       .andWhere('record.user_id IN (:...employeeIds)', { employeeIds })
-      .andWhere('record.timestamp >= :dateFrom', { dateFrom: parseArgentinaDateStart(dateFrom) })
-      .andWhere('record.timestamp <= :dateTo', { dateTo: parseArgentinaDateEnd(dateTo) })
+      .andWhere('record.timestamp >= :dateFrom', { dateFrom: parseArgentinaDateStart(this.addDays(dateFrom, -1)) })
+      .andWhere('record.timestamp <= :dateTo', { dateTo: parseArgentinaDateEnd(this.addDays(dateTo, 1)) })
       .orderBy('record.user_id', 'ASC')
       .addOrderBy('record.timestamp', 'ASC')
       .getMany();
@@ -394,12 +398,14 @@ export class AttendanceCalculationService {
 
   private applyRecordsToSummary(
     summary: AttendanceDaySummary,
-    records: AttendanceRecord[],
+    employeeGroups: Map<string, AttendanceRecord[]> | undefined,
     devicesById: Map<number, Device>,
     employee: Employee,
     company: Company | null,
     holiday: Holiday | null,
   ): void {
+    const schedule = resolveScheduleForDate(employee, summary.date, company);
+    const records = this.recordsForSchedule(employeeGroups, summary.date, schedule);
     const pairing = this.pairing.summarize(
       records.map((record) => ({
         timestamp: record.timestamp,
@@ -409,13 +415,12 @@ export class AttendanceCalculationService {
     );
     const primaryDevice = this.resolvePrimaryDevice(records, devicesById);
     const hasRecords = pairing.punchCount > 0;
-    const schedule = resolveScheduleForDate(employee, summary.date, company);
     const isHoliday = Boolean(holiday && !holiday.isWorkable);
     const isWorkDay = schedule.isWorkday;
     const isWeekend = !isWorkDay && this.isArgentinaWeekend(summary.date);
-    const expectedEntry = schedule.entryTime ? this.dateTimeFor(summary.date, schedule.entryTime) : null;
-    const expectedExit = schedule.exitTime ? this.dateTimeFor(summary.date, schedule.exitTime) : null;
-    const workedMinutes = pairing.isIncomplete ? 0 : pairing.workedMinutes;
+    const expectedEntry = schedule.intervals[0]?.entryDateTime ?? null;
+    const expectedExit = schedule.intervals[schedule.intervals.length - 1]?.exitDateTime ?? null;
+    const workedMinutes = pairing.workedMinutes;
 
     summary.firstPunchAt = pairing.firstPunch;
     summary.lastPunchAt = pairing.lastPunch;
@@ -511,8 +516,103 @@ export class AttendanceCalculationService {
     return Math.max(Math.floor((expected.getTime() - actual.getTime()) / 60000) - tolerance, 0);
   }
 
-  private dateTimeFor(date: string, time: string): Date {
-    return new Date(`${date}T${time}:00.000-03:00`);
+  private recordsForSchedule(
+    employeeGroups: Map<string, AttendanceRecord[]> | undefined,
+    date: string,
+    schedule: ResolvedScheduleForDate,
+  ): AttendanceRecord[] {
+    if (!employeeGroups) {
+      return [];
+    }
+    if (schedule.intervals.length === 0) {
+      return employeeGroups.get(date) ?? [];
+    }
+
+    const firstInterval = schedule.intervals[0];
+    const lastInterval = schedule.intervals[schedule.intervals.length - 1];
+    const windowStart = new Date(firstInterval.entryDateTime.getTime() - 4 * 60 * 60 * 1000);
+    const windowEnd = new Date(lastInterval.exitDateTime.getTime() + 6 * 60 * 60 * 1000);
+    const candidates = [
+      ...(employeeGroups.get(this.addDays(date, -1)) ?? []),
+      ...(employeeGroups.get(date) ?? []),
+      ...(employeeGroups.get(this.addDays(date, 1)) ?? []),
+    ];
+
+    return candidates
+      .filter((record) => record.timestamp >= windowStart && record.timestamp <= windowEnd)
+      .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+  }
+
+  private async syncAutomaticTimeBank(
+    summaries: AttendanceDaySummary[],
+    employees: Employee[],
+  ): Promise<void> {
+    const summaryIds = summaries.map((summary) => summary.id).filter(Boolean);
+    if (summaryIds.length === 0) {
+      return;
+    }
+
+    await this.timeBankLedgerRepo
+      .createQueryBuilder()
+      .delete()
+      .where('attendance_day_summary_id IN (:...summaryIds)', { summaryIds })
+      .andWhere('source IN (:...sources)', { sources: ['overtime', 'deficit'] })
+      .execute();
+
+    const employeesById = new Map(employees.map((employee) => [employee.id, employee]));
+    const entries: EmployeeTimeBankLedger[] = [];
+
+    for (const summary of summaries) {
+      const employee = employeesById.get(summary.employeeId);
+      if (!employee || summary.hasIncompleteRecord) {
+        continue;
+      }
+      // timeBankEnabled y timeBankMode son propiedades del perfil, no dependen de la fecha,
+      // por lo que se leen directamente del perfil en lugar de recalcular el horario completo.
+      const profile = (employee as Employee & { scheduleProfile?: { timeBankEnabled?: boolean; timeBankMode?: string } }).scheduleProfile;
+      const timeBankEnabled = Boolean(profile?.timeBankEnabled);
+      const timeBankMode = timeBankEnabled ? (profile?.timeBankMode ?? 'overtime_only') : 'none';
+      if (!timeBankEnabled || timeBankMode === 'none') {
+        continue;
+      }
+      if (summary.overtimeMinutes > 0) {
+        entries.push(this.timeBankLedgerRepo.create({
+          companyId: summary.companyId,
+          employeeId: summary.employeeId,
+          date: summary.date,
+          attendanceDaySummaryId: summary.id,
+          type: 'credit',
+          minutes: summary.overtimeMinutes,
+          source: 'overtime',
+          reason: 'Horas extra simples generadas por recálculo de asistencia.',
+          createdByUserId: null,
+        }));
+      }
+      const deficitMinutes = Math.max(summary.expectedMinutes - summary.workedMinutes, 0);
+      if (timeBankMode === 'overtime_and_deficit' && summary.hasRecords && deficitMinutes > 0) {
+        entries.push(this.timeBankLedgerRepo.create({
+          companyId: summary.companyId,
+          employeeId: summary.employeeId,
+          date: summary.date,
+          attendanceDaySummaryId: summary.id,
+          type: 'debit',
+          minutes: -deficitMinutes,
+          source: 'deficit',
+          reason: 'Déficit de minutos generado por recálculo de asistencia.',
+          createdByUserId: null,
+        }));
+      }
+    }
+
+    if (entries.length > 0) {
+      await this.timeBankLedgerRepo.save(entries);
+    }
+  }
+
+  private addDays(date: string, amount: number): string {
+    const value = new Date(`${date}T12:00:00.000-03:00`);
+    value.setUTCDate(value.getUTCDate() + amount);
+    return value.toISOString().slice(0, 10);
   }
 
   private isArgentinaWeekend(date: string): boolean {

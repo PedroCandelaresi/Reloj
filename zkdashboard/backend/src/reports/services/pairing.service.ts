@@ -11,10 +11,7 @@ export class PairingService {
     const lastPunch = sorted.length > 0 ? sorted[sorted.length - 1].timestamp : null;
     const punchCount = sorted.length;
     const isIncomplete = punchCount === 1 || punchCount % 2 === 1;
-    const workedMinutes =
-      firstPunch && lastPunch && punchCount >= 2
-        ? Math.max(0, Math.floor((lastPunch.getTime() - firstPunch.getTime()) / 60000))
-        : 0;
+    const workedMinutes = this.sumWorkedPairs(sorted);
     const devices = [...new Set(sorted.map((record) => record.deviceSn).filter(Boolean))];
     const primaryDevice = this.findPrimaryDevice(sorted);
 
@@ -50,5 +47,16 @@ export class PairingService {
     }
 
     return primary;
+  }
+
+  private sumWorkedPairs(records: PairingInputRecord[]): number {
+    let total = 0;
+    for (let index = 0; index + 1 < records.length; index += 2) {
+      total += Math.max(
+        0,
+        Math.floor((records[index + 1].timestamp.getTime() - records[index].timestamp.getTime()) / 60000),
+      );
+    }
+    return total;
   }
 }

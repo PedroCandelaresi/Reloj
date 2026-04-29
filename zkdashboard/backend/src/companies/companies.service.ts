@@ -21,6 +21,7 @@ import { AssignCompanyUserDto } from './dto/assign-company-user.dto';
 import { UpdateCompanyUserDto } from './dto/update-company-user.dto';
 import { CompanyMembership } from './company-membership.entity';
 import { Company } from './company.entity';
+import { ScheduleProfileDayInterval } from './schedule-profile-day-interval.entity';
 import { ScheduleProfileDayRule, ScheduleProfileSeason } from './schedule-profile-day-rule.entity';
 import { ScheduleProfile } from './schedule-profile.entity';
 import { normalizeCuit } from './validation/cuit.util';
@@ -50,6 +51,8 @@ export class CompaniesService {
     private readonly scheduleProfilesRepo: Repository<ScheduleProfile>,
     @InjectRepository(ScheduleProfileDayRule)
     private readonly scheduleProfileDayRulesRepo: Repository<ScheduleProfileDayRule>,
+    @InjectRepository(ScheduleProfileDayInterval)
+    private readonly scheduleProfileDayIntervalsRepo: Repository<ScheduleProfileDayInterval>,
     @InjectRepository(AdminUser)
     private readonly usersRepo: Repository<AdminUser>,
     @InjectRepository(Employee)
@@ -143,23 +146,39 @@ export class CompaniesService {
       workDays: profile.workDays ?? null,
       breakMinutes: profile.breakMinutes ?? 0,
       overtimeAfterMinutes: profile.overtimeAfterMinutes ?? 0,
+      rotationMode: profile.rotationMode ?? 'none',
+      rotationStartDate: profile.rotationStartDate ?? null,
+      rotationLengthWeeks: profile.rotationLengthWeeks ?? null,
+      rotationLengthDays: profile.rotationLengthDays ?? null,
+      timeBankEnabled: profile.timeBankEnabled ?? false,
+      timeBankMode: profile.timeBankMode ?? 'none',
       dayRules: (profile.dayRules ?? [])
         .slice()
-        .sort((a, b) => a.season.localeCompare(b.season) || a.dayOfWeek - b.dayOfWeek)
+        .sort((a, b) =>
+          a.season.localeCompare(b.season) ||
+          (a.cycleWeek ?? 0) - (b.cycleWeek ?? 0) ||
+          (a.cycleDay ?? 0) - (b.cycleDay ?? 0) ||
+          (a.dayOfWeek ?? 0) - (b.dayOfWeek ?? 0))
         .map((rule) => ({
           id: rule.id,
           scheduleProfileId: rule.scheduleProfileId,
           dayOfWeek: rule.dayOfWeek,
+          cycleDay: rule.cycleDay ?? null,
+          cycleWeek: rule.cycleWeek ?? null,
           season: rule.season,
           isWorkday: rule.isWorkday,
           entryTime: rule.entryTime,
           exitTime: rule.exitTime,
+          isSplitShift: rule.isSplitShift ?? false,
+          secondEntryTime: rule.secondEntryTime ?? null,
+          secondExitTime: rule.secondExitTime ?? null,
           breakMinutes: rule.breakMinutes ?? 0,
           expectedMinutes: rule.expectedMinutes ?? null,
           lateToleranceMinutes: rule.lateToleranceMinutes ?? null,
           earlyDepartureToleranceMinutes: rule.earlyDepartureToleranceMinutes ?? null,
           overtimeAfterMinutes: rule.overtimeAfterMinutes ?? null,
           notes: rule.notes ?? null,
+          intervals: this.serializeRuleIntervals(rule),
           createdAt: rule.createdAt,
           updatedAt: rule.updatedAt,
         })),
@@ -330,7 +349,7 @@ export class CompaniesService {
     const companyId = this.getScopedCompanyId(user);
     const profiles = await this.scheduleProfilesRepo.find({
       where: { companyId },
-      relations: { dayRules: true },
+      relations: { dayRules: { intervals: true } },
       order: {
         name: 'ASC',
         createdAt: 'ASC',
@@ -364,7 +383,14 @@ export class CompaniesService {
       workDays: dto.workDays ?? null,
       breakMinutes: dto.breakMinutes ?? 0,
       overtimeAfterMinutes: dto.overtimeAfterMinutes ?? 0,
+      rotationMode: dto.rotationMode ?? 'none',
+      rotationStartDate: dto.rotationStartDate ?? null,
+      rotationLengthWeeks: dto.rotationLengthWeeks ?? null,
+      rotationLengthDays: dto.rotationLengthDays ?? null,
+      timeBankEnabled: dto.timeBankEnabled ?? false,
+      timeBankMode: dto.timeBankEnabled ? dto.timeBankMode ?? 'overtime_only' : 'none',
     });
+    this.validateRotation(profile);
 
     try {
       const saved = await this.scheduleProfilesRepo.save(profile);
@@ -386,7 +412,7 @@ export class CompaniesService {
     const companyId = this.getScopedCompanyId(user);
     const profile = await this.scheduleProfilesRepo.findOne({
       where: { id: profileId, companyId },
-      relations: { dayRules: true },
+      relations: { dayRules: { intervals: true } },
     });
     if (!profile) {
       throw new NotFoundException('Perfil horario no encontrado');
@@ -411,6 +437,15 @@ export class CompaniesService {
     if (dto.workDays !== undefined) profile.workDays = dto.workDays;
     if (dto.breakMinutes !== undefined) profile.breakMinutes = dto.breakMinutes;
     if (dto.overtimeAfterMinutes !== undefined) profile.overtimeAfterMinutes = dto.overtimeAfterMinutes;
+    if (dto.rotationMode !== undefined) profile.rotationMode = dto.rotationMode;
+    if (dto.rotationStartDate !== undefined) profile.rotationStartDate = dto.rotationStartDate;
+    if (dto.rotationLengthWeeks !== undefined) profile.rotationLengthWeeks = dto.rotationLengthWeeks;
+    if (dto.rotationLengthDays !== undefined) profile.rotationLengthDays = dto.rotationLengthDays;
+    if (dto.timeBankEnabled !== undefined) profile.timeBankEnabled = dto.timeBankEnabled;
+    if (dto.timeBankMode !== undefined) profile.timeBankMode = dto.timeBankMode;
+    if (!profile.timeBankEnabled) profile.timeBankMode = 'none';
+    if (profile.timeBankEnabled && profile.timeBankMode === 'none') profile.timeBankMode = 'overtime_only';
+    this.validateRotation(profile);
 
     try {
       const saved = await this.scheduleProfilesRepo.save(profile);
@@ -469,7 +504,7 @@ export class CompaniesService {
   private async loadScheduleProfile(profileId: string, companyId: string): Promise<ScheduleProfile> {
     const profile = await this.scheduleProfilesRepo.findOne({
       where: { id: profileId, companyId },
-      relations: { dayRules: true },
+      relations: { dayRules: { intervals: true } },
     });
     if (!profile) {
       throw new NotFoundException('Perfil horario no encontrado');
@@ -489,27 +524,43 @@ export class CompaniesService {
     const seen = new Set<string>();
     const entities = rules.map((rule) => {
       const season = (rule.season ?? 'normal') as ScheduleProfileSeason;
-      const key = `${rule.dayOfWeek}:${season}`;
+      const key = `${rule.dayOfWeek ?? ''}:${rule.cycleDay ?? ''}:${rule.cycleWeek ?? ''}:${season}`;
       if (seen.has(key)) {
-        throw new BadRequestException('Hay reglas duplicadas para el mismo día y temporada.');
+        throw new BadRequestException('Hay reglas duplicadas para el mismo día, ciclo y temporada.');
       }
       seen.add(key);
 
       this.validateDayRule(rule);
       const isWorkday = rule.isWorkday ?? true;
+      const isSplitShift = Boolean(rule.isSplitShift);
+      const intervals = this.normalizeIntervals(rule);
       return this.scheduleProfileDayRulesRepo.create({
         scheduleProfileId: profile.id,
-        dayOfWeek: rule.dayOfWeek,
+        dayOfWeek: rule.dayOfWeek ?? null,
+        cycleDay: rule.cycleDay ?? null,
+        cycleWeek: rule.cycleWeek ?? null,
         season,
         isWorkday,
-        entryTime: isWorkday ? rule.entryTime ?? null : null,
-        exitTime: isWorkday ? rule.exitTime ?? null : null,
+        entryTime: isWorkday ? intervals[0]?.entryTime ?? rule.entryTime ?? null : null,
+        exitTime: isWorkday ? intervals[0]?.exitTime ?? rule.exitTime ?? null : null,
+        isSplitShift: isWorkday && (isSplitShift || intervals.length > 1),
+        secondEntryTime: isWorkday ? intervals[1]?.entryTime ?? rule.secondEntryTime ?? null : null,
+        secondExitTime: isWorkday ? intervals[1]?.exitTime ?? rule.secondExitTime ?? null : null,
         breakMinutes: rule.breakMinutes ?? profile.breakMinutes ?? 0,
         expectedMinutes: isWorkday ? rule.expectedMinutes ?? null : 0,
         lateToleranceMinutes: rule.lateToleranceMinutes ?? null,
         earlyDepartureToleranceMinutes: rule.earlyDepartureToleranceMinutes ?? null,
         overtimeAfterMinutes: rule.overtimeAfterMinutes ?? null,
         notes: rule.notes ?? null,
+        intervals: isWorkday
+          ? intervals.map((interval, index) => this.scheduleProfileDayIntervalsRepo.create({
+              sequence: index + 1,
+              entryTime: interval.entryTime,
+              exitTime: interval.exitTime,
+              crossesMidnight: interval.crossesMidnight,
+              expectedMinutes: interval.expectedMinutes ?? null,
+            }))
+          : [],
       });
     });
 
@@ -520,19 +571,147 @@ export class CompaniesService {
   }
 
   private validateDayRule(rule: NonNullable<CreateScheduleProfileDto['dayRules']>[number]): void {
-    if (rule.dayOfWeek < 1 || rule.dayOfWeek > 7) {
+    if (rule.dayOfWeek !== undefined && rule.dayOfWeek !== null && (rule.dayOfWeek < 1 || rule.dayOfWeek > 7)) {
       throw new BadRequestException('El día de la semana debe estar entre 1 y 7.');
+    }
+    if (rule.cycleDay !== undefined && rule.cycleDay !== null && (rule.cycleDay < 1 || rule.cycleDay > 31)) {
+      throw new BadRequestException('El día del ciclo debe estar entre 1 y 31.');
+    }
+    if (rule.cycleWeek !== undefined && rule.cycleWeek !== null && (rule.cycleWeek < 1 || rule.cycleWeek > 6)) {
+      throw new BadRequestException('La semana del ciclo debe estar entre 1 y 6.');
+    }
+    if (rule.dayOfWeek == null && rule.cycleDay == null) {
+      throw new BadRequestException('Cada regla debe indicar un día de semana o un día de ciclo.');
     }
     if (!['normal', 'summer', 'winter'].includes(rule.season ?? 'normal')) {
       throw new BadRequestException('La temporada debe ser normal, verano o invierno.');
     }
     const isWorkday = rule.isWorkday ?? true;
-    if (isWorkday && (!rule.entryTime || !rule.exitTime)) {
-      throw new BadRequestException('Si el día es laborable, completá horario de entrada y salida.');
+    const intervals = this.normalizeIntervals(rule);
+    if (isWorkday && intervals.length === 0) {
+      throw new BadRequestException('Si el día es laborable, completá al menos un intervalo de entrada y salida.');
     }
-    if (isWorkday && rule.entryTime && rule.exitTime && rule.exitTime < rule.entryTime) {
-      throw new BadRequestException('Los turnos nocturnos se implementarán en una etapa posterior.');
+    if (intervals.length > 4) {
+      throw new BadRequestException('Por ahora se permiten hasta 4 intervalos por día.');
     }
+    for (const interval of intervals) {
+      if (interval.exitTime < interval.entryTime && !interval.crossesMidnight) {
+        throw new BadRequestException('Si el horario termina al día siguiente, marcá “Cruza medianoche”.');
+      }
+    }
+    if (this.intervalsOverlap(intervals)) {
+      throw new BadRequestException('Los intervalos del día no pueden superponerse.');
+    }
+  }
+
+  /**
+   * Detecta solapamiento entre intervalos de un mismo día, incluyendo turnos nocturnos.
+   *
+   * Estrategia: cada intervalo se convierte a minutos absolutos. Los que cruzan medianoche
+   * tienen exitMinutes > 1440. Se ordenan por entryMinutes y se verifica cada par (i, j)
+   * con i < j:
+   *   - Solapamiento directo:   b.entry < a.exit
+   *   - Solapamiento envuelto:  b.crossesMidnight && a.entry < (b.exit - 1440)
+   *     (la porción post-medianoche de b se superpone con el inicio de a)
+   */
+  private intervalsOverlap(
+    intervals: Array<{ entryTime: string; exitTime: string; crossesMidnight: boolean }>,
+  ): boolean {
+    if (intervals.length < 2) return false;
+
+    const toMinutes = (t: string) => {
+      const [h, m] = t.split(':').map(Number);
+      return h * 60 + m;
+    };
+
+    const abs = intervals.map((interval) => {
+      const entry = toMinutes(interval.entryTime);
+      const rawExit = toMinutes(interval.exitTime);
+      const exit = interval.crossesMidnight || rawExit <= entry ? rawExit + 1440 : rawExit;
+      return { entry, exit, cm: interval.crossesMidnight };
+    });
+
+    abs.sort((a, b) => a.entry - b.entry);
+
+    for (let i = 0; i < abs.length; i++) {
+      for (let j = i + 1; j < abs.length; j++) {
+        const a = abs[i]; // a.entry <= b.entry garantizado por el sort
+        const b = abs[j];
+        if (b.entry < a.exit) return true;
+        // Verificar si la porción post-medianoche de b solapa con a
+        if (b.cm && b.exit - 1440 > 0 && a.entry < b.exit - 1440) return true;
+      }
+    }
+    return false;
+  }
+
+  private validateRotation(profile: Pick<ScheduleProfile, 'rotationMode' | 'rotationStartDate' | 'rotationLengthWeeks' | 'rotationLengthDays'>): void {
+    if (!profile.rotationMode || profile.rotationMode === 'none') {
+      return;
+    }
+    if (!profile.rotationStartDate) {
+      throw new BadRequestException('Para usar rotación, indicá la fecha de inicio del ciclo.');
+    }
+    if (profile.rotationMode === 'weekly' && (!profile.rotationLengthWeeks || profile.rotationLengthWeeks < 1 || profile.rotationLengthWeeks > 6)) {
+      throw new BadRequestException('La rotación semanal debe tener entre 1 y 6 semanas.');
+    }
+    if (profile.rotationMode === 'daily_cycle' && (!profile.rotationLengthDays || profile.rotationLengthDays < 1 || profile.rotationLengthDays > 31)) {
+      throw new BadRequestException('El ciclo por días debe tener entre 1 y 31 días.');
+    }
+  }
+
+  private normalizeIntervals(rule: NonNullable<CreateScheduleProfileDto['dayRules']>[number]) {
+    if (rule.isWorkday === false) {
+      return [];
+    }
+    const intervals = rule.intervals?.length
+      ? rule.intervals
+      : [
+          ...(rule.entryTime && rule.exitTime
+            ? [{ sequence: 1, entryTime: rule.entryTime, exitTime: rule.exitTime, crossesMidnight: rule.exitTime < rule.entryTime, expectedMinutes: null }]
+            : []),
+          ...(rule.isSplitShift && rule.secondEntryTime && rule.secondExitTime
+            ? [{ sequence: 2, entryTime: rule.secondEntryTime, exitTime: rule.secondExitTime, crossesMidnight: rule.secondExitTime < rule.secondEntryTime, expectedMinutes: null }]
+            : []),
+        ];
+
+    return intervals
+      .slice()
+      .sort((a, b) => a.sequence - b.sequence)
+      .map((interval, index) => ({
+        sequence: index + 1,
+        entryTime: interval.entryTime,
+        exitTime: interval.exitTime,
+        crossesMidnight: Boolean(interval.crossesMidnight || interval.exitTime < interval.entryTime),
+        expectedMinutes: interval.expectedMinutes ?? null,
+      }));
+  }
+
+  private serializeRuleIntervals(rule: ScheduleProfileDayRule) {
+    const intervals = rule.intervals?.length
+      ? rule.intervals
+      : [
+          ...(rule.entryTime && rule.exitTime
+            ? [{ sequence: 1, entryTime: rule.entryTime, exitTime: rule.exitTime, crossesMidnight: rule.exitTime < rule.entryTime, expectedMinutes: null }]
+            : []),
+          ...(rule.isSplitShift && rule.secondEntryTime && rule.secondExitTime
+            ? [{ sequence: 2, entryTime: rule.secondEntryTime, exitTime: rule.secondExitTime, crossesMidnight: rule.secondExitTime < rule.secondEntryTime, expectedMinutes: null }]
+            : []),
+        ];
+
+    return intervals
+      .slice()
+      .sort((a, b) => a.sequence - b.sequence)
+      .map((interval) => ({
+        id: 'id' in interval ? interval.id : undefined,
+        sequence: interval.sequence,
+        entryTime: interval.entryTime,
+        exitTime: interval.exitTime,
+        crossesMidnight: Boolean(interval.crossesMidnight),
+        expectedMinutes: interval.expectedMinutes ?? null,
+        createdAt: 'createdAt' in interval ? interval.createdAt : undefined,
+        updatedAt: 'updatedAt' in interval ? interval.updatedAt : undefined,
+      }));
   }
 
   private buildDefaultDayRules(profile: ScheduleProfile): NonNullable<CreateScheduleProfileDto['dayRules']> {
@@ -548,6 +727,18 @@ export class CompaniesService {
         isWorkday,
         entryTime: isWorkday ? profile.entryTime : null,
         exitTime: isWorkday ? profile.exitTime : null,
+        isSplitShift: false,
+        secondEntryTime: null,
+        secondExitTime: null,
+        intervals: isWorkday
+          ? [{
+              sequence: 1,
+              entryTime: profile.entryTime,
+              exitTime: profile.exitTime,
+              crossesMidnight: profile.exitTime < profile.entryTime,
+              expectedMinutes: null,
+            }]
+          : [],
         breakMinutes: profile.breakMinutes ?? 0,
         expectedMinutes: isWorkday ? profile.expectedMinutesPerDay ?? null : 0,
         lateToleranceMinutes: profile.lateToleranceMinutes ?? 0,

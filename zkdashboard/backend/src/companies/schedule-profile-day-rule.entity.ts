@@ -5,15 +5,16 @@ import {
   Index,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { ScheduleProfileDayInterval } from './schedule-profile-day-interval.entity';
 import { ScheduleProfile } from './schedule-profile.entity';
 
 export type ScheduleProfileSeason = 'normal' | 'summer' | 'winter';
 
 @Entity('schedule_profile_day_rules')
-@Index('UQ_schedule_profile_day_rule', ['scheduleProfileId', 'dayOfWeek', 'season'], { unique: true })
 @Index('IDX_schedule_profile_day_rules_profile_id', ['scheduleProfileId'])
 export class ScheduleProfileDayRule {
   @PrimaryGeneratedColumn('uuid')
@@ -26,8 +27,14 @@ export class ScheduleProfileDayRule {
   @JoinColumn({ name: 'schedule_profile_id' })
   scheduleProfile: ScheduleProfile;
 
-  @Column({ name: 'day_of_week', type: 'integer' })
-  dayOfWeek: number;
+  @Column({ name: 'day_of_week', type: 'integer', nullable: true })
+  dayOfWeek: number | null;
+
+  @Column({ name: 'cycle_day', type: 'integer', nullable: true })
+  cycleDay: number | null;
+
+  @Column({ name: 'cycle_week', type: 'integer', nullable: true })
+  cycleWeek: number | null;
 
   @Column({ type: 'varchar', length: 12, default: 'normal' })
   season: ScheduleProfileSeason;
@@ -40,6 +47,15 @@ export class ScheduleProfileDayRule {
 
   @Column({ name: 'exit_time', type: 'varchar', length: 5, nullable: true })
   exitTime: string | null;
+
+  @Column({ name: 'is_split_shift', type: 'boolean', default: false })
+  isSplitShift: boolean;
+
+  @Column({ name: 'second_entry_time', type: 'varchar', length: 5, nullable: true })
+  secondEntryTime: string | null;
+
+  @Column({ name: 'second_exit_time', type: 'varchar', length: 5, nullable: true })
+  secondExitTime: string | null;
 
   @Column({ name: 'break_minutes', type: 'integer', default: 0 })
   breakMinutes: number;
@@ -58,6 +74,9 @@ export class ScheduleProfileDayRule {
 
   @Column({ type: 'text', nullable: true })
   notes: string | null;
+
+  @OneToMany(() => ScheduleProfileDayInterval, (interval) => interval.dayRule, { cascade: true })
+  intervals?: ScheduleProfileDayInterval[];
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

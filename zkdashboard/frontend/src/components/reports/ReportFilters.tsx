@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { AttendanceUserOption, Device } from '@/lib/api';
+import { MaskedDateInput } from '@/components/MaskedDateInput';
 import { formatAttendanceUserOption } from '@/lib/format-employee';
 import { getCompanyDeviceName } from '@/lib/ux-labels';
 
@@ -40,23 +41,11 @@ export function ReportFilters({
         <>
           <div>
             <label className="mb-1 block text-xs" style={{ color: 'var(--text-muted)' }}>Desde</label>
-            <input
-              type="date"
-              name="dateFrom"
-              defaultValue={dateFrom}
-              className="rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
-            />
+            <MaskedDateInput name="dateFrom" defaultValue={dateFrom} />
           </div>
           <div>
             <label className="mb-1 block text-xs" style={{ color: 'var(--text-muted)' }}>Hasta</label>
-            <input
-              type="date"
-              name="dateTo"
-              defaultValue={dateTo}
-              className="rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
-            />
+            <MaskedDateInput name="dateTo" defaultValue={dateTo} />
           </div>
         </>
       ) : (

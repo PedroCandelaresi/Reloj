@@ -3,12 +3,13 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { CompanyAdminGuard } from '../auth/guards/company-admin.guard';
 import { DevicesModule } from '../devices/devices.module';
 import { Employee } from './employee.entity';
+import { EmployeeTimeBankLedger } from './employee-time-bank-ledger.entity';
 import { ScheduleProfile } from '../companies/schedule-profile.entity';
 import { EmployeesService } from './employees.service';
 import { EmployeesController } from './employees.controller';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Employee, ScheduleProfile]), DevicesModule],
+  imports: [TypeOrmModule.forFeature([Employee, ScheduleProfile, EmployeeTimeBankLedger]), DevicesModule],
   providers: [EmployeesService, CompanyAdminGuard],
   controllers: [EmployeesController],
   exports: [EmployeesService],

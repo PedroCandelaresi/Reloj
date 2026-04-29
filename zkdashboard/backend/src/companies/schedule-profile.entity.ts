@@ -13,6 +13,9 @@ import { Employee } from '../employees/employee.entity';
 import { Company } from './company.entity';
 import { ScheduleProfileDayRule } from './schedule-profile-day-rule.entity';
 
+export type ScheduleProfileRotationMode = 'none' | 'weekly' | 'daily_cycle';
+export type ScheduleProfileTimeBankMode = 'none' | 'overtime_only' | 'overtime_and_deficit';
+
 @Entity('schedule_profiles')
 @Index('UQ_schedule_profiles_company_name', ['companyId', 'name'], { unique: true })
 export class ScheduleProfile {
@@ -77,6 +80,24 @@ export class ScheduleProfile {
 
   @Column({ name: 'overtime_after_minutes', default: 0 })
   overtimeAfterMinutes: number;
+
+  @Column({ name: 'rotation_mode', type: 'varchar', length: 20, default: 'none' })
+  rotationMode: ScheduleProfileRotationMode;
+
+  @Column({ name: 'rotation_start_date', type: 'date', nullable: true })
+  rotationStartDate: string | null;
+
+  @Column({ name: 'rotation_length_weeks', type: 'integer', nullable: true })
+  rotationLengthWeeks: number | null;
+
+  @Column({ name: 'rotation_length_days', type: 'integer', nullable: true })
+  rotationLengthDays: number | null;
+
+  @Column({ name: 'time_bank_enabled', type: 'boolean', default: false })
+  timeBankEnabled: boolean;
+
+  @Column({ name: 'time_bank_mode', type: 'varchar', length: 30, default: 'none' })
+  timeBankMode: ScheduleProfileTimeBankMode;
 
   @OneToMany(() => Employee, (employee) => employee.scheduleProfile)
   employees?: Employee[];

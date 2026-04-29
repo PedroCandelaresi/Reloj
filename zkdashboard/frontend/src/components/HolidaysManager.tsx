@@ -7,6 +7,7 @@ import {
   deleteHolidayAction,
   saveHolidayAction,
 } from '@/app/(protected)/settings/holidays/actions';
+import { MaskedDateInput } from '@/components/MaskedDateInput';
 import type { CurrentUserProfile, Holiday, HolidayInput } from '@/lib/api';
 import { humanizeActionError } from '@/lib/ux-labels';
 
@@ -230,10 +231,7 @@ export function HolidaysManager({
 
             <label className="block text-sm">
               <span className="font-medium" style={{ color: 'var(--text-secondary)' }}>Fecha</span>
-              <input type="date" name="date" value={form.date} onChange={handleChange} required
-                className="mt-1 w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
-              />
+              <MaskedDateInput value={form.date} onChange={(date) => setForm((current) => ({ ...current, date }))} required className="mt-1 w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
             </label>
 
             <label className="block text-sm">

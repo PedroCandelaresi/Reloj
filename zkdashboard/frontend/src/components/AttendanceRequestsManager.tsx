@@ -11,6 +11,7 @@ import {
   rejectAttendanceRequestAction,
   uploadAttendanceRequestAttachmentAction,
 } from '@/app/(protected)/attendance/requests/actions';
+import { MaskedDateInput, MaskedDateTimeInput } from '@/components/MaskedDateInput';
 import {
   type AttendanceAuditLog,
   type AttendanceJustificationType,
@@ -303,12 +304,12 @@ export function AttendanceRequestsManager({
               </select>
             </Field>
             <Field label="Fecha">
-              <input type="date" name="date" value={form.date} onChange={handleChange} required className="input-field w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+              <MaskedDateInput value={form.date} onChange={(date) => setForm((current) => ({ ...current, date }))} required className="input-field w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
             </Field>
             {form.type === 'manual_punch' && (
               <>
                 <Field label="Hora fichada">
-                  <input type="datetime-local" name="punchTime" value={form.punchTime} onChange={handleChange} required className="input-field w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                  <MaskedDateTimeInput value={form.punchTime} onChange={(punchTime) => setForm((current) => ({ ...current, punchTime }))} required className="input-field w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
                 </Field>
                 <Field label="Tipo fichada">
                   <select name="punchType" value={form.punchType} onChange={handleChange} className="input-field w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
@@ -328,7 +329,7 @@ export function AttendanceRequestsManager({
                   <input name="targetAttendanceRecordId" value={form.targetAttendanceRecordId} onChange={handleChange} inputMode="numeric" required className="input-field w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
                 </Field>
                 <Field label="Nueva hora">
-                  <input type="datetime-local" name="newPunchTime" value={form.newPunchTime} onChange={handleChange} required className="input-field w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                  <MaskedDateTimeInput value={form.newPunchTime} onChange={(newPunchTime) => setForm((current) => ({ ...current, newPunchTime }))} required className="input-field w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
                 </Field>
               </>
             )}

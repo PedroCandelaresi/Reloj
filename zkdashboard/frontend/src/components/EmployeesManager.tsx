@@ -21,6 +21,7 @@ import {
   updateEmployeeAction,
 } from '@/app/(protected)/employees/actions';
 import { formatEmployeeName } from '@/lib/format-employee';
+import { maskTimeInput } from '@/lib/input-masks';
 import { getCompanyDeviceName, humanizeActionError } from '@/lib/ux-labels';
 
 type FormMode = 'create' | 'edit';
@@ -149,7 +150,8 @@ export function EmployeesManagerContent({
 
   const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = event.target;
-    setForm((current) => ({ ...current, [name]: value }));
+    const nextValue = name === 'entryTime' || name === 'exitTime' ? maskTimeInput(value) : value;
+    setForm((current) => ({ ...current, [name]: nextValue }));
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -672,14 +674,14 @@ export function EmployeesManagerContent({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Horario de entrada</label>
-                  <input name="entryTime" type="text" value={form.entryTime} onChange={handleChange} placeholder="HH:MM" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$" inputMode="numeric"
+                  <input name="entryTime" type="text" value={form.entryTime} onChange={handleChange} placeholder="HH:MM" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$" inputMode="numeric" maxLength={5}
                     className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Horario de salida</label>
-                  <input name="exitTime" type="text" value={form.exitTime} onChange={handleChange} placeholder="HH:MM" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$" inputMode="numeric"
+                  <input name="exitTime" type="text" value={form.exitTime} onChange={handleChange} placeholder="HH:MM" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$" inputMode="numeric" maxLength={5}
                     className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
                   />

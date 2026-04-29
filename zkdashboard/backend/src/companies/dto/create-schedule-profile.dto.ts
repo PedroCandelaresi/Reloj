@@ -1,5 +1,5 @@
 import { Transform, Type } from 'class-transformer';
-import { IsArray, IsInt, IsNotEmpty, IsOptional, IsString, Matches, Max, MaxLength, Min, ValidateNested } from 'class-validator';
+import { IsArray, IsBoolean, IsIn, IsInt, IsNotEmpty, IsOptional, IsString, Matches, Max, MaxLength, Min, ValidateNested } from 'class-validator';
 import { ScheduleProfileDayRuleDto } from './schedule-profile-day-rule.dto';
 
 const TIME_24H_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
@@ -133,6 +133,38 @@ export class CreateScheduleProfileDto {
   @Max(480)
   @IsOptional()
   overtimeAfterMinutes?: number;
+
+  @IsIn(['none', 'weekly', 'daily_cycle'])
+  @IsOptional()
+  rotationMode?: 'none' | 'weekly' | 'daily_cycle';
+
+  @Transform(trimNullableValue)
+  @IsOptional()
+  @IsString()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, {
+    message: 'La fecha de inicio de rotación debe tener formato YYYY-MM-DD.',
+  })
+  rotationStartDate?: string | null;
+
+  @IsInt()
+  @Min(1)
+  @Max(6)
+  @IsOptional()
+  rotationLengthWeeks?: number | null;
+
+  @IsInt()
+  @Min(1)
+  @Max(31)
+  @IsOptional()
+  rotationLengthDays?: number | null;
+
+  @IsBoolean()
+  @IsOptional()
+  timeBankEnabled?: boolean;
+
+  @IsIn(['none', 'overtime_only', 'overtime_and_deficit'])
+  @IsOptional()
+  timeBankMode?: 'none' | 'overtime_only' | 'overtime_and_deficit';
 
   @IsArray()
   @ValidateNested({ each: true })

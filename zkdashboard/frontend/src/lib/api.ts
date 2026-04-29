@@ -497,6 +497,12 @@ export interface ScheduleProfile {
   workDays: string[] | null;
   breakMinutes: number;
   overtimeAfterMinutes: number;
+  rotationMode?: 'none' | 'weekly' | 'daily_cycle';
+  rotationStartDate?: string | null;
+  rotationLengthWeeks?: number | null;
+  rotationLengthDays?: number | null;
+  timeBankEnabled?: boolean;
+  timeBankMode?: 'none' | 'overtime_only' | 'overtime_and_deficit';
   dayRules: ScheduleProfileDayRule[];
   createdAt: string;
   updatedAt: string;
@@ -507,17 +513,34 @@ export type ScheduleProfileSeason = 'normal' | 'summer' | 'winter';
 export interface ScheduleProfileDayRule {
   id?: string;
   scheduleProfileId?: string;
-  dayOfWeek: number;
+  dayOfWeek: number | null;
+  cycleDay?: number | null;
+  cycleWeek?: number | null;
   season: ScheduleProfileSeason;
   isWorkday: boolean;
   entryTime: string | null;
   exitTime: string | null;
+  isSplitShift?: boolean;
+  secondEntryTime?: string | null;
+  secondExitTime?: string | null;
+  intervals?: ScheduleProfileDayInterval[];
   breakMinutes: number;
   expectedMinutes: number | null;
   lateToleranceMinutes: number | null;
   earlyDepartureToleranceMinutes: number | null;
   overtimeAfterMinutes: number | null;
   notes?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ScheduleProfileDayInterval {
+  id?: string;
+  sequence: number;
+  entryTime: string;
+  exitTime: string;
+  crossesMidnight?: boolean;
+  expectedMinutes?: number | null;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -540,6 +563,12 @@ export interface ScheduleProfileInput {
   workDays?: string[] | null;
   breakMinutes?: number;
   overtimeAfterMinutes?: number;
+  rotationMode?: 'none' | 'weekly' | 'daily_cycle';
+  rotationStartDate?: string | null;
+  rotationLengthWeeks?: number | null;
+  rotationLengthDays?: number | null;
+  timeBankEnabled?: boolean;
+  timeBankMode?: 'none' | 'overtime_only' | 'overtime_and_deficit';
   dayRules?: Omit<ScheduleProfileDayRule, 'id' | 'scheduleProfileId' | 'createdAt' | 'updatedAt'>[];
 }
 

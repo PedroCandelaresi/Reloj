@@ -1,5 +1,6 @@
 import { RecordsSyncControls } from '@/components/RecordsSyncControls';
 import { StatusBadge } from '@/components/StatusBadge';
+import { MaskedDateInput } from '@/components/MaskedDateInput';
 import {
   formatAttendanceUser,
   formatAttendanceUserOption,
@@ -123,17 +124,11 @@ export default async function RecordsPage({ searchParams }: PageProps) {
           </div>
           <div>
             <label className="block text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Desde</label>
-            <input type="date" name="dateFrom" defaultValue={dateFrom}
-              className="rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
-            />
+            <MaskedDateInput name="dateFrom" defaultValue={dateFrom} />
           </div>
           <div>
             <label className="block text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Hasta</label>
-            <input type="date" name="dateTo" defaultValue={dateTo}
-              className="rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
-            />
+            <MaskedDateInput name="dateTo" defaultValue={dateTo} />
           </div>
           <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">
             Filtrar

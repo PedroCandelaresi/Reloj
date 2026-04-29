@@ -10,6 +10,7 @@ import {
   deleteCompanyAction,
   updateCompanyAction,
 } from '@/app/(protected)/admin/companies/actions';
+import { maskTimeInput } from '@/lib/input-masks';
 
 type FormMode = 'create' | 'edit';
 
@@ -115,7 +116,9 @@ export function AdminCompaniesManager({
     const nextValue =
       type === 'checkbox'
         ? (event.target as HTMLInputElement).checked
-        : value;
+        : name === 'defaultEntryTime' || name === 'defaultExitTime'
+          ? maskTimeInput(value)
+          : value;
 
     setForm((current) => ({
       ...current,
@@ -345,7 +348,7 @@ export function AdminCompaniesManager({
                   <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
                     Entrada global <span style={{ color: 'var(--text-muted)', fontWeight: 'normal' }}>(HH:MM)</span>
                   </label>
-                  <input name="defaultEntryTime" type="text" inputMode="numeric" value={form.defaultEntryTime} onChange={handleChange} placeholder="08:00" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$"
+                  <input name="defaultEntryTime" type="text" inputMode="numeric" value={form.defaultEntryTime} onChange={handleChange} placeholder="08:00" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$" maxLength={5}
                     className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
                   />
@@ -354,7 +357,7 @@ export function AdminCompaniesManager({
                   <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
                     Salida global <span style={{ color: 'var(--text-muted)', fontWeight: 'normal' }}>(HH:MM)</span>
                   </label>
-                  <input name="defaultExitTime" type="text" inputMode="numeric" value={form.defaultExitTime} onChange={handleChange} placeholder="17:00" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$"
+                  <input name="defaultExitTime" type="text" inputMode="numeric" value={form.defaultExitTime} onChange={handleChange} placeholder="17:00" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$" maxLength={5}
                     className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
                   />

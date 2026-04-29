@@ -1,4 +1,5 @@
 import { AttendanceRequestsManager } from '@/components/AttendanceRequestsManager';
+import { MaskedDateInput } from '@/components/MaskedDateInput';
 import { CompanyRequiredMessage } from '@/components/reports/CompanyRequiredMessage';
 import {
   getAttendanceAuditLog,
@@ -82,11 +83,11 @@ export default async function AttendanceRequestsPage({ searchParams }: PageProps
           {companyId && <input type="hidden" name="companyId" value={companyId} />}
           <label className="text-sm">
             <span className="mb-1 block font-medium" style={{ color: 'var(--text-secondary)' }}>Desde</span>
-            <input type="date" name="dateFrom" defaultValue={params.dateFrom} className="input-field w-full rounded-lg px-3 py-2 text-sm" />
+            <MaskedDateInput name="dateFrom" defaultValue={params.dateFrom} className="input-field w-full rounded-lg px-3 py-2 text-sm" />
           </label>
           <label className="text-sm">
             <span className="mb-1 block font-medium" style={{ color: 'var(--text-secondary)' }}>Hasta</span>
-            <input type="date" name="dateTo" defaultValue={params.dateTo} className="input-field w-full rounded-lg px-3 py-2 text-sm" />
+            <MaskedDateInput name="dateTo" defaultValue={params.dateTo} className="input-field w-full rounded-lg px-3 py-2 text-sm" />
           </label>
           <label className="text-sm">
             <span className="mb-1 block font-medium" style={{ color: 'var(--text-secondary)' }}>Estado</span>

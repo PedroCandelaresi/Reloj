@@ -23,6 +23,9 @@ import { DeviceCommand } from '../devices/device-command.entity';
 import { InboundRequest } from '../adms/inbound-request.entity';
 import { Company } from '../companies/company.entity';
 import { ScheduleProfile } from '../companies/schedule-profile.entity';
+import { ScheduleProfileDayInterval } from '../companies/schedule-profile-day-interval.entity';
+import { ScheduleProfileDayRule } from '../companies/schedule-profile-day-rule.entity';
+import { EmployeeTimeBankLedger } from '../employees/employee-time-bank-ledger.entity';
 
 @Module({
   imports: [
@@ -40,6 +43,9 @@ import { ScheduleProfile } from '../companies/schedule-profile.entity';
       InboundRequest,
       Company,
       ScheduleProfile,
+      ScheduleProfileDayRule,
+      ScheduleProfileDayInterval,
+      EmployeeTimeBankLedger,
     ]),
     DevicesModule,
   ],

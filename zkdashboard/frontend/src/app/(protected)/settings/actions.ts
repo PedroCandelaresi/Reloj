@@ -59,6 +59,12 @@ export async function saveScheduleProfileAction(input: {
   expectedMinutesPerDay?: number | string | null;
   breakMinutes?: number | string | null;
   overtimeAfterMinutes?: number | string | null;
+  rotationMode?: 'none' | 'weekly' | 'daily_cycle';
+  rotationStartDate?: string | null;
+  rotationLengthWeeks?: number | string | null;
+  rotationLengthDays?: number | string | null;
+  timeBankEnabled?: boolean;
+  timeBankMode?: 'none' | 'overtime_only' | 'overtime_and_deficit';
   workDays?: string[] | null;
   dayRules?: Omit<ScheduleProfileDayRule, 'id' | 'scheduleProfileId' | 'createdAt' | 'updatedAt'>[];
 }): Promise<CompanySettingsActionResult> {
@@ -87,6 +93,12 @@ export async function saveScheduleProfileAction(input: {
     expectedMinutesPerDay: nullableNumber(input.expectedMinutesPerDay),
     breakMinutes: numberOrDefault(input.breakMinutes, 0),
     overtimeAfterMinutes: numberOrDefault(input.overtimeAfterMinutes, 0),
+    rotationMode: input.rotationMode ?? 'none',
+    rotationStartDate: cleanText(input.rotationStartDate) || null,
+    rotationLengthWeeks: nullableNumber(input.rotationLengthWeeks),
+    rotationLengthDays: nullableNumber(input.rotationLengthDays),
+    timeBankEnabled: input.timeBankEnabled ?? false,
+    timeBankMode: input.timeBankEnabled ? input.timeBankMode ?? 'overtime_only' : 'none',
     workDays: input.workDays?.length ? input.workDays : null,
     dayRules: input.dayRules,
   };

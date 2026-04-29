@@ -11,11 +11,13 @@ import { InboundRequest } from '../adms/inbound-request.entity';
 import { CompanyMembership } from '../companies/company-membership.entity';
 import { Company } from '../companies/company.entity';
 import { ScheduleProfile } from '../companies/schedule-profile.entity';
+import { ScheduleProfileDayInterval } from '../companies/schedule-profile-day-interval.entity';
 import { ScheduleProfileDayRule } from '../companies/schedule-profile-day-rule.entity';
 import { Device } from '../devices/device.entity';
 import { DeviceCommand } from '../devices/device-command.entity';
 import { DeviceUserSnapshot } from '../devices/device-user-snapshot.entity';
 import { Employee } from '../employees/employee.entity';
+import { EmployeeTimeBankLedger } from '../employees/employee-time-bank-ledger.entity';
 import { AdminUser } from '../users/admin-user.entity';
 
 dotenv.config();
@@ -31,11 +33,13 @@ export const DATABASE_ENTITIES = [
   CompanyMembership,
   ScheduleProfile,
   ScheduleProfileDayRule,
+  ScheduleProfileDayInterval,
   Device,
   DeviceCommand,
   DeviceUserSnapshot,
   AdminUser,
   Employee,
+  EmployeeTimeBankLedger,
 ];
 
 function parsePort(rawValue: string | undefined, fallback: number): number {
