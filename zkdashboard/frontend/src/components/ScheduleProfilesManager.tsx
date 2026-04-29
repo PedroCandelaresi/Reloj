@@ -253,6 +253,12 @@ export function ScheduleProfilesManager({ profiles }: { profiles: ScheduleProfil
       return;
     }
     const normalWorkRule = allRules.find((rule) => rule.season === 'normal' && rule.isWorkday && rule.entryTime && rule.exitTime);
+    const normalWorkDays: string[] = allRules.reduce<string[]>((days, rule) => {
+      if (rule.season !== 'normal' || !rule.isWorkday) return days;
+      const code = DAYS.find((day) => day.value === rule.dayOfWeek)?.code;
+      if (code) days.push(code);
+      return days;
+    }, []);
 
     startTransition(() => {
       void saveScheduleProfileAction({
@@ -265,10 +271,7 @@ export function ScheduleProfilesManager({ profiles }: { profiles: ScheduleProfil
         breakMinutes: normalWorkRule?.breakMinutes ?? form.breakMinutes,
         overtimeAfterMinutes: normalWorkRule?.overtimeAfterMinutes ?? form.overtimeAfterMinutes,
         dayRules: allRules,
-        workDays: allRules
-          .filter((rule) => rule.season === 'normal' && rule.isWorkday)
-          .map((rule) => DAYS.find((day) => day.value === rule.dayOfWeek)?.code)
-          .filter((code): code is string => Boolean(code)),
+        workDays: normalWorkDays,
       }).then((result) => {
         if (result.error) {
           setMessage({ type: 'error', text: humanizeActionError(result.error) });
