@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { CompanyRequiredMessage } from '@/components/reports/CompanyRequiredMessage';
 import { ExportButtons } from '@/components/reports/ExportButtons';
 import { Phase2ReportTable } from '@/components/reports/Phase2ReportTable';
 import { ReportFilters } from '@/components/reports/ReportFilters';
@@ -6,17 +7,21 @@ import { exportLateArrivalsReport, getDistinctUsers, getLateArrivalsReport } fro
 import { todayArgentinaDateKey } from '@/lib/argentina-date';
 import { requireCurrentSession } from '@/lib/session';
 
-interface PageProps { searchParams: Promise<{ dateFrom?: string; dateTo?: string; employeeId?: string; minLateMinutes?: string; justification?: string }> }
+interface PageProps { searchParams: Promise<{ dateFrom?: string; dateTo?: string; employeeId?: string; minLateMinutes?: string; justification?: string; companyId?: string }> }
 
 export default async function LateArrivalsPage({ searchParams }: PageProps) {
   const user = await requireCurrentSession();
   const sp = await searchParams;
+  const companyId = sp.companyId || '';
+  if (user.isSuperAdmin && !companyId) {
+    return <CompanyRequiredMessage reportName="Tardanzas" />;
+  }
   const dateFrom = sp.dateFrom || todayArgentinaDateKey();
   const dateTo = sp.dateTo || dateFrom;
   const employeeId = sp.employeeId || '';
   const justification = sp.justification || 'all';
   const minLateMinutes = sp.minLateMinutes || '';
-  const params = { dateFrom, dateTo, employeeId, minLateMinutes, justification };
+  const params = { dateFrom, dateTo, employeeId, minLateMinutes, justification, companyId };
   const canCreateRequests = user.isSuperAdmin || user.companyRole === 'company_admin' || user.companyRole === 'operator';
   const [rows, userOptions] = await Promise.all([getLateArrivalsReport(params), getDistinctUsers()]);
 
@@ -30,6 +35,7 @@ export default async function LateArrivalsPage({ searchParams }: PageProps) {
           dateFrom={dateFrom}
           dateTo={dateTo}
           employeeId={employeeId}
+          companyId={companyId}
           justification={justification}
           showJustificationFilter
         />

@@ -55,9 +55,11 @@ function canEditHoliday(user: CurrentUserProfile, holiday: Holiday) {
 export function HolidaysManager({
   holidays,
   user,
+  companyId,
 }: {
   holidays: Holiday[];
   user: CurrentUserProfile;
+  companyId?: string;
 }) {
   const router = useRouter();
   const writable = canWrite(user);
@@ -98,7 +100,7 @@ export function HolidaysManager({
       name: form.name,
       type: form.type,
       isWorkable: form.isWorkable,
-      companyId: user.isSuperAdmin ? null : undefined,
+      companyId: user.isSuperAdmin ? companyId || null : undefined,
     };
 
     startTransition(() => {

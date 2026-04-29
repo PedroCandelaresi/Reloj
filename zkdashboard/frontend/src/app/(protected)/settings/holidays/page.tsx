@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { HolidaysManager } from '@/components/HolidaysManager';
+import { CompanyRequiredMessage } from '@/components/reports/CompanyRequiredMessage';
 import { getHolidays } from '@/lib/api';
 import { currentArgentinaPeriod } from '@/lib/argentina-date';
 import { requireCurrentSession } from '@/lib/session';
@@ -8,16 +9,21 @@ interface PageProps {
   searchParams: Promise<{
     year?: string;
     month?: string;
+    companyId?: string;
   }>;
 }
 
 export default async function HolidaysPage({ searchParams }: PageProps) {
   const user = await requireCurrentSession();
   const sp = await searchParams;
+  const companyId = sp.companyId || '';
+  if (user.isSuperAdmin && !companyId) {
+    return <CompanyRequiredMessage reportName="Feriados" />;
+  }
   const fallback = currentArgentinaPeriod();
   const year = sp.year || fallback.year;
   const month = sp.month || fallback.month;
-  const holidays = await getHolidays({ year, month });
+  const holidays = await getHolidays({ year, month, companyId: companyId || undefined });
   const backHref = user.companyRole === 'company_admin' && !user.isSuperAdmin ? '/settings' : '/reports';
 
   return (
@@ -34,6 +40,7 @@ export default async function HolidaysPage({ searchParams }: PageProps) {
             </p>
           </div>
           <form action="/settings/holidays" className="flex flex-wrap items-end gap-3">
+            {companyId && <input type="hidden" name="companyId" value={companyId} />}
             <label className="text-sm">
               <span className="mb-1 block font-medium" style={{ color: 'var(--text-secondary)' }}>Año</span>
               <input name="year" defaultValue={year} inputMode="numeric" pattern="[0-9]{4}"
@@ -58,7 +65,7 @@ export default async function HolidaysPage({ searchParams }: PageProps) {
           </form>
         </div>
 
-        <HolidaysManager holidays={holidays} user={user} />
+        <HolidaysManager holidays={holidays} user={user} companyId={companyId || undefined} />
       </main>
     </>
   );

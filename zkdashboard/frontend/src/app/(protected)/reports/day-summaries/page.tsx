@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { ConfirmSubmitButton } from '@/components/ConfirmSubmitButton';
+import { CompanyRequiredMessage } from '@/components/reports/CompanyRequiredMessage';
 import { ReportFilters } from '@/components/reports/ReportFilters';
 import { statusClassName, statusLabel } from '@/components/reports/report-utils';
 import {
@@ -32,6 +33,9 @@ export default async function DaySummariesPage({ searchParams }: PageProps) {
   const dateTo = sp.dateTo || dateFrom;
   const employeeId = sp.employeeId || '';
   const companyId = sp.companyId || '';
+  if (user.isSuperAdmin && !companyId) {
+    return <CompanyRequiredMessage reportName="Resumen diario calculado" />;
+  }
   const params = { dateFrom, dateTo, employeeId, companyId };
   const canRecalculate = user.companyRole === 'company_admin' || (user.isSuperAdmin && Boolean(companyId));
   const canCreateRequests = user.isSuperAdmin || user.companyRole === 'company_admin' || user.companyRole === 'operator';

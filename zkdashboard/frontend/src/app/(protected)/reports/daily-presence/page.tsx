@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { CompanyRequiredMessage } from '@/components/reports/CompanyRequiredMessage';
 import { DailyPresenceTable } from '@/components/reports/DailyPresenceTable';
 import { ExportButtons } from '@/components/reports/ExportButtons';
 import { ReportFilters } from '@/components/reports/ReportFilters';
@@ -9,6 +10,7 @@ import {
   getDistinctUsers,
 } from '@/lib/api';
 import { todayArgentinaDateKey } from '@/lib/argentina-date';
+import { requireCurrentSession } from '@/lib/session';
 
 interface PageProps {
   searchParams: Promise<{
@@ -16,16 +18,22 @@ interface PageProps {
     dateTo?: string;
     employeeId?: string;
     deviceId?: string;
+    companyId?: string;
   }>;
 }
 
 export default async function DailyPresencePage({ searchParams }: PageProps) {
+  const user = await requireCurrentSession();
   const sp = await searchParams;
+  const companyId = sp.companyId || '';
+  if (user.isSuperAdmin && !companyId) {
+    return <CompanyRequiredMessage reportName="Presencia diaria" />;
+  }
   const dateFrom = sp.dateFrom || todayArgentinaDateKey();
   const dateTo = sp.dateTo || dateFrom;
   const employeeId = sp.employeeId || '';
   const deviceId = sp.deviceId || '';
-  const params = { dateFrom, dateTo, employeeId, deviceId };
+  const params = { dateFrom, dateTo, employeeId, deviceId, companyId };
   const [rows, userOptions, devices] = await Promise.all([
     getDailyPresenceReport(params),
     getDistinctUsers(),
@@ -48,6 +56,7 @@ export default async function DailyPresencePage({ searchParams }: PageProps) {
           dateTo={dateTo}
           employeeId={employeeId}
           deviceId={deviceId}
+          companyId={companyId}
         />
         <DailyPresenceTable rows={rows} />
       </main>

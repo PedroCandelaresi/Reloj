@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { CompanyRequiredMessage } from '@/components/reports/CompanyRequiredMessage';
 import { ExportButtons } from '@/components/reports/ExportButtons';
 import { IncompleteRecordsTable } from '@/components/reports/IncompleteRecordsTable';
 import { ReportFilters } from '@/components/reports/ReportFilters';
@@ -17,17 +18,22 @@ interface PageProps {
     dateTo?: string;
     employeeId?: string;
     deviceId?: string;
+    companyId?: string;
   }>;
 }
 
 export default async function IncompleteRecordsPage({ searchParams }: PageProps) {
   const user = await requireCurrentSession();
   const sp = await searchParams;
+  const companyId = sp.companyId || '';
+  if (user.isSuperAdmin && !companyId) {
+    return <CompanyRequiredMessage reportName="Fichadas incompletas" />;
+  }
   const dateFrom = sp.dateFrom || todayArgentinaDateKey();
   const dateTo = sp.dateTo || dateFrom;
   const employeeId = sp.employeeId || '';
   const deviceId = sp.deviceId || '';
-  const params = { dateFrom, dateTo, employeeId, deviceId };
+  const params = { dateFrom, dateTo, employeeId, deviceId, companyId };
   const canCreateRequests = user.isSuperAdmin || user.companyRole === 'company_admin' || user.companyRole === 'operator';
   const [rows, userOptions, devices] = await Promise.all([
     getIncompleteRecordsReport(params),
@@ -56,6 +62,7 @@ export default async function IncompleteRecordsPage({ searchParams }: PageProps)
           dateTo={dateTo}
           employeeId={employeeId}
           deviceId={deviceId}
+          companyId={companyId}
         />
         <IncompleteRecordsTable rows={rows} canCreateRequests={canCreateRequests} />
       </main>

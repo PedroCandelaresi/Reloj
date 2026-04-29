@@ -1,18 +1,25 @@
 import Link from 'next/link';
+import { CompanyRequiredMessage } from '@/components/reports/CompanyRequiredMessage';
 import { ExportButtons } from '@/components/reports/ExportButtons';
 import { Phase2ReportTable } from '@/components/reports/Phase2ReportTable';
 import { ReportFilters } from '@/components/reports/ReportFilters';
 import { exportWorkedHoursReport, getDistinctUsers, getWorkedHoursReport } from '@/lib/api';
 import { todayArgentinaDateKey } from '@/lib/argentina-date';
+import { requireCurrentSession } from '@/lib/session';
 
-interface PageProps { searchParams: Promise<{ dateFrom?: string; dateTo?: string; employeeId?: string }> }
+interface PageProps { searchParams: Promise<{ dateFrom?: string; dateTo?: string; employeeId?: string; companyId?: string }> }
 
 export default async function WorkedHoursPage({ searchParams }: PageProps) {
+  const user = await requireCurrentSession();
   const sp = await searchParams;
+  const companyId = sp.companyId || '';
+  if (user.isSuperAdmin && !companyId) {
+    return <CompanyRequiredMessage reportName="Horas trabajadas" />;
+  }
   const dateFrom = sp.dateFrom || todayArgentinaDateKey();
   const dateTo = sp.dateTo || dateFrom;
   const employeeId = sp.employeeId || '';
-  const params = { dateFrom, dateTo, employeeId };
+  const params = { dateFrom, dateTo, employeeId, companyId };
   const [rows, userOptions] = await Promise.all([getWorkedHoursReport(params), getDistinctUsers()]);
 
   return (
@@ -28,7 +35,7 @@ export default async function WorkedHoursPage({ searchParams }: PageProps) {
           </div>
           <ExportButtons excelHref={exportWorkedHoursReport(params)} />
         </div>
-        <ReportFilters action="/reports/worked-hours" userOptions={userOptions} dateFrom={dateFrom} dateTo={dateTo} employeeId={employeeId} />
+        <ReportFilters action="/reports/worked-hours" userOptions={userOptions} dateFrom={dateFrom} dateTo={dateTo} employeeId={employeeId} companyId={companyId} />
         <Phase2ReportTable rows={rows} mode="worked" emptyMessage="No hay horas trabajadas para el período seleccionado." />
       </main>
     </>

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { CompanyRequiredMessage } from '@/components/reports/CompanyRequiredMessage';
 import { ExportButtons } from '@/components/reports/ExportButtons';
 import { Phase2ReportTable } from '@/components/reports/Phase2ReportTable';
 import { ReportFilters } from '@/components/reports/ReportFilters';
@@ -6,16 +7,20 @@ import { exportAbsencesReport, getAbsencesReport, getDistinctUsers } from '@/lib
 import { todayArgentinaDateKey } from '@/lib/argentina-date';
 import { requireCurrentSession } from '@/lib/session';
 
-interface PageProps { searchParams: Promise<{ dateFrom?: string; dateTo?: string; employeeId?: string; justification?: string }> }
+interface PageProps { searchParams: Promise<{ dateFrom?: string; dateTo?: string; employeeId?: string; justification?: string; companyId?: string }> }
 
 export default async function AbsencesPage({ searchParams }: PageProps) {
   const user = await requireCurrentSession();
   const sp = await searchParams;
+  const companyId = sp.companyId || '';
+  if (user.isSuperAdmin && !companyId) {
+    return <CompanyRequiredMessage reportName="Ausencias" />;
+  }
   const dateFrom = sp.dateFrom || todayArgentinaDateKey();
   const dateTo = sp.dateTo || dateFrom;
   const employeeId = sp.employeeId || '';
   const justification = sp.justification || 'all';
-  const params = { dateFrom, dateTo, employeeId, justification };
+  const params = { dateFrom, dateTo, employeeId, justification, companyId };
   const canCreateRequests = user.isSuperAdmin || user.companyRole === 'company_admin' || user.companyRole === 'operator';
   const [rows, userOptions] = await Promise.all([getAbsencesReport(params), getDistinctUsers()]);
 
@@ -36,6 +41,7 @@ export default async function AbsencesPage({ searchParams }: PageProps) {
           dateFrom={dateFrom}
           dateTo={dateTo}
           employeeId={employeeId}
+          companyId={companyId}
           justification={justification}
           showJustificationFilter
         />

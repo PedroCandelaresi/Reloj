@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { CompanyRequiredMessage } from '@/components/reports/CompanyRequiredMessage';
 import { ExportButtons } from '@/components/reports/ExportButtons';
 import { MonthlySummaryTable } from '@/components/reports/MonthlySummaryTable';
 import { ReportFilters } from '@/components/reports/ReportFilters';
@@ -8,22 +9,29 @@ import {
   getMonthlySummaryReport,
 } from '@/lib/api';
 import { currentArgentinaPeriod } from '@/lib/argentina-date';
+import { requireCurrentSession } from '@/lib/session';
 
 interface PageProps {
   searchParams: Promise<{
     year?: string;
     month?: string;
     employeeId?: string;
+    companyId?: string;
   }>;
 }
 
 export default async function MonthlySummaryPage({ searchParams }: PageProps) {
+  const user = await requireCurrentSession();
   const sp = await searchParams;
+  const companyId = sp.companyId || '';
+  if (user.isSuperAdmin && !companyId) {
+    return <CompanyRequiredMessage reportName="Resumen mensual" />;
+  }
   const fallback = currentArgentinaPeriod();
   const year = sp.year || fallback.year;
   const month = sp.month || fallback.month;
   const employeeId = sp.employeeId || '';
-  const params = { year, month, employeeId };
+  const params = { year, month, employeeId, companyId };
   const paddedMonth = String(month).padStart(2, '0');
   const dateFrom = `${year}-${paddedMonth}-01`;
   const dateTo = `${year}-${paddedMonth}-${String(new Date(Number(year), Number(month), 0).getDate()).padStart(2, '0')}`;
@@ -59,6 +67,7 @@ export default async function MonthlySummaryPage({ searchParams }: PageProps) {
           year={year}
           month={month}
           employeeId={employeeId}
+          companyId={companyId}
         />
         {report.source === 'raw_records' && (
           <div className="mb-5 rounded-lg border px-4 py-3 text-sm" style={{ background: 'var(--blue-soft)', borderColor: 'rgba(59,130,246,0.25)', color: 'var(--blue-text)' }}>
@@ -73,7 +82,7 @@ export default async function MonthlySummaryPage({ searchParams }: PageProps) {
                 Recalculá el mes completo antes de usar este reporte para RRHH. Faltan {report.coverage.missingSummaryDays} resumen(es) diario(s).
               </p>
             </div>
-            <Link href={`/reports/day-summaries?dateFrom=${dateFrom}&dateTo=${dateTo}${employeeId ? `&employeeId=${employeeId}` : ''}`}
+            <Link href={`/reports/day-summaries?dateFrom=${dateFrom}&dateTo=${dateTo}${employeeId ? `&employeeId=${employeeId}` : ''}${companyId ? `&companyId=${companyId}` : ''}`}
               className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
               Abrir recálculo del período
             </Link>

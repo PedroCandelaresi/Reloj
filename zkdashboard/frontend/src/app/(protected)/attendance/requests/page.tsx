@@ -1,4 +1,5 @@
 import { AttendanceRequestsManager } from '@/components/AttendanceRequestsManager';
+import { CompanyRequiredMessage } from '@/components/reports/CompanyRequiredMessage';
 import {
   getAttendanceAuditLog,
   getAttendanceJustificationTypes,
@@ -24,12 +25,17 @@ interface PageProps {
     targetAttendanceRecordId?: string;
     newPunchTime?: string;
     fromReport?: string;
+    companyId?: string;
   }>;
 }
 
 export default async function AttendanceRequestsPage({ searchParams }: PageProps) {
   const user = await requireCurrentSession();
   const sp = await searchParams;
+  const companyId = sp.companyId || '';
+  if (user.isSuperAdmin && !companyId) {
+    return <CompanyRequiredMessage reportName="Solicitudes de asistencia" />;
+  }
   const today = todayArgentinaDateKey();
   const params = {
     status: sp.status || undefined,
@@ -37,12 +43,13 @@ export default async function AttendanceRequestsPage({ searchParams }: PageProps
     employeeId: sp.employeeId || undefined,
     dateFrom: sp.dateFrom || today,
     dateTo: sp.dateTo || today,
+    companyId: companyId || undefined,
   };
   const [requestsResult, auditLogsResult, userOptionsResult, justificationTypesResult] = await Promise.allSettled([
     getAttendanceRequests(params),
-    getAttendanceAuditLog({ dateFrom: params.dateFrom, dateTo: params.dateTo, employeeId: params.employeeId }),
+    getAttendanceAuditLog({ dateFrom: params.dateFrom, dateTo: params.dateTo, employeeId: params.employeeId, companyId: params.companyId }),
     getDistinctUsers(),
-    getAttendanceJustificationTypes(),
+    getAttendanceJustificationTypes({ companyId: params.companyId }),
   ]);
   const requests = requestsResult.status === 'fulfilled' ? requestsResult.value : [];
   const auditLogs = auditLogsResult.status === 'fulfilled' ? auditLogsResult.value : [];
@@ -72,6 +79,7 @@ export default async function AttendanceRequestsPage({ searchParams }: PageProps
         )}
 
         <form action="/attendance/requests" className="card mb-6 grid grid-cols-1 gap-4 p-5 md:grid-cols-5">
+          {companyId && <input type="hidden" name="companyId" value={companyId} />}
           <label className="text-sm">
             <span className="mb-1 block font-medium" style={{ color: 'var(--text-secondary)' }}>Desde</span>
             <input type="date" name="dateFrom" defaultValue={params.dateFrom} className="input-field w-full rounded-lg px-3 py-2 text-sm" />

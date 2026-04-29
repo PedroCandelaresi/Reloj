@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+import type { ReactNode } from 'react';
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import type { CompanySummary, CompanyUser, Employee } from '@/lib/api';
@@ -86,6 +88,18 @@ function LinkStatusBadge({ status }: { status: ReturnType<typeof userEmployeeLin
         {status.detail}
       </p>
     </div>
+  );
+}
+
+function AdminCompanyLink({ href, children }: { href: string; children: ReactNode }) {
+  return (
+    <Link
+      href={href}
+      className="rounded-lg px-3 py-2 text-xs font-medium transition-colors"
+      style={{ background: 'var(--blue-soft)', color: 'var(--blue-text)' }}
+    >
+      {children}
+    </Link>
   );
 }
 
@@ -194,10 +208,17 @@ export function AdminCompanyDetailPanel({
   return (
     <div className="card rounded-xl mt-6">
       <div className="px-6 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
-        <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>
-          {company.nombreFantasia || company.razonSocial}
-          <span className="ml-2 text-sm font-normal" style={{ color: 'var(--text-muted)' }}>{company.cuit}</span>
-        </h3>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>
+            {company.nombreFantasia || company.razonSocial}
+            <span className="ml-2 text-sm font-normal" style={{ color: 'var(--text-muted)' }}>{company.cuit}</span>
+          </h3>
+          <div className="flex flex-wrap gap-2">
+            <AdminCompanyLink href={`/reports?companyId=${company.id}`}>Reportes</AdminCompanyLink>
+            <AdminCompanyLink href={`/attendance/requests?companyId=${company.id}`}>Solicitudes</AdminCompanyLink>
+            <AdminCompanyLink href={`/settings/holidays?companyId=${company.id}`}>Feriados</AdminCompanyLink>
+          </div>
+        </div>
       </div>
 
       {banner && (

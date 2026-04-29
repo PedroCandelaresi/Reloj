@@ -8,7 +8,10 @@ export function CompanyRequiredMessage({ reportName }: { reportName: string }) {
           {reportName}
         </h1>
         <p className="mt-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
-          Para ver este reporte como super admin, primero seleccioná una empresa.
+          Para usar esta sección como super admin, primero seleccioná una empresa.
+        </p>
+        <p className="mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>
+          Los datos de asistencia, solicitudes, feriados y reportes pertenecen a una empresa específica.
         </p>
         <Link
           href="/admin/companies"
