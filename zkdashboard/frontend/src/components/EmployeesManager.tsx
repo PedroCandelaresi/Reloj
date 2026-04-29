@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, useTransition } from 'react';
+import { useEffect, useMemo, useState, useTransition } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import type {
   Device,
@@ -59,6 +59,26 @@ const RECONCILIATION_STATUS_LABELS: Record<DeviceUserMatchStatus, string> = {
   pin_conflict: 'Conflicto de N° de usuario',
 };
 
+function SummaryTile({
+  label,
+  value,
+  helper,
+  tone = 'default',
+}: {
+  label: string;
+  value: number;
+  helper: string;
+  tone?: 'default' | 'warning';
+}) {
+  return (
+    <div className="card rounded-xl p-5">
+      <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>{label}</p>
+      <p className="mt-2 text-3xl font-semibold" style={{ color: tone === 'warning' ? '#b45309' : 'var(--text-primary)' }}>{value}</p>
+      <p className="mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>{helper}</p>
+    </div>
+  );
+}
+
 function toFormValues(employee: Employee): FormValues {
   return {
     id: employee.id,
@@ -103,6 +123,7 @@ export function EmployeesManagerContent({
   const [syncDeviceId, setSyncDeviceId] = useState(devices[0]?.id ? String(devices[0].id) : '');
   const [reconciliation, setReconciliation] = useState<DeviceUserReconciliation | null>(null);
   const [isReconciliationLoading, setIsReconciliationLoading] = useState(false);
+  const [search, setSearch] = useState('');
 
   const openCreate = () => {
     setMode('create');
@@ -272,14 +293,42 @@ export function EmployeesManagerContent({
         ...reconciliation.matched,
       ]
     : [];
+  const employeesWithoutSchedule = employees.filter((employee) => !employee.scheduleProfileId).length;
+  const employeesWithContact = employees.filter((employee) => employee.telefono || employee.email).length;
+  const filteredEmployees = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    if (!term) return employees;
+    return employees.filter((employee) => {
+      const values = [
+        employee.id,
+        employee.apellido,
+        employee.nombre,
+        employee.telefono,
+        employee.email,
+        employee.scheduleProfile?.name,
+      ];
+      return values.some((value) => value?.toLowerCase().includes(term));
+    });
+  }, [employees, search]);
 
   return (
     <>
-      <div className="card rounded-xl">
-        <div className="px-6 py-4 flex items-center justify-between gap-4" style={{ borderBottom: '1px solid var(--border)' }}>
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <SummaryTile label="Empleados cargados" value={employees.length} helper="Personas registradas en esta empresa" />
+          <SummaryTile label="Sin horario" value={employeesWithoutSchedule} helper="Revisalos antes de calcular asistencia" tone={employeesWithoutSchedule > 0 ? 'warning' : 'default'} />
+          <SummaryTile label="Con datos de contacto" value={employeesWithContact} helper="Tienen teléfono o email cargado" />
+        </div>
+
+        <div className="card rounded-xl">
+          <div className="px-6 py-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between" style={{ borderBottom: '1px solid var(--border)' }}>
           <div>
-            <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Maestra de empleados</h2>
-            <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>{employees.length} empleados registrados</p>
+            <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Lista de empleados</h2>
+            <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
+              {canManage
+                ? 'Gestioná empleados, horarios y envío al reloj desde una sola vista.'
+                : 'Consultá empleados, horarios y estado de sincronización con el reloj.'}
+            </p>
           </div>
           {canManage ? (
             <button
@@ -309,13 +358,112 @@ export function EmployeesManagerContent({
           </div>
         )}
 
+        <div className="mx-6 mt-6 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+          <label className="block max-w-md flex-1 text-sm">
+            <span className="mb-1 block font-medium" style={{ color: 'var(--text-secondary)' }}>Buscar empleado</span>
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Nombre, apellido, N° de usuario, teléfono o email"
+              className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
+            />
+          </label>
+          <div className="text-sm" style={{ color: 'var(--text-muted)' }}>
+            Mostrando {filteredEmployees.length} de {employees.length}
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="table-header-row text-xs uppercase">
+                <th className="px-6 py-4 text-left font-semibold">Empleado</th>
+                <th className="px-6 py-4 text-left font-semibold">Contacto</th>
+                <th className="px-6 py-4 text-left font-semibold">Horario</th>
+                <th className="px-6 py-4 text-left font-semibold">Perfil</th>
+                {canManage && <th className="px-6 py-4 text-right font-semibold">Acciones</th>}
+              </tr>
+            </thead>
+            <tbody>
+              {employees.length === 0 ? (
+                <tr>
+                  <td colSpan={canManage ? 5 : 4} className="px-6 py-12 text-center" style={{ color: 'var(--text-muted)' }}>
+                    <p className="font-medium" style={{ color: 'var(--text-secondary)' }}>No hay empleados cargados todavía.</p>
+                    <p className="mt-1">Para calcular asistencia, primero cargá empleados o consultá los usuarios del reloj.</p>
+                  </td>
+                </tr>
+              ) : filteredEmployees.length === 0 ? (
+                <tr>
+                  <td colSpan={canManage ? 5 : 4} className="px-6 py-12 text-center" style={{ color: 'var(--text-muted)' }}>
+                    No encontramos empleados con esa búsqueda.
+                  </td>
+                </tr>
+              ) : (
+                filteredEmployees.map((employee) => (
+                  <tr key={employee.id} className="transition-colors border-t" style={{ borderColor: 'var(--border)' }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--row-hover)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = '')}
+                  >
+                    <td className="px-6 py-4">
+                      <div className="font-medium" style={{ color: 'var(--text-primary)' }}>{employee.apellido}, {employee.nombre}</div>
+                      <div className="mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>N° de usuario: {employee.id}</div>
+                    </td>
+                    <td className="px-6 py-4" style={{ color: 'var(--text-secondary)' }}>
+                      <div>{employee.telefono || 'Sin teléfono'}</div>
+                      <div className="mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>{employee.email || 'Sin email'}</div>
+                    </td>
+                    <td className="px-6 py-4" style={{ color: 'var(--text-secondary)' }}>
+                      {employee.entryTime || employee.exitTime ? (
+                        <span>{employee.entryTime || '--:--'} a {employee.exitTime || '--:--'}</span>
+                      ) : (
+                        <span style={{ color: 'var(--text-muted)' }}>Usa el perfil asignado</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      {employee.scheduleProfile?.name ? (
+                        <span className="rounded-full px-3 py-1 text-xs font-medium" style={{ background: 'var(--brand-soft)', color: 'var(--brand-text)' }}>
+                          {employee.scheduleProfile.name}
+                        </span>
+                      ) : (
+                        <span className="rounded-full px-3 py-1 text-xs font-medium" style={{ background: 'rgba(245,158,11,0.14)', color: '#b45309' }}>
+                          Sin horario
+                        </span>
+                      )}
+                    </td>
+                    {canManage && (
+                      <td className="px-6 py-4">
+                        <div className="flex flex-wrap justify-end gap-2">
+                          <button type="button" onClick={() => openEdit(employee)}
+                            className="rounded-lg px-3 py-2 text-xs font-medium transition-colors" style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
+                            Editar
+                          </button>
+                          <button type="button" onClick={() => handleExportToDevice(employee)} disabled={isPending || devices.length === 0}
+                            className="rounded-lg px-3 py-2 text-xs font-medium transition-colors disabled:opacity-60" style={{ background: 'var(--brand-soft)', color: 'var(--brand-text)' }}>
+                            Enviar al reloj
+                          </button>
+                          <button type="button" onClick={() => handleDelete(employee)} disabled={isPending}
+                            className="rounded-lg px-3 py-2 text-xs font-medium transition-colors disabled:opacity-60" style={{ background: 'var(--danger-soft)', color: 'var(--danger-text)' }}>
+                            Eliminar
+                          </button>
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
         {canQueryDeviceUsers && (
-          <div className="mx-6 mt-6 rounded-xl p-4" style={{ border: '1px solid var(--border)', background: 'var(--surface-raised)' }}>
+          <div className="card rounded-xl p-5" style={{ border: '1px solid var(--border)' }}>
             <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
               <div className="min-w-0">
-                <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Usuarios del reloj</p>
+                <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Comparar con usuarios del reloj</p>
                 <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                  Compara usuarios del reloj contra empleados del sistema. No importa biometría ni crea empleados automáticamente.
+                  Sirve para revisar quién está cargado en el reloj. No importa biometría ni crea empleados automáticamente.
                 </p>
               </div>
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -438,67 +586,6 @@ export function EmployeesManagerContent({
             </div>
           </div>
         )}
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="table-header-row text-xs uppercase">
-                <th className="px-6 py-4 text-left font-semibold">DNI</th>
-                <th className="px-6 py-4 text-left font-semibold">Apellido</th>
-                <th className="px-6 py-4 text-left font-semibold">Nombre</th>
-                <th className="px-6 py-4 text-left font-semibold">Teléfono</th>
-                <th className="px-6 py-4 text-left font-semibold">Email</th>
-                <th className="px-6 py-4 text-left font-semibold">Entrada</th>
-                <th className="px-6 py-4 text-left font-semibold">Salida</th>
-                <th className="px-6 py-4 text-left font-semibold">Perfil</th>
-                {canManage && <th className="px-6 py-4 text-right font-semibold">Acciones</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {employees.length === 0 ? (
-                <tr>
-                  <td colSpan={canManage ? 9 : 8} className="px-6 py-10 text-center" style={{ color: 'var(--text-muted)' }}>
-                    No hay empleados cargados todavía. Para calcular asistencia, primero cargá empleados o importalos desde el reloj.
-                  </td>
-                </tr>
-              ) : (
-                employees.map((employee) => (
-                  <tr key={employee.id} className="transition-colors border-t" style={{ borderColor: 'var(--border)' }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--row-hover)')}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = '')}
-                  >
-                    <td className="px-6 py-4 font-medium" style={{ color: 'var(--text-primary)' }}>{employee.id}</td>
-                    <td className="px-6 py-4" style={{ color: 'var(--text-secondary)' }}>{employee.apellido}</td>
-                    <td className="px-6 py-4" style={{ color: 'var(--text-secondary)' }}>{employee.nombre}</td>
-                    <td className="px-6 py-4" style={{ color: 'var(--text-muted)' }}>{employee.telefono || '—'}</td>
-                    <td className="px-6 py-4" style={{ color: 'var(--text-muted)' }}>{employee.email || '—'}</td>
-                    <td className="px-6 py-4" style={{ color: 'var(--text-muted)' }}>{employee.entryTime || '—'}</td>
-                    <td className="px-6 py-4" style={{ color: 'var(--text-muted)' }}>{employee.exitTime || '—'}</td>
-                    <td className="px-6 py-4" style={{ color: 'var(--text-muted)' }}>{employee.scheduleProfile?.name || '—'}</td>
-                    {canManage && (
-                      <td className="px-6 py-4">
-                        <div className="flex justify-end gap-2">
-                          <button type="button" onClick={() => openEdit(employee)}
-                            className="font-medium transition-colors" style={{ color: 'var(--brand-text)' }}>
-                            Editar
-                          </button>
-                          <button type="button" onClick={() => handleExportToDevice(employee)} disabled={isPending || devices.length === 0}
-                            className="font-medium transition-colors disabled:opacity-60" style={{ color: 'var(--brand-text)' }}>
-                            Enviar al reloj
-                          </button>
-                          <button type="button" onClick={() => handleDelete(employee)} disabled={isPending}
-                            className="font-medium transition-colors disabled:opacity-60" style={{ color: 'var(--danger-text)' }}>
-                            Eliminar
-                          </button>
-                        </div>
-                      </td>
-                    )}
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
       </div>
 
       {canManage && isModalOpen && (
@@ -509,7 +596,7 @@ export function EmployeesManagerContent({
                 {mode === 'create' ? 'Agregar empleado' : 'Editar empleado'}
               </h3>
               <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-                El DNI debe coincidir con el `user_id` que llega desde el reloj.
+                El N° de usuario debe coincidir con el número que usa la persona para fichar en el reloj.
               </p>
             </div>
 
@@ -521,7 +608,7 @@ export function EmployeesManagerContent({
               )}
 
               <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>DNI</label>
+                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>N° de usuario / DNI</label>
                 <input
                   name="id" value={form.id} onChange={handleChange} required
                   disabled={mode === 'edit'} inputMode="numeric"
@@ -561,7 +648,7 @@ export function EmployeesManagerContent({
                   ))}
                 </select>
                 <p className="mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
-                  Los horarios propios de abajo pisan al perfil. Dejalos vacíos para usar verano/invierno del perfil.
+                  Si no elegís un perfil, este empleado no tendrá cálculo de tardanzas, ausencias ni horas esperadas.
                 </p>
               </div>
 
