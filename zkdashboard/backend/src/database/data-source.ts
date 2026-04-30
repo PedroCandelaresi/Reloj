@@ -5,7 +5,9 @@ import { DataSource, DataSourceOptions } from 'typeorm';
 import { AttendanceRecord } from '../attendance/attendance.entity';
 import { AttendanceAuditLog } from '../attendance/entities/attendance-audit-log.entity';
 import { AttendanceDaySummary } from '../attendance/entities/attendance-day-summary.entity';
+import { AttendanceJustificationType } from '../attendance/entities/attendance-justification-type.entity';
 import { AttendanceRequest } from '../attendance/entities/attendance-request.entity';
+import { AttendanceRequestAttachment } from '../attendance/entities/attendance-request-attachment.entity';
 import { Holiday } from '../attendance/entities/holiday.entity';
 import { InboundRequest } from '../adms/inbound-request.entity';
 import { CompanyMembership } from '../companies/company-membership.entity';
@@ -27,6 +29,8 @@ export const DATABASE_ENTITIES = [
   AttendanceRecord,
   AttendanceDaySummary,
   AttendanceRequest,
+  AttendanceRequestAttachment,
+  AttendanceJustificationType,
   AttendanceAuditLog,
   Holiday,
   Company,

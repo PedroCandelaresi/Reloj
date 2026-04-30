@@ -449,11 +449,12 @@ export class AttendanceRequestsService {
       },
     });
     if (existing) {
-      throw new BadRequestException('Ya existe una fichada para ese empleado y horario.');
+      throw new BadRequestException('Ya existe una fichada para ese empleado en ese horario.');
     }
 
-    const record = await attendanceRepo.save(
-      attendanceRepo.create({
+    let record: AttendanceRecord;
+    try {
+      record = await attendanceRepo.save(attendanceRepo.create({
         deviceSn: 'manual',
         userId: request.employeeId,
         deviceId: null,
@@ -463,8 +464,13 @@ export class AttendanceRequestsService {
         verifyType: 0,
         workCode: null,
         source: 'manual',
-      }),
-    );
+      }));
+    } catch (error) {
+      if (this.isUniqueConstraintError(error)) {
+        throw new BadRequestException('Ya existe una fichada para ese empleado en ese horario.');
+      }
+      throw error;
+    }
 
     await this.writeAudit({
       companyId: request.companyId,

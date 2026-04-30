@@ -32,10 +32,12 @@ services:
       DB_HOST: postgres
       PORT: 4370
       LOG_DIR: /home/reloj/log
+      ATTENDANCE_ATTACHMENTS_DIR: /home/reloj/attachments
     ports:
       - '4370:4370'
     volumes:
       - backend_logs:/home/reloj/log
+      - attendance_attachments:/home/reloj/attachments
     healthcheck:
       test:
         [
@@ -52,3 +54,4 @@ services:
 volumes:
   postgres_data:
   backend_logs:
+  attendance_attachments:

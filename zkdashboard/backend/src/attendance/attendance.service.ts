@@ -113,17 +113,14 @@ export class AttendanceService {
       }
     }
 
-    for (const record of records) {
-      const exists = await this.repo.findOne({
-        where: {
-          deviceSn: record.deviceSn,
-          userId: record.userId,
-          timestamp: record.timestamp,
-        },
-      });
-      if (!exists) {
-        await this.repo.save(record);
-      }
+    if (records.length > 0) {
+      await this.repo
+        .createQueryBuilder()
+        .insert()
+        .into(AttendanceRecord)
+        .values(records)
+        .orIgnore()
+        .execute();
     }
   }
 
