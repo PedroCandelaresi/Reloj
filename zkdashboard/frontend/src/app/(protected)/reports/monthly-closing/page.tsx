@@ -220,14 +220,18 @@ function MonthlyClosingTable({ rows }: { rows: MonthlyClosingReportRow[] }) {
 }
 
 function StatusBadge({ status }: { status: MonthlyClosingStatus }) {
-  const styles: Record<MonthlyClosingStatus, { label: string; background: string; color: string }> = {
-    ok: { label: 'OK', background: 'var(--brand-soft)', color: 'var(--brand-text)' },
-    review_required: { label: 'Revisar', background: 'rgba(245,158,11,0.14)', color: '#b45309' },
-    incomplete_data: { label: 'Datos incompletos', background: 'rgba(239,68,68,0.12)', color: '#b91c1c' },
+  const styles: Record<MonthlyClosingStatus, { label: string; background: string; color: string; tooltip: string }> = {
+    ok: { label: 'OK', background: 'var(--brand-soft)', color: 'var(--brand-text)', tooltip: '' },
+    review_required: { label: 'Revisar', background: 'rgba(245,158,11,0.14)', color: '#b45309', tooltip: 'Hay ausencias, tardanzas o justificaciones pendientes de revisión.' },
+    incomplete_data: { label: 'Datos incompletos', background: 'rgba(239,68,68,0.12)', color: '#b91c1c', tooltip: 'Faltan datos para calcular correctamente el mes. El empleado puede no tener perfil horario asignado o el período puede no estar recalculado.' },
   };
   const style = styles[status];
   return (
-    <span className="inline-flex rounded-full px-3 py-1 text-xs font-semibold" style={{ background: style.background, color: style.color }}>
+    <span
+      className="inline-flex rounded-full px-3 py-1 text-xs font-semibold"
+      style={{ background: style.background, color: style.color, cursor: style.tooltip ? 'help' : 'default' }}
+      title={style.tooltip || undefined}
+    >
       {style.label}
     </span>
   );

@@ -21,10 +21,22 @@ export default async function EmployeesWithoutSchedulePage({ searchParams }: Pag
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 pt-32">
       <ReportHeader
-        title="Empleados sin horario"
-        subtitle={`Empleados a los que no se les puede calcular asistencia, tardanzas ni ausencias. ${rows.length} registro(s).`}
+        title="Empleados sin perfil horario"
+        subtitle={`${rows.length} empleado(s) sin perfil horario asignado.`}
         excelHref={exportEmployeesWithoutScheduleReport(params)}
       />
+
+      {rows.length > 0 && (
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border px-4 py-3 text-sm" style={{ background: 'rgba(245,158,11,0.10)', borderColor: 'rgba(245,158,11,0.35)', color: '#92400e' }}>
+          <p>
+            Estos empleados no tienen perfil horario asignado. El sistema no calculará ausencias, tardanzas, horas esperadas ni cierre mensual hasta que se les asigne uno.
+          </p>
+          <Link href="/employees" className="shrink-0 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors" style={{ background: '#b45309' }}>
+            Asignar perfiles desde Empleados
+          </Link>
+        </div>
+      )}
+
       <EmployeeFilter action="/reports/employees-without-schedule" employeeId={employeeId} companyId={companyId} userOptions={userOptions} />
       <EmployeesWithoutScheduleTable rows={rows} />
     </main>
@@ -84,7 +96,7 @@ function EmployeesWithoutScheduleTable({ rows }: { rows: EmployeeWithoutSchedule
             {rows.length === 0 ? (
               <tr>
                 <td colSpan={4} className="px-6 py-10 text-center" style={{ color: 'var(--text-muted)' }}>
-                  Todos los empleados tienen horario configurado.
+                  ✓ Todos los empleados tienen perfil horario asignado.
                 </td>
               </tr>
             ) : (

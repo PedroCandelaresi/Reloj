@@ -9,7 +9,6 @@ import {
 } from './entities/attendance-day-summary.entity';
 import { Employee } from '../employees/employee.entity';
 import { Device } from '../devices/device.entity';
-import { Company } from '../companies/company.entity';
 import { ResolvedScheduleForDate, resolveScheduleForDate } from '../companies/schedule-resolution.util';
 import { Holiday } from './entities/holiday.entity';
 import { EmployeeTimeBankLedger } from '../employees/employee-time-bank-ledger.entity';
@@ -83,8 +82,6 @@ export class AttendanceCalculationService {
     private readonly employeesRepo: Repository<Employee>,
     @InjectRepository(Device)
     private readonly devicesRepo: Repository<Device>,
-    @InjectRepository(Company)
-    private readonly companiesRepo: Repository<Company>,
     @InjectRepository(Holiday)
     private readonly holidaysRepo: Repository<Holiday>,
     @InjectRepository(EmployeeTimeBankLedger)
@@ -174,7 +171,6 @@ export class AttendanceCalculationService {
     let holidayDays = 0;
     let weekendDays = 0;
     const toSave: AttendanceDaySummary[] = [];
-    const company = await this.companiesRepo.findOneBy({ id: companyId });
     const holidays = await this.getHolidays(companyId, dates);
 
     for (const employee of employees) {
@@ -197,7 +193,7 @@ export class AttendanceCalculationService {
         }
 
         const approvedJustification = this.approvedJustificationSnapshot(summary);
-        this.applyRecordsToSummary(summary, employeeGroups, devicesById, employee, company, holidays.get(date) ?? null);
+        this.applyRecordsToSummary(summary, employeeGroups, devicesById, employee, holidays.get(date) ?? null);
         this.restoreApprovedJustification(summary, approvedJustification);
         if (summary.isAbsent) absentDays += 1;
         if (summary.hasIncompleteRecord) incompleteDays += 1;
@@ -401,10 +397,9 @@ export class AttendanceCalculationService {
     employeeGroups: Map<string, AttendanceRecord[]> | undefined,
     devicesById: Map<number, Device>,
     employee: Employee,
-    company: Company | null,
     holiday: Holiday | null,
   ): void {
-    const schedule = resolveScheduleForDate(employee, summary.date, company);
+    const schedule = resolveScheduleForDate(employee, summary.date);
     const records = this.recordsForSchedule(employeeGroups, summary.date, schedule);
     const pairing = this.pairing.summarize(
       records.map((record) => ({

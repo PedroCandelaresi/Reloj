@@ -389,7 +389,7 @@ export class MonthlyClosingService {
     pendingJustificationsCount: number;
   }): string[] {
     const observations: string[] = [];
-    if (!employee.scheduleProfileId) observations.push('Empleado sin horario configurado');
+    if (!employee.scheduleProfileId) observations.push('Empleado sin perfil horario — no se calcularon tardanzas, ausencias ni horas esperadas');
     if (hasIncompletePeriod || missingDays > 0) observations.push('Período con datos incompletos');
     if (unjustifiedAbsentDaysCount > 0) observations.push(`Tiene ${unjustifiedAbsentDaysCount} ${this.plural(unjustifiedAbsentDaysCount, 'ausencia sin justificar', 'ausencias sin justificar')}`);
     if (unjustifiedLateDaysCount > 0) observations.push(`Tiene ${unjustifiedLateDaysCount} ${this.plural(unjustifiedLateDaysCount, 'tardanza sin justificar', 'tardanzas sin justificar')}`);

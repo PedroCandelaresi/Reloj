@@ -1,4 +1,3 @@
-import { Company } from './company.entity';
 import { ScheduleProfileDayInterval } from './schedule-profile-day-interval.entity';
 import { ScheduleProfileDayRule, ScheduleProfileSeason } from './schedule-profile-day-rule.entity';
 import { ScheduleProfile } from './schedule-profile.entity';
@@ -84,30 +83,29 @@ export function dayNumberFromWorkDayCode(code: string): number | null {
 export function resolveScheduleForDate(
   employee: Employee,
   date: string,
-  company: Company | null,
 ): ResolvedScheduleForDate {
   const profile = employee.scheduleProfile as ProfileWithRules | null | undefined;
 
-  if (!profile && !employee.entryTime && !employee.exitTime && !company?.defaultEntryTime && !company?.defaultExitTime) {
-    return emptySchedule('no_schedule', date, profile, 'normal', null, null);
+  if (!profile) {
+    return emptySchedule('no_schedule', date, null, 'normal', null, null);
   }
 
   const season = resolveSeason(profile, date);
   const rotation = resolveRotation(profile, date);
   const dayOfWeek = dayOfWeekArgentina(date);
-  const dayRule = findScheduleRule(profile?.dayRules, {
+  const dayRule = findScheduleRule(profile.dayRules, {
     season,
     dayOfWeek,
     cycleWeek: rotation.cycleWeek,
     cycleDay: rotation.cycleDay,
-    rotationMode: profile?.rotationMode ?? 'none',
+    rotationMode: profile.rotationMode ?? 'none',
   });
 
   if (dayRule) {
     return scheduleFromRule(dayRule, profile, season, date, rotation.cycleWeek, rotation.cycleDay);
   }
 
-  return legacySchedule(employee, profile, company, date, season);
+  return legacySchedule(profile, date, season);
 }
 
 function scheduleFromRule(
@@ -173,48 +171,42 @@ function scheduleFromRule(
 }
 
 function legacySchedule(
-  employee: Employee,
-  profile: ProfileWithRules | null | undefined,
-  company: Company | null,
+  profile: ProfileWithRules,
   date: string,
   season: ScheduleProfileSeason,
 ): ResolvedScheduleForDate {
   const entryTime =
-    season === 'summer' && profile?.summerEntryTime
+    season === 'summer' && profile.summerEntryTime
       ? profile.summerEntryTime
-      : season === 'winter' && profile?.winterEntryTime
+      : season === 'winter' && profile.winterEntryTime
         ? profile.winterEntryTime
-        : profile?.entryTime ?? employee.entryTime ?? company?.defaultEntryTime ?? null;
+        : profile.entryTime ?? null;
   const exitTime =
-    season === 'summer' && profile?.summerExitTime
+    season === 'summer' && profile.summerExitTime
       ? profile.summerExitTime
-      : season === 'winter' && profile?.winterExitTime
+      : season === 'winter' && profile.winterExitTime
         ? profile.winterExitTime
-        : profile?.exitTime ?? employee.exitTime ?? company?.defaultExitTime ?? null;
+        : profile.exitTime ?? null;
 
   if (!entryTime || !exitTime) {
     return emptySchedule('no_schedule', date, profile, season, null, null);
   }
 
-  const workDays = profile?.workDays?.length
-    ? profile.workDays
-    : company?.defaultWorkDays?.length
-      ? company.defaultWorkDays
-      : DEFAULT_WORK_DAYS;
+  const workDays = profile.workDays?.length ? profile.workDays : DEFAULT_WORK_DAYS;
   const isWorkday = workDays.includes(dayCodeArgentina(date));
-  const breakMinutes = profile?.breakMinutes ?? 0;
+  const breakMinutes = profile.breakMinutes ?? 0;
   const interval = resolveInterval(date, {
     entryTime,
     exitTime,
     crossesMidnight: exitTime < entryTime,
     expectedMinutes: null,
   });
-  const expectedMinutes = profile?.expectedMinutesPerDay ?? Math.max(interval.expectedMinutes - breakMinutes, 0);
+  const expectedMinutes = profile.expectedMinutesPerDay ?? Math.max(interval.expectedMinutes - breakMinutes, 0);
 
   return {
     isWorkday,
     date,
-    scheduleProfileId: profile?.id ?? null,
+    scheduleProfileId: profile.id,
     ruleId: null,
     season,
     cycleWeek: null,
@@ -227,11 +219,11 @@ function legacySchedule(
     intervals: isWorkday ? [interval] : [],
     expectedMinutes: isWorkday ? expectedMinutes : 0,
     breakMinutes,
-    lateToleranceMinutes: profile?.lateToleranceMinutes ?? 0,
-    earlyDepartureToleranceMinutes: profile?.earlyDepartureToleranceMinutes ?? 0,
-    overtimeAfterMinutes: profile?.overtimeAfterMinutes ?? 0,
-    timeBankEnabled: Boolean(profile?.timeBankEnabled),
-    timeBankMode: profile?.timeBankEnabled ? profile.timeBankMode ?? 'overtime_only' : 'none',
+    lateToleranceMinutes: profile.lateToleranceMinutes ?? 0,
+    earlyDepartureToleranceMinutes: profile.earlyDepartureToleranceMinutes ?? 0,
+    overtimeAfterMinutes: profile.overtimeAfterMinutes ?? 0,
+    timeBankEnabled: Boolean(profile.timeBankEnabled),
+    timeBankMode: profile.timeBankEnabled ? profile.timeBankMode ?? 'overtime_only' : 'none',
     source: 'legacy_profile',
   };
 }

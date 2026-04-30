@@ -21,7 +21,6 @@ import {
   updateEmployeeAction,
 } from '@/app/(protected)/employees/actions';
 import { formatEmployeeName } from '@/lib/format-employee';
-import { maskTimeInput } from '@/lib/input-masks';
 import { getCompanyDeviceName, humanizeActionError } from '@/lib/ux-labels';
 
 type FormMode = 'create' | 'edit';
@@ -32,8 +31,6 @@ type FormValues = {
   apellido: string;
   telefono: string;
   email: string;
-  entryTime: string;
-  exitTime: string;
   scheduleProfileId: string;
 };
 
@@ -48,8 +45,6 @@ const EMPTY_FORM: FormValues = {
   apellido: '',
   telefono: '',
   email: '',
-  entryTime: '',
-  exitTime: '',
   scheduleProfileId: '',
 };
 
@@ -88,8 +83,6 @@ function toFormValues(employee: Employee): FormValues {
     apellido: employee.apellido,
     telefono: employee.telefono ?? '',
     email: employee.email ?? '',
-    entryTime: employee.entryTime ?? '',
-    exitTime: employee.exitTime ?? '',
     scheduleProfileId: employee.scheduleProfileId ?? '',
   };
 }
@@ -150,7 +143,7 @@ export function EmployeesManagerContent({
 
   const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = event.target;
-    const nextValue = name === 'entryTime' || name === 'exitTime' ? maskTimeInput(value) : value;
+    const nextValue = value;
     setForm((current) => ({ ...current, [name]: nextValue }));
   };
 
@@ -164,8 +157,6 @@ export function EmployeesManagerContent({
     const apellido = form.apellido.trim();
     const telefono = form.telefono.trim();
     const email = form.email.trim();
-    const entryTime = form.entryTime.trim();
-    const exitTime = form.exitTime.trim();
     const scheduleProfileId = form.scheduleProfileId.trim();
 
     if (!id || !nombre || !apellido) {
@@ -179,8 +170,8 @@ export function EmployeesManagerContent({
     startTransition(() => {
       const request =
         mode === 'create'
-          ? createEmployeeAction({ id, nombre, apellido, telefono: telefono || null, email: email || null, entryTime: entryTime || null, exitTime: exitTime || null, scheduleProfileId: scheduleProfileId || null })
-          : updateEmployeeAction(id, { nombre, apellido, telefono: telefono || null, email: email || null, entryTime: entryTime || null, exitTime: exitTime || null, scheduleProfileId: scheduleProfileId || null });
+          ? createEmployeeAction({ id, nombre, apellido, telefono: telefono || null, email: email || null, entryTime: null, exitTime: null, scheduleProfileId: scheduleProfileId || null })
+          : updateEmployeeAction(id, { nombre, apellido, telefono: telefono || null, email: email || null, entryTime: null, exitTime: null, scheduleProfileId: scheduleProfileId || null });
 
       void request
         .then((result: ActionResult) => {
@@ -381,10 +372,9 @@ export function EmployeesManagerContent({
           <table className="w-full table-fixed text-sm">
             <thead>
               <tr className="table-header-row text-xs uppercase">
-                <th className="w-[28%] px-6 py-5 text-left font-semibold">Empleado</th>
-                <th className="w-[25%] px-6 py-5 text-left font-semibold">Contacto</th>
-                <th className="w-[16%] px-6 py-5 text-left font-semibold">Horario</th>
-                <th className="w-[16%] px-6 py-5 text-left font-semibold">Perfil</th>
+                <th className="w-[35%] px-6 py-5 text-left font-semibold">Empleado</th>
+                <th className="w-[30%] px-6 py-5 text-left font-semibold">Contacto</th>
+                <th className="w-[20%] px-6 py-5 text-left font-semibold">Perfil</th>
                 {canManage && <th className="w-[15%] px-6 py-5 text-right font-semibold">Acciones</th>}
               </tr>
             </thead>
@@ -416,21 +406,18 @@ export function EmployeesManagerContent({
                       <div className="break-words">{employee.telefono || 'Sin teléfono'}</div>
                       <div className="mt-1 break-words text-xs" style={{ color: 'var(--text-muted)' }}>{employee.email || 'Sin email'}</div>
                     </td>
-                    <td className="px-6 py-5 align-top" style={{ color: 'var(--text-secondary)' }}>
-                      {employee.entryTime || employee.exitTime ? (
-                        <span>{employee.entryTime || '--:--'} a {employee.exitTime || '--:--'}</span>
-                      ) : (
-                        <span style={{ color: 'var(--text-muted)' }}>Usa el perfil asignado</span>
-                      )}
-                    </td>
                     <td className="px-6 py-5 align-top">
                       {employee.scheduleProfile?.name ? (
                         <span className="inline-flex max-w-full rounded-full px-3 py-1 text-xs font-medium" style={{ background: 'var(--brand-soft)', color: 'var(--brand-text)' }}>
                           {employee.scheduleProfile.name}
                         </span>
                       ) : (
-                        <span className="inline-flex rounded-full px-3 py-1 text-xs font-medium" style={{ background: 'rgba(245,158,11,0.14)', color: '#b45309' }}>
-                          Sin horario
+                        <span
+                          className="inline-flex rounded-full px-3 py-1 text-xs font-medium cursor-help"
+                          style={{ background: 'rgba(245,158,11,0.14)', color: '#b45309' }}
+                          title="Sin perfil horario asignado. No se calcularán tardanzas, ausencias ni cierre mensual hasta asignarle uno."
+                        >
+                          Sin perfil horario
                         </span>
                       )}
                     </td>
@@ -650,9 +637,15 @@ export function EmployeesManagerContent({
                     </option>
                   ))}
                 </select>
-                <p className="mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
-                  Si no elegís un perfil, este empleado no tendrá cálculo de tardanzas, ausencias ni horas esperadas.
-                </p>
+                {!form.scheduleProfileId ? (
+                  <div className="mt-2 rounded-lg border px-3 py-2 text-xs" style={{ background: 'rgba(245,158,11,0.10)', borderColor: 'rgba(245,158,11,0.35)', color: '#92400e' }}>
+                    ⚠️ Sin perfil horario asignado. El sistema no calculará tardanzas, ausencias, horas esperadas ni cierre mensual para este empleado.
+                  </div>
+                ) : (
+                  <p className="mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
+                    El perfil determina el horario de trabajo y los días laborales. Recalculá el período si lo cambiás.
+                  </p>
+                )}
               </div>
 
               <div>
@@ -671,22 +664,6 @@ export function EmployeesManagerContent({
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Horario de entrada</label>
-                  <input name="entryTime" type="text" value={form.entryTime} onChange={handleChange} placeholder="HH:MM" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$" inputMode="numeric" maxLength={5}
-                    className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Horario de salida</label>
-                  <input name="exitTime" type="text" value={form.exitTime} onChange={handleChange} placeholder="HH:MM" pattern="^([01][0-9]|2[0-3]):[0-5][0-9]$" inputMode="numeric" maxLength={5}
-                    className="w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
-                  />
-                </div>
-              </div>
 
               <div className="flex items-center justify-end gap-3 pt-2">
                 <button type="button" onClick={closeModal} disabled={isPending}
