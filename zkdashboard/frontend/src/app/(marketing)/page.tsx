@@ -1,8 +1,8 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { useEffect, useState } from 'react';
 import { MarketingCarousel } from '@/components/marketing/MarketingCarousel';
 import { MarketingContactSection } from '@/components/marketing/MarketingContactSection';
+import { MarketingIntroAnimation } from '@/components/marketing/MarketingIntroAnimation';
 import { decodeJwtPayload, getDefaultAppPath } from '@/lib/auth-token';
 import { buildMarketingWhatsAppUrl } from '@/lib/marketing';
 
@@ -47,7 +47,7 @@ export default async function MarketingHomePage() {
     redirect(getDefaultAppPath(decodeJwtPayload(token)));
   }
 
-  return (
+  const content = (
     <>
       <section id="inicio" className="scroll-mt-28 py-14 md:py-20">
         <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
@@ -127,4 +127,6 @@ export default async function MarketingHomePage() {
       <MarketingContactSection />
     </>
   );
+
+  return <MarketingIntroAnimation>{content}</MarketingIntroAnimation>;
 }
