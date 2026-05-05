@@ -1,3 +1,5 @@
+'use client';
+
 import { MarketingContactForm } from '@/components/marketing/MarketingContactForm';
 import { buildMarketingWhatsAppUrl, marketingConfig } from '@/lib/marketing';
 
