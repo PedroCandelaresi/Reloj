@@ -1,3 +1,5 @@
+'use client';
+
 import { buildMarketingWhatsAppUrl } from '@/lib/marketing';
 import { useIntro } from './IntroProvider';
 

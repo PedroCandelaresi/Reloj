@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 import { buildMarketingWhatsAppUrl, marketingConfig } from '@/lib/marketing';
 import { useIntro } from './IntroProvider';
