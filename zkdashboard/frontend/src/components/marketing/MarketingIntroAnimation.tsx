@@ -1,35 +1,24 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-
-type AnimationPhase = 'hidden' | 'revealing' | 'visible';
+import { useEffect } from 'react';
+import { useIntro } from './IntroProvider';
 
 export function MarketingIntroAnimation({ children }: { children: React.ReactNode }) {
-  const [phase, setPhase] = useState<AnimationPhase>('hidden');
+  const { state } = useIntro();
 
   useEffect(() => {
-    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-    if (prefersReduced) {
-      setPhase('visible');
-      return;
+    // Disable scroll restoration for landing page experience
+    if (typeof window !== 'undefined') {
+      history.scrollRestoration = 'manual';
+      window.scrollTo(0, 0);
     }
-
-    // Content reveals progressively while brand transforms
-    const timer1 = setTimeout(() => setPhase('revealing'), 2600);
-    const timer2 = setTimeout(() => setPhase('visible'), 3400);
-
-    return () => {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-    };
   }, []);
 
-  if (phase === 'hidden') {
+  if (state === 'loading' || state === 'intro') {
     return null; // Content hidden during brand intro
   }
 
-  if (phase === 'revealing') {
+  if (state === 'revealing') {
     return (
       <div className="animate-content-reveal">
         {children}
@@ -37,6 +26,6 @@ export function MarketingIntroAnimation({ children }: { children: React.ReactNod
     );
   }
 
-  // Visible: Content fully shown
+  // Complete: Content fully shown
   return <>{children}</>;
 }

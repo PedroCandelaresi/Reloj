@@ -1,9 +1,18 @@
 import Link from 'next/link';
 import { buildMarketingWhatsAppUrl, marketingConfig } from '@/lib/marketing';
+import { useIntro } from './IntroProvider';
 
 export function MarketingFooter() {
+  const { isIntroComplete } = useIntro();
+
   return (
-    <footer className="border-t border-white/10 bg-[#060a0a] py-12">
+    <footer
+      className={`border-t border-white/10 bg-[#060a0a] py-12 transition-all duration-800 ease-out ${
+        isIntroComplete
+          ? 'opacity-100 translate-y-0'
+          : 'opacity-0 translate-y-4 pointer-events-none'
+      }`}
+    >
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
         <div className="grid gap-8 md:grid-cols-[1.2fr_0.8fr] md:items-start">
           <div>

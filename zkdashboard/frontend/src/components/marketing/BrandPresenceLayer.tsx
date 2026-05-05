@@ -1,10 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useIntro } from './IntroProvider';
 
 type BrandPhase = 'initial' | 'intro' | 'transforming' | 'background';
 
 export function BrandPresenceLayer() {
+  const { state: introState } = useIntro();
   const [phase, setPhase] = useState<BrandPhase>('initial');
 
   useEffect(() => {
@@ -15,17 +17,15 @@ export function BrandPresenceLayer() {
       return;
     }
 
-    // Sequence: initial → intro → transforming → background
-    const timer1 = setTimeout(() => setPhase('intro'), 100);
-    const timer2 = setTimeout(() => setPhase('transforming'), 1800);
-    const timer3 = setTimeout(() => setPhase('background'), 3400);
-
-    return () => {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-      clearTimeout(timer3);
-    };
-  }, []);
+    // Sync with intro provider timing
+    if (introState === 'intro') {
+      setPhase('intro');
+    } else if (introState === 'revealing') {
+      setPhase('transforming');
+    } else if (introState === 'complete') {
+      setPhase('background');
+    }
+  }, [introState]);
 
   return (
     <div className="pointer-events-none fixed inset-0 z-1 flex items-center justify-center isolate">

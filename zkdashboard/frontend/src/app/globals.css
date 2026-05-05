@@ -5,6 +5,7 @@
 /* ── Smooth scroll behavior ────────────────────────────────────── */
 html {
   scroll-behavior: smooth;
+  scrollbar-gutter: stable;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -58,11 +59,11 @@ html {
 }
 
 .animate-header-reveal {
-  animation: header-reveal 0.8s cubic-bezier(0.22, 1, 0.36, 1) 2.8s both;
+  animation: header-reveal 0.9s cubic-bezier(0.22, 1, 0.36, 1) 2.6s both;
 }
 
 .animate-header-reveal-delayed {
-  animation: header-reveal 0.8s cubic-bezier(0.22, 1, 0.36, 1) 3.0s both;
+  animation: header-reveal 0.9s cubic-bezier(0.22, 1, 0.36, 1) 2.8s both;
 }
 
 /* ── Light theme (GNOME Adwaita Light) ──────────────────────────── */
