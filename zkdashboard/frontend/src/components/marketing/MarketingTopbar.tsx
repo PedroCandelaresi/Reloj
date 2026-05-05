@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { marketingNavItems, marketingConfig } from '@/lib/marketing';
 
 function MenuIcon() {
@@ -22,6 +22,30 @@ function CloseIcon() {
 
 export function MarketingTopbar() {
   const [open, setOpen] = useState(false);
+  const [activeHref, setActiveHref] = useState('#inicio');
+
+  const validHashes = useMemo(() => new Set(marketingNavItems.map((item) => item.href)), []);
+  const legacyAnchorMap = useMemo(
+    () =>
+      ({
+        '#servicios': '#servicios-anchor',
+        '#sistema-rrhh': '#rrhh-anchor',
+        '#contacto': '#contacto-anchor',
+      }) as const,
+    [],
+  );
+
+  useEffect(() => {
+    const updateActive = () => {
+      const currentHash = window.location.hash || '#inicio';
+      const hash = legacyAnchorMap[currentHash as keyof typeof legacyAnchorMap] ?? currentHash;
+      setActiveHref(validHashes.has(hash) ? hash : '#inicio');
+    };
+
+    updateActive();
+    window.addEventListener('hashchange', updateActive);
+    return () => window.removeEventListener('hashchange', updateActive);
+  }, [legacyAnchorMap, validHashes]);
 
   return (
     <header className="fixed inset-x-0 top-0 z-40 px-4 pt-4 sm:px-6">
@@ -45,7 +69,12 @@ export function MarketingTopbar() {
                     <a
                       key={item.href}
                       href={item.href}
-                      className="rounded-full px-3 py-2 text-sm whitespace-nowrap text-slate-200 transition hover:bg-white/10 hover:text-white"
+                      className={`rounded-full px-3 py-2 text-sm whitespace-nowrap transition ${
+                        activeHref === item.href
+                          ? 'bg-white/12 text-white'
+                          : 'text-slate-200 hover:bg-white/10 hover:text-white'
+                      }`}
+                      onClick={() => setActiveHref(item.href)}
                     >
                       {item.label}
                     </a>
@@ -95,8 +124,15 @@ export function MarketingTopbar() {
                 <a
                   key={item.href}
                   href={item.href}
-                  onClick={() => setOpen(false)}
-                  className="rounded-2xl px-4 py-3 text-sm text-slate-200 transition hover:bg-white/10 hover:text-white"
+                  onClick={() => {
+                    setOpen(false);
+                    setActiveHref(item.href);
+                  }}
+                  className={`rounded-2xl px-4 py-3 text-sm transition ${
+                    activeHref === item.href
+                      ? 'bg-white/10 text-white'
+                      : 'text-slate-200 hover:bg-white/10 hover:text-white'
+                  }`}
                 >
                   {item.label}
                 </a>

@@ -8,9 +8,9 @@ export const marketingConfig = {
 
 export const marketingNavItems = [
   { href: '#inicio', label: 'Inicio' },
-  { href: '#servicios', label: 'Servicios' },
-  { href: '#sistema-rrhh', label: 'Sistema RRHH' },
-  { href: '#contacto', label: 'Contacto' },
+  { href: '#servicios-anchor', label: 'Servicios' },
+  { href: '#rrhh-anchor', label: 'Sistema RRHH' },
+  { href: '#contacto-anchor', label: 'Contacto' },
 ] as const;
 
 export const contactServiceOptions = [

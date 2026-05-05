@@ -145,7 +145,8 @@ export default function MarketingHomePage() {
         </div>
       </section>
 
-      <section id="servicios" className="py-8 md:py-12">
+      <div id="servicios-anchor" className="section-scroll-anchor" aria-hidden="true" />
+      <section id="servicios" className="pt-12 pb-8 md:pt-16 md:pb-12">
         <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
           <div className="rounded-[2rem] border border-white/15 bg-[#0b1111]/75 p-6 backdrop-blur-xl sm:p-8">
             <p className="text-xs uppercase tracking-[0.2em] text-emerald-200/85">Servicios</p>
@@ -176,7 +177,8 @@ export default function MarketingHomePage() {
         </div>
       </section>
 
-      <section id="sistema-rrhh" className="py-8 md:py-12">
+      <div id="rrhh-anchor" className="section-scroll-anchor" aria-hidden="true" />
+      <section id="sistema-rrhh" className="pt-12 pb-8 md:pt-16 md:pb-12">
         <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
           <div className="rounded-[2rem] border border-white/15 bg-[#0b1111]/75 p-6 backdrop-blur-xl sm:p-8">
             <h2 className="text-3xl font-semibold text-white sm:text-4xl">
@@ -211,7 +213,7 @@ export default function MarketingHomePage() {
         </div>
       </section>
 
-      <section id="web-comercial" className="py-8 md:py-12">
+      <section id="web-comercial" className="pt-12 pb-8 md:pt-16 md:pb-12">
         <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
           <div className="rounded-[2rem] border border-white/15 bg-[#0b1111]/75 p-6 backdrop-blur-xl sm:p-8">
             <h2 className="text-3xl font-semibold text-white sm:text-4xl">
@@ -247,7 +249,7 @@ export default function MarketingHomePage() {
         </div>
       </section>
 
-      <section id="instalaciones-soporte" className="py-8 md:py-12">
+      <section id="instalaciones-soporte" className="pt-12 pb-8 md:pt-16 md:pb-12">
         <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
           <div className="rounded-[2rem] border border-white/15 bg-[#0b1111]/75 p-6 backdrop-blur-xl sm:p-8">
             <h2 className="text-3xl font-semibold text-white sm:text-4xl">
@@ -272,6 +274,7 @@ export default function MarketingHomePage() {
         </div>
       </section>
 
+      <div id="contacto-anchor" className="section-scroll-anchor" aria-hidden="true" />
       <MarketingContactSection />
     </>
   );

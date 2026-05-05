@@ -4,18 +4,34 @@
 
 /* ── Smooth scroll behavior ────────────────────────────────────── */
 :root {
+  --header-top: 16px;
   --header-control-height: 56px;
+  --section-anchor-air: 88px;
 }
 
 html {
   overflow-y: scroll;
   overflow-x: clip;
   scroll-behavior: smooth;
-  scroll-padding-top: calc(var(--header-control-height, 56px) + 88px);
+  scroll-padding-top: calc(
+    var(--header-top, 16px) + var(--header-control-height, 56px) + var(--section-anchor-air, 88px)
+  );
 }
 
-section[id] {
-  scroll-margin-top: calc(var(--header-control-height, 56px) + 88px);
+.section-scroll-anchor {
+  position: relative;
+  height: 1px;
+  width: 100%;
+  scroll-margin-top: calc(
+    var(--header-top, 16px) + var(--header-control-height, 56px) + var(--section-anchor-air, 88px)
+  );
+  pointer-events: none;
+}
+
+#inicio {
+  scroll-margin-top: calc(
+    var(--header-top, 16px) + var(--header-control-height, 56px) + var(--section-anchor-air, 88px)
+  );
 }
 
 @media (prefers-reduced-motion: reduce) {
