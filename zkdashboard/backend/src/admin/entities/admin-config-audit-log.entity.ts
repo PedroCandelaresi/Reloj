@@ -18,6 +18,8 @@ export type AdminConfigAuditAction =
   | 'employee_status_changed'
   | 'employee_department_changed'
   | 'employee_position_changed'
+  | 'employee_created'
+  | 'employee_deleted'
   | 'department_created'
   | 'department_updated'
   | 'department_deleted'

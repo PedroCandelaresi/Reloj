@@ -107,7 +107,7 @@ export class SupportController {
     }>;
   }> {
     const limit = limitStr ? Math.min(parseInt(limitStr, 10), 500) : 100;
-    const { recent, summary } = await this.auditService.getRecalculationSummary(companyId, limit);
+    const { recent, summary } = await this.auditService.getRecalculationSummary(companyId, undefined, limit);
 
     return {
       summary,
@@ -151,7 +151,15 @@ export class SupportController {
     }
 
     const limit = limitStr ? Math.min(parseInt(limitStr, 10), 500) : 100;
-    const logs = await this.auditService.getConfigAuditLog(companyId, entityType, action as any, limit);
+    const logs = await this.auditService.getConfigAuditLog(
+      companyId,
+      entityType,
+      action as any,
+      undefined,
+      undefined,
+      undefined,
+      limit,
+    );
     const summary = await this.auditService.getConfigAuditSummary(companyId);
 
     return {
