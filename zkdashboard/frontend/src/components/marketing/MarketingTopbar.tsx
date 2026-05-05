@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { buildMarketingWhatsAppUrl, marketingNavItems, marketingConfig } from '@/lib/marketing';
+import { marketingNavItems, marketingConfig } from '@/lib/marketing';
 
 function MenuIcon() {
   return (
@@ -57,14 +57,6 @@ export function MarketingTopbar() {
               >
                 Ingresar
               </Link>
-              <a
-                href={whatsappUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="rounded-full bg-emerald-400 px-5 py-2 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300"
-              >
-                {marketingConfig.supportTagline}
-              </a>
             </div>
 
             <button
@@ -102,14 +94,6 @@ export function MarketingTopbar() {
               >
                 Ingresar
               </Link>
-              <a
-                href={whatsappUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="rounded-2xl bg-emerald-400 px-4 py-3 text-center text-sm font-semibold text-slate-950 transition hover:bg-emerald-300"
-              >
-                {marketingConfig.supportTagline}
-              </a>
             </div>
           </div>
         ) : null}

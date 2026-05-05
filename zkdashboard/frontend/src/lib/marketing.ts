@@ -7,8 +7,7 @@ export const marketingConfig = {
 
 export const marketingNavItems = [
   { href: '#inicio', label: 'Inicio' },
-  { href: '#asistencia', label: 'Control de asistencia' },
-  { href: '#fichadas', label: 'Gestión de fichadas' },
+  { href: '#servicios', label: 'Servicios' },
   { href: '#contacto', label: 'Contacto' },
 ] as const;
 

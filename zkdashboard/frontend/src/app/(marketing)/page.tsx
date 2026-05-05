@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { MarketingCarousel } from '@/components/marketing/MarketingCarousel';
 import { MarketingContactSection } from '@/components/marketing/MarketingContactSection';
 import { decodeJwtPayload, getDefaultAppPath } from '@/lib/auth-token';
 import { buildMarketingWhatsAppUrl } from '@/lib/marketing';
@@ -80,32 +81,22 @@ export default async function MarketingHomePage() {
             </div>
 
             <div className="rounded-[2rem] border border-white/15 bg-[#0b1111]/75 p-5 backdrop-blur-xl sm:p-6">
-              <div className="grid gap-4 sm:grid-cols-2">
-                {highlights.map((item) => (
-                  <article key={item.title} className="rounded-2xl border border-white/15 bg-white/5 p-4 sm:p-5">
-                    <h2 className="text-lg font-semibold text-white">{item.title}</h2>
-                    <p className="mt-2 text-sm leading-7 text-slate-300">{item.description}</p>
-                  </article>
-                ))}
-                <article className="rounded-2xl border border-emerald-300/30 bg-emerald-300/10 p-4 sm:col-span-2 sm:p-5">
-                  <p className="text-xs uppercase tracking-[0.2em] text-emerald-200/80">Resultado</p>
-                  <p className="mt-2 text-base leading-7 text-emerald-100">
-                    Menos tiempo en planillas, más visibilidad operativa y decisiones más rápidas.
-                  </p>
-                </article>
-              </div>
+              <MarketingCarousel />
             </div>
           </div>
         </div>
       </section>
 
-      <section id="asistencia" className="scroll-mt-28 py-8 md:py-12">
+      <section id="servicios" className="scroll-mt-28 py-8 md:py-12">
         <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
           <div className="rounded-[2rem] border border-white/15 bg-[#0b1111]/75 p-6 backdrop-blur-xl sm:p-8">
-            <p className="text-xs uppercase tracking-[0.2em] text-emerald-200/85">Cómo trabajamos</p>
+            <p className="text-xs uppercase tracking-[0.2em] text-emerald-200/85">Servicios</p>
             <h2 className="mt-3 text-3xl font-semibold text-white sm:text-4xl">
-              Implementación por etapas, sin fricción para tu equipo
+              Servicios pensados para tu control de asistencia
             </h2>
+            <p className="mt-4 max-w-3xl text-base leading-8 text-slate-300">
+              Desde el reloj de punto hasta reportes inteligentes y gestión de turnos, trabajamos para que tu equipo tenga menos fricción y más transparencia.
+            </p>
             <div className="mt-8 grid gap-4 lg:grid-cols-3">
               {steps.map((step) => (
                 <article key={step.step} className="rounded-2xl border border-white/15 bg-white/5 p-5">
