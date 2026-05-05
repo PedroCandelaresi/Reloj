@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import type { AttendanceUserOption, Device } from '@/lib/api';
+import type { AttendanceUserOption, Department, Device, Position } from '@/lib/api';
 import { MaskedDateInput } from '@/components/MaskedDateInput';
 import { formatAttendanceUserOption } from '@/lib/format-employee';
 import { getCompanyDeviceName } from '@/lib/ux-labels';
@@ -8,11 +8,16 @@ export function ReportFilters({
   action,
   userOptions,
   devices = [],
+  departments = [],
+  positions = [],
   dateFrom,
   dateTo,
   employeeId,
   deviceId,
   companyId,
+  departmentId,
+  positionId,
+  includeInactive,
   justification,
   showJustificationFilter = false,
   month,
@@ -22,11 +27,16 @@ export function ReportFilters({
   action: string;
   userOptions: AttendanceUserOption[];
   devices?: Device[];
+  departments?: Department[];
+  positions?: Position[];
   dateFrom?: string;
   dateTo?: string;
   employeeId?: string;
   deviceId?: string;
   companyId?: string;
+  departmentId?: string;
+  positionId?: string;
+  includeInactive?: string;
   justification?: string;
   showJustificationFilter?: boolean;
   month?: string;
@@ -112,6 +122,54 @@ export function ReportFilters({
           </select>
         </div>
       )}
+
+      {departments.length > 0 && (
+        <div>
+          <label className="mb-1 block text-xs" style={{ color: 'var(--text-muted)' }}>Sector</label>
+          <select
+            name="departmentId"
+            defaultValue={departmentId}
+            className="min-w-48 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
+          >
+            <option value="">Todos</option>
+            {departments.filter((department) => department.isActive).map((department) => (
+              <option key={department.id} value={department.id}>
+                {department.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {positions.length > 0 && (
+        <div>
+          <label className="mb-1 block text-xs" style={{ color: 'var(--text-muted)' }}>Puesto</label>
+          <select
+            name="positionId"
+            defaultValue={positionId}
+            className="min-w-48 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
+          >
+            <option value="">Todos</option>
+            {positions.filter((position) => position.isActive).map((position) => (
+              <option key={position.id} value={position.id}>
+                {position.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      <label className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm" style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
+        <input
+          type="checkbox"
+          name="includeInactive"
+          value="true"
+          defaultChecked={includeInactive === 'true'}
+        />
+        Incluir inactivos
+      </label>
 
       {showJustificationFilter && (
         <div>

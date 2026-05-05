@@ -3,11 +3,11 @@ import { CompanyRequiredMessage } from '@/components/reports/CompanyRequiredMess
 import { ExportButtons } from '@/components/reports/ExportButtons';
 import { Phase2ReportTable } from '@/components/reports/Phase2ReportTable';
 import { ReportFilters } from '@/components/reports/ReportFilters';
-import { exportWorkedHoursReport, getDistinctUsers, getWorkedHoursReport } from '@/lib/api';
+import { exportWorkedHoursReport, getDepartments, getDistinctUsers, getPositions, getWorkedHoursReport } from '@/lib/api';
 import { todayArgentinaDateKey } from '@/lib/argentina-date';
 import { requireCurrentSession } from '@/lib/session';
 
-interface PageProps { searchParams: Promise<{ dateFrom?: string; dateTo?: string; employeeId?: string; companyId?: string }> }
+interface PageProps { searchParams: Promise<{ dateFrom?: string; dateTo?: string; employeeId?: string; companyId?: string; departmentId?: string; positionId?: string; includeInactive?: string }> }
 
 export default async function WorkedHoursPage({ searchParams }: PageProps) {
   const user = await requireCurrentSession();
@@ -19,8 +19,16 @@ export default async function WorkedHoursPage({ searchParams }: PageProps) {
   const dateFrom = sp.dateFrom || todayArgentinaDateKey();
   const dateTo = sp.dateTo || dateFrom;
   const employeeId = sp.employeeId || '';
-  const params = { dateFrom, dateTo, employeeId, companyId };
-  const [rows, userOptions] = await Promise.all([getWorkedHoursReport(params), getDistinctUsers()]);
+  const departmentId = sp.departmentId || '';
+  const positionId = sp.positionId || '';
+  const includeInactive = sp.includeInactive || '';
+  const params = { dateFrom, dateTo, employeeId, departmentId, positionId, includeInactive, companyId };
+  const [rows, userOptions, departments, positions] = await Promise.all([
+    getWorkedHoursReport(params),
+    getDistinctUsers(),
+    getDepartments(companyId ? { companyId } : {}).catch(() => []),
+    getPositions(companyId ? { companyId } : {}).catch(() => []),
+  ]);
 
   return (
     <>
@@ -35,7 +43,7 @@ export default async function WorkedHoursPage({ searchParams }: PageProps) {
           </div>
           <ExportButtons excelHref={exportWorkedHoursReport(params)} />
         </div>
-        <ReportFilters action="/reports/worked-hours" userOptions={userOptions} dateFrom={dateFrom} dateTo={dateTo} employeeId={employeeId} companyId={companyId} />
+        <ReportFilters action="/reports/worked-hours" userOptions={userOptions} dateFrom={dateFrom} dateTo={dateTo} employeeId={employeeId} companyId={companyId} departmentId={departmentId} positionId={positionId} includeInactive={includeInactive} departments={departments} positions={positions} />
         <Phase2ReportTable rows={rows} mode="worked" emptyMessage="No hay horas trabajadas para el período seleccionado." />
       </main>
     </>

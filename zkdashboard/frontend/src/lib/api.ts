@@ -98,6 +98,26 @@ export interface EmployeeSummary {
   apellido: string;
 }
 
+export interface Department {
+  id: string;
+  companyId: string;
+  name: string;
+  description: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Position {
+  id: string;
+  companyId: string;
+  name: string;
+  description: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Employee extends EmployeeSummary {
   telefono: string | null;
   email: string | null;
@@ -105,6 +125,13 @@ export interface Employee extends EmployeeSummary {
   exitTime: string | null;
   scheduleProfileId: string | null;
   scheduleProfile?: ScheduleProfile | null;
+  departmentId: string | null;
+  positionId: string | null;
+  department?: Department | null;
+  position?: Position | null;
+  isActive: boolean;
+  inactiveAt: string | null;
+  inactiveReason: string | null;
   companyId: string | null;
   createdAt: string;
 }
@@ -118,6 +145,10 @@ export interface EmployeeInput {
   entryTime?: string | null;
   exitTime?: string | null;
   scheduleProfileId?: string | null;
+  departmentId?: string | null;
+  positionId?: string | null;
+  isActive?: boolean;
+  inactiveReason?: string | null;
   companyId?: string | null;
 }
 
@@ -129,7 +160,51 @@ export interface EmployeeUpdateInput {
   entryTime?: string | null;
   exitTime?: string | null;
   scheduleProfileId?: string | null;
+  departmentId?: string | null;
+  positionId?: string | null;
+  isActive?: boolean;
+  inactiveReason?: string | null;
   companyId?: string | null;
+}
+
+export interface EmployeeImportNormalizedRow {
+  rowNumber: number;
+  documento: string;
+  nombre: string;
+  apellido: string;
+  departmentName: string | null;
+  departmentId: string | null;
+  positionName: string | null;
+  positionId: string | null;
+  scheduleProfileName: string | null;
+  scheduleProfileId: string | null;
+  isActive: boolean;
+  warnings: string[];
+}
+
+export interface EmployeeImportInvalidRow {
+  rowNumber: number;
+  documento: string | null;
+  nombre: string | null;
+  apellido: string | null;
+  errors: string[];
+  warnings: string[];
+}
+
+export interface EmployeeImportPreviewResult {
+  totalRows: number;
+  validRows: number;
+  invalidRows: number;
+  warnings: string[];
+  normalizedRows: EmployeeImportNormalizedRow[];
+  errors: EmployeeImportInvalidRow[];
+}
+
+export interface EmployeeImportConfirmResult {
+  createdCount: number;
+  skippedCount: number;
+  errorCount: number;
+  errors: Array<{ rowNumber: number; documento: string; errors: string[] }>;
 }
 
 export interface CompanySummary {
@@ -731,6 +806,9 @@ export interface ReportFilterParams {
   userId?: string;
   deviceId?: string;
   companyId?: string;
+  departmentId?: string;
+  positionId?: string;
+  includeInactive?: boolean | string;
   justification?: 'all' | 'justified' | 'unjustified' | 'pending' | string;
 }
 
@@ -740,6 +818,9 @@ export interface MonthlySummaryParams {
   employeeId?: string;
   userId?: string;
   companyId?: string;
+  departmentId?: string;
+  positionId?: string;
+  includeInactive?: boolean | string;
 }
 
 export interface AttendanceDaySummary {
@@ -964,7 +1045,7 @@ export interface EmployeeWithoutScheduleReportRow {
   employee: EmployeeSummary | null;
   employeeId: string;
   document: string;
-  status: 'Activo';
+  status: 'Activo' | 'Inactivo';
   reason: string;
 }
 
@@ -1286,8 +1367,12 @@ export function getDistinctUsers() {
   return apiFetch<AttendanceUserOption[]>('/attendance/users');
 }
 
-export function getEmployees() {
-  return apiFetch<Employee[]>('/employees');
+export function getEmployees(params: {
+  includeInactive?: boolean | string;
+  departmentId?: string;
+  positionId?: string;
+} = {}) {
+  return apiFetch<Employee[]>(`/employees${buildReportQuery(params)}`);
 }
 
 export function getEmployee(id: string) {
@@ -1330,6 +1415,65 @@ export function deleteEmployee(id: string) {
   return apiFetch<{ success: true }>(`/employees/${id}`, {
     method: 'DELETE',
   });
+}
+
+export function previewEmployeesImport(formData: FormData) {
+  return apiFetchForm<EmployeeImportPreviewResult>('/employees/import/preview', formData);
+}
+
+export function confirmEmployeesImport(input: {
+  rows: EmployeeImportNormalizedRow[];
+  companyId?: string | null;
+  updateExisting?: boolean;
+}) {
+  return apiFetch<EmployeeImportConfirmResult>('/employees/import/confirm', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export function getDepartments(params: { companyId?: string } = {}) {
+  return apiFetch<Department[]>(`/departments${buildReportQuery(params)}`);
+}
+
+export function createDepartment(input: Pick<Department, 'name'> & Partial<Pick<Department, 'description' | 'isActive' | 'companyId'>>) {
+  return apiFetch<Department>('/departments', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export function updateDepartment(id: string, input: Partial<Pick<Department, 'name' | 'description' | 'isActive'>>) {
+  return apiFetch<Department>(`/departments/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(input),
+  });
+}
+
+export function deactivateDepartment(id: string) {
+  return apiFetch<Department>(`/departments/${id}`, { method: 'DELETE' });
+}
+
+export function getPositions(params: { companyId?: string } = {}) {
+  return apiFetch<Position[]>(`/positions${buildReportQuery(params)}`);
+}
+
+export function createPosition(input: Pick<Position, 'name'> & Partial<Pick<Position, 'description' | 'isActive' | 'companyId'>>) {
+  return apiFetch<Position>('/positions', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export function updatePosition(id: string, input: Partial<Pick<Position, 'name' | 'description' | 'isActive'>>) {
+  return apiFetch<Position>(`/positions/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(input),
+  });
+}
+
+export function deactivatePosition(id: string) {
+  return apiFetch<Position>(`/positions/${id}`, { method: 'DELETE' });
 }
 
 export function requestEmployeeImportFromDevice(deviceId: number) {
@@ -1381,7 +1525,7 @@ export function getRecords(params: {
 
 function buildReportQuery(params: object) {
   const qs = new URLSearchParams();
-  for (const [key, value] of Object.entries(params) as Array<[string, string | number | undefined]>) {
+  for (const [key, value] of Object.entries(params) as Array<[string, string | number | boolean | undefined]>) {
     if (value !== undefined && value !== '') {
       qs.set(key, String(value));
     }

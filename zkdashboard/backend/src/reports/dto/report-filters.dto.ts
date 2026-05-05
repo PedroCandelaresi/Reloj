@@ -25,6 +25,18 @@ export class ReportFiltersDto {
   @IsOptional()
   companyId?: string;
 
+  @IsString()
+  @IsOptional()
+  departmentId?: string;
+
+  @IsString()
+  @IsOptional()
+  positionId?: string;
+
+  @IsIn(['true', 'false'])
+  @IsOptional()
+  includeInactive?: string;
+
   @IsIn(['excel', 'json'])
   @IsOptional()
   format?: 'excel' | 'json';

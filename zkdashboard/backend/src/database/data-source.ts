@@ -16,10 +16,14 @@ import { ScheduleProfile } from '../companies/schedule-profile.entity';
 import { ScheduleProfileDayInterval } from '../companies/schedule-profile-day-interval.entity';
 import { ScheduleProfileDayRule } from '../companies/schedule-profile-day-rule.entity';
 import { Device } from '../devices/device.entity';
+import { AdminConfigAuditLog } from '../admin/entities/admin-config-audit-log.entity';
+import { AttendanceRecalculationLog } from '../admin/entities/attendance-recalculation-log.entity';
 import { DeviceCommand } from '../devices/device-command.entity';
 import { DeviceUserSnapshot } from '../devices/device-user-snapshot.entity';
+import { Department } from '../employees/department.entity';
 import { Employee } from '../employees/employee.entity';
 import { EmployeeTimeBankLedger } from '../employees/employee-time-bank-ledger.entity';
+import { Position } from '../employees/position.entity';
 import { AdminUser } from '../users/admin-user.entity';
 
 dotenv.config();
@@ -41,7 +45,11 @@ export const DATABASE_ENTITIES = [
   Device,
   DeviceCommand,
   DeviceUserSnapshot,
+  AdminConfigAuditLog,
+  AttendanceRecalculationLog,
   AdminUser,
+  Department,
+  Position,
   Employee,
   EmployeeTimeBankLedger,
 ];

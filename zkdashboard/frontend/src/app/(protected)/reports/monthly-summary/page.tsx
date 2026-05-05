@@ -5,8 +5,10 @@ import { MonthlySummaryTable } from '@/components/reports/MonthlySummaryTable';
 import { ReportFilters } from '@/components/reports/ReportFilters';
 import {
   exportMonthlySummaryReport,
+  getDepartments,
   getDistinctUsers,
   getMonthlySummaryReport,
+  getPositions,
 } from '@/lib/api';
 import { currentArgentinaPeriod } from '@/lib/argentina-date';
 import { requireCurrentSession } from '@/lib/session';
@@ -17,6 +19,9 @@ interface PageProps {
     month?: string;
     employeeId?: string;
     companyId?: string;
+    departmentId?: string;
+    positionId?: string;
+    includeInactive?: string;
   }>;
 }
 
@@ -31,13 +36,18 @@ export default async function MonthlySummaryPage({ searchParams }: PageProps) {
   const year = sp.year || fallback.year;
   const month = sp.month || fallback.month;
   const employeeId = sp.employeeId || '';
-  const params = { year, month, employeeId, companyId };
+  const departmentId = sp.departmentId || '';
+  const positionId = sp.positionId || '';
+  const includeInactive = sp.includeInactive || '';
+  const params = { year, month, employeeId, departmentId, positionId, includeInactive, companyId };
   const paddedMonth = String(month).padStart(2, '0');
   const dateFrom = `${year}-${paddedMonth}-01`;
   const dateTo = `${year}-${paddedMonth}-${String(new Date(Number(year), Number(month), 0).getDate()).padStart(2, '0')}`;
-  const [report, userOptions] = await Promise.all([
+  const [report, userOptions, departments, positions] = await Promise.all([
     getMonthlySummaryReport(params),
     getDistinctUsers(),
+    getDepartments(companyId ? { companyId } : {}).catch(() => []),
+    getPositions(companyId ? { companyId } : {}).catch(() => []),
   ]);
   const rows = report.rows;
 
@@ -68,6 +78,11 @@ export default async function MonthlySummaryPage({ searchParams }: PageProps) {
           month={month}
           employeeId={employeeId}
           companyId={companyId}
+          departmentId={departmentId}
+          positionId={positionId}
+          includeInactive={includeInactive}
+          departments={departments}
+          positions={positions}
         />
         {report.source === 'raw_records' && (
           <div className="mb-5 rounded-lg border px-4 py-3 text-sm" style={{ background: 'var(--blue-soft)', borderColor: 'rgba(59,130,246,0.25)', color: 'var(--blue-text)' }}>

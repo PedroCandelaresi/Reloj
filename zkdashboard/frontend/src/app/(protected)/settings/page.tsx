@@ -1,6 +1,7 @@
 import { ScheduleProfilesManager } from '@/components/ScheduleProfilesManager';
 import { getScheduleProfiles } from '@/lib/api';
 import { requireCurrentSession } from '@/lib/session';
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 export default async function SettingsPage() {
@@ -28,6 +29,18 @@ export default async function SettingsPage() {
 
         <div className="mb-6 rounded-lg border px-4 py-3 text-sm" style={{ background: 'rgba(59,130,246,0.07)', borderColor: 'rgba(59,130,246,0.25)', color: 'var(--text-secondary)' }}>
           Después de crear o modificar un perfil, recalculá el período en <strong>Reportes → Resúmenes diarios</strong> para que los cambios se reflejen en tardanzas, ausencias y cierre mensual.
+        </div>
+
+        <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
+          <Link
+            href="/settings/org-structure"
+            className="card block rounded-xl p-5 transition-colors hover:border-emerald-500"
+          >
+            <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Estructura de empresa</h2>
+            <p className="mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>
+              Administrá sectores/departamentos y puestos/cargos para organizar empleados y filtrar reportes.
+            </p>
+          </Link>
         </div>
 
         <ScheduleProfilesManager profiles={scheduleProfiles} />

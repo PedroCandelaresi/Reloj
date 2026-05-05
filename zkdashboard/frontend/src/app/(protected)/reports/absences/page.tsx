@@ -3,11 +3,11 @@ import { CompanyRequiredMessage } from '@/components/reports/CompanyRequiredMess
 import { ExportButtons } from '@/components/reports/ExportButtons';
 import { Phase2ReportTable } from '@/components/reports/Phase2ReportTable';
 import { ReportFilters } from '@/components/reports/ReportFilters';
-import { exportAbsencesReport, getAbsencesReport, getDistinctUsers } from '@/lib/api';
+import { exportAbsencesReport, getAbsencesReport, getDepartments, getDistinctUsers, getPositions } from '@/lib/api';
 import { todayArgentinaDateKey } from '@/lib/argentina-date';
 import { requireCurrentSession } from '@/lib/session';
 
-interface PageProps { searchParams: Promise<{ dateFrom?: string; dateTo?: string; employeeId?: string; justification?: string; companyId?: string }> }
+interface PageProps { searchParams: Promise<{ dateFrom?: string; dateTo?: string; employeeId?: string; justification?: string; companyId?: string; departmentId?: string; positionId?: string; includeInactive?: string }> }
 
 export default async function AbsencesPage({ searchParams }: PageProps) {
   const user = await requireCurrentSession();
@@ -19,10 +19,18 @@ export default async function AbsencesPage({ searchParams }: PageProps) {
   const dateFrom = sp.dateFrom || todayArgentinaDateKey();
   const dateTo = sp.dateTo || dateFrom;
   const employeeId = sp.employeeId || '';
+  const departmentId = sp.departmentId || '';
+  const positionId = sp.positionId || '';
+  const includeInactive = sp.includeInactive || '';
   const justification = sp.justification || 'all';
-  const params = { dateFrom, dateTo, employeeId, justification, companyId };
+  const params = { dateFrom, dateTo, employeeId, departmentId, positionId, includeInactive, justification, companyId };
   const canCreateRequests = user.isSuperAdmin || user.companyRole === 'company_admin' || user.companyRole === 'operator';
-  const [rows, userOptions] = await Promise.all([getAbsencesReport(params), getDistinctUsers()]);
+  const [rows, userOptions, departments, positions] = await Promise.all([
+    getAbsencesReport(params),
+    getDistinctUsers(),
+    getDepartments(companyId ? { companyId } : {}).catch(() => []),
+    getPositions(companyId ? { companyId } : {}).catch(() => []),
+  ]);
 
   return (
     <>
@@ -42,6 +50,11 @@ export default async function AbsencesPage({ searchParams }: PageProps) {
           dateTo={dateTo}
           employeeId={employeeId}
           companyId={companyId}
+          departmentId={departmentId}
+          positionId={positionId}
+          includeInactive={includeInactive}
+          departments={departments}
+          positions={positions}
           justification={justification}
           showJustificationFilter
         />

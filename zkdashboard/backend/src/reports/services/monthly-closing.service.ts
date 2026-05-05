@@ -138,7 +138,7 @@ export class MonthlyClosingService {
     const dates = eachDate(dateFrom, dateTo);
     const [company, employees] = await Promise.all([
       this.companiesRepo.findOneBy({ id: companyId }),
-      this.getEmployees(companyId, employeeId),
+      this.getEmployees(companyId, employeeId, filters),
     ]);
 
     const employeeIds = employees.map((employee) => employee.id);
@@ -210,15 +210,21 @@ export class MonthlyClosingService {
     };
   }
 
-  private async getEmployees(companyId: string, employeeId?: string): Promise<Employee[]> {
-    const where = {
-      companyId,
-      ...(employeeId ? { id: employeeId } : {}),
-    };
-    return this.employeesRepo.find({
-      where,
-      order: { apellido: 'ASC', nombre: 'ASC', id: 'ASC' },
-    });
+  private async getEmployees(
+    companyId: string,
+    employeeId?: string,
+    filters: Pick<MonthlySummaryDto, 'departmentId' | 'positionId' | 'includeInactive'> = {},
+  ): Promise<Employee[]> {
+    const qb = this.employeesRepo
+      .createQueryBuilder('employee')
+      .where('employee.company_id = :companyId', { companyId });
+
+    if (employeeId) qb.andWhere('employee.id = :employeeId', { employeeId });
+    if (filters.includeInactive !== 'true') qb.andWhere('employee.is_active = true');
+    if (filters.departmentId) qb.andWhere('employee.department_id = :departmentId', { departmentId: filters.departmentId });
+    if (filters.positionId) qb.andWhere('employee.position_id = :positionId', { positionId: filters.positionId });
+
+    return qb.orderBy('employee.apellido', 'ASC').addOrderBy('employee.nombre', 'ASC').addOrderBy('employee.id', 'ASC').getMany();
   }
 
   private async getSummaries(

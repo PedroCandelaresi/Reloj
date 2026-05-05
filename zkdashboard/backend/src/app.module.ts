@@ -9,6 +9,7 @@ import { DevicesModule } from './devices/devices.module';
 import { UsersModule } from './users/users.module';
 import { EmployeesModule } from './employees/employees.module';
 import { AdminDashboardModule } from './admin-dashboard/admin-dashboard.module';
+import { AdminModule } from './admin/admin.module';
 import { ReportsModule } from './reports/reports.module';
 import { buildDatabaseOptions } from './database/data-source';
 
@@ -33,6 +34,7 @@ import { buildDatabaseOptions } from './database/data-source';
     UsersModule,
     AuthModule,
     AdminDashboardModule,
+    AdminModule,
     CompaniesModule,
     DevicesModule,
     EmployeesModule,

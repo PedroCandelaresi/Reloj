@@ -3,11 +3,11 @@ import { CompanyRequiredMessage } from '@/components/reports/CompanyRequiredMess
 import { ExportButtons } from '@/components/reports/ExportButtons';
 import { Phase2ReportTable } from '@/components/reports/Phase2ReportTable';
 import { ReportFilters } from '@/components/reports/ReportFilters';
-import { exportLateArrivalsReport, getDistinctUsers, getLateArrivalsReport } from '@/lib/api';
+import { exportLateArrivalsReport, getDepartments, getDistinctUsers, getLateArrivalsReport, getPositions } from '@/lib/api';
 import { todayArgentinaDateKey } from '@/lib/argentina-date';
 import { requireCurrentSession } from '@/lib/session';
 
-interface PageProps { searchParams: Promise<{ dateFrom?: string; dateTo?: string; employeeId?: string; minLateMinutes?: string; justification?: string; companyId?: string }> }
+interface PageProps { searchParams: Promise<{ dateFrom?: string; dateTo?: string; employeeId?: string; minLateMinutes?: string; justification?: string; companyId?: string; departmentId?: string; positionId?: string; includeInactive?: string }> }
 
 export default async function LateArrivalsPage({ searchParams }: PageProps) {
   const user = await requireCurrentSession();
@@ -19,11 +19,19 @@ export default async function LateArrivalsPage({ searchParams }: PageProps) {
   const dateFrom = sp.dateFrom || todayArgentinaDateKey();
   const dateTo = sp.dateTo || dateFrom;
   const employeeId = sp.employeeId || '';
+  const departmentId = sp.departmentId || '';
+  const positionId = sp.positionId || '';
+  const includeInactive = sp.includeInactive || '';
   const justification = sp.justification || 'all';
   const minLateMinutes = sp.minLateMinutes || '';
-  const params = { dateFrom, dateTo, employeeId, minLateMinutes, justification, companyId };
+  const params = { dateFrom, dateTo, employeeId, departmentId, positionId, includeInactive, minLateMinutes, justification, companyId };
   const canCreateRequests = user.isSuperAdmin || user.companyRole === 'company_admin' || user.companyRole === 'operator';
-  const [rows, userOptions] = await Promise.all([getLateArrivalsReport(params), getDistinctUsers()]);
+  const [rows, userOptions, departments, positions] = await Promise.all([
+    getLateArrivalsReport(params),
+    getDistinctUsers(),
+    getDepartments(companyId ? { companyId } : {}).catch(() => []),
+    getPositions(companyId ? { companyId } : {}).catch(() => []),
+  ]);
 
   return (
     <>
@@ -36,6 +44,11 @@ export default async function LateArrivalsPage({ searchParams }: PageProps) {
           dateTo={dateTo}
           employeeId={employeeId}
           companyId={companyId}
+          departmentId={departmentId}
+          positionId={positionId}
+          includeInactive={includeInactive}
+          departments={departments}
+          positions={positions}
           justification={justification}
           showJustificationFilter
         />

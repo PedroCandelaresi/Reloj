@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, SelectQueryBuilder } from 'typeorm';
 import { AttendanceRecord } from '../../attendance/attendance.entity';
 import { AttendanceAuditLog } from '../../attendance/entities/attendance-audit-log.entity';
 import { AttendanceJustificationType } from '../../attendance/entities/attendance-justification-type.entity';
@@ -56,7 +56,7 @@ export interface EmployeeWithoutScheduleReportRow {
   employee: ReportEmployee;
   employeeId: string;
   document: string;
-  status: 'Activo';
+  status: 'Activo' | 'Inactivo';
   reason: 'No tiene perfil de horario asignado';
 }
 
@@ -128,6 +128,7 @@ export class HrControlReportsService {
     if (filters.employeeId || filters.userId) {
       qb.andWhere('record.user_id = :employeeId', { employeeId: filters.employeeId || filters.userId });
     }
+    this.applyEmployeeFilters(qb, filters);
 
     const rows = await qb.orderBy('record.timestamp', 'ASC').addOrderBy('employee.apellido', 'ASC').getRawMany();
 
@@ -186,6 +187,7 @@ export class HrControlReportsService {
     if (filters.employeeId || filters.userId) {
       qb.andWhere('audit.employee_id = :employeeId', { employeeId: filters.employeeId || filters.userId });
     }
+    this.applyEmployeeFilters(qb, filters);
 
     const rows = await qb.orderBy('audit.created_at', 'ASC').addOrderBy('employee.apellido', 'ASC').getRawMany();
 
@@ -224,13 +226,14 @@ export class HrControlReportsService {
     if (filters.employeeId || filters.userId) {
       qb.andWhere('employee.id = :employeeId', { employeeId: filters.employeeId || filters.userId });
     }
+    this.applyEmployeeFilters(qb, filters);
 
     const employees = await qb.orderBy('employee.apellido', 'ASC').addOrderBy('employee.nombre', 'ASC').getMany();
     return employees.map((employee) => ({
       employee: { id: employee.id, nombre: employee.nombre, apellido: employee.apellido },
       employeeId: employee.id,
       document: employee.id,
-      status: 'Activo',
+      status: employee.isActive ? 'Activo' : 'Inactivo',
       reason: 'No tiene perfil de horario asignado',
     }));
   }
@@ -262,6 +265,7 @@ export class HrControlReportsService {
     if (filters.employeeId || filters.userId) {
       qb.andWhere('employee.id = :employeeId', { employeeId: filters.employeeId || filters.userId });
     }
+    this.applyEmployeeFilters(qb, filters);
 
     const employees = await qb.orderBy('employee.apellido', 'ASC').addOrderBy('employee.nombre', 'ASC').getMany();
     return employees.map((employee) => ({
@@ -287,6 +291,21 @@ export class HrControlReportsService {
       throw new BadRequestException('Para consultar este reporte como super admin, seleccioná una empresa.');
     }
     return resolveReportCompanyId(user, filters.companyId);
+  }
+
+  private applyEmployeeFilters(
+    qb: SelectQueryBuilder<any>,
+    filters: Pick<ReportFiltersDto, 'departmentId' | 'positionId' | 'includeInactive'>,
+  ): void {
+    if (filters.includeInactive !== 'true') {
+      qb.andWhere('employee.is_active = true');
+    }
+    if (filters.departmentId) {
+      qb.andWhere('employee.department_id = :departmentId', { departmentId: filters.departmentId });
+    }
+    if (filters.positionId) {
+      qb.andWhere('employee.position_id = :positionId', { positionId: filters.positionId });
+    }
   }
 
   private employeeFromRaw(row: Record<string, unknown>): ReportEmployee {

@@ -5,17 +5,20 @@ import { exportEmployeesWithoutScheduleReport, getDistinctUsers, getEmployeesWit
 import { formatAttendanceUserOption, formatEmployeeName } from '@/lib/format-employee';
 import { requireCurrentSession } from '@/lib/session';
 
-interface PageProps { searchParams: Promise<{ employeeId?: string; companyId?: string }> }
+interface PageProps { searchParams: Promise<{ employeeId?: string; companyId?: string; departmentId?: string; positionId?: string; includeInactive?: string }> }
 
 export default async function EmployeesWithoutSchedulePage({ searchParams }: PageProps) {
   const user = await requireCurrentSession();
   const sp = await searchParams;
   const employeeId = sp.employeeId || '';
   const companyId = sp.companyId || '';
+  const departmentId = sp.departmentId || '';
+  const positionId = sp.positionId || '';
+  const includeInactive = sp.includeInactive || '';
   if (user.isSuperAdmin && !companyId) {
     return <CompanyRequiredMessage reportName="Empleados sin horario" />;
   }
-  const params = { employeeId, companyId };
+  const params = { employeeId, departmentId, positionId, includeInactive, companyId };
   const [rows, userOptions] = await Promise.all([getEmployeesWithoutScheduleReport(params), getDistinctUsers()]);
 
   return (

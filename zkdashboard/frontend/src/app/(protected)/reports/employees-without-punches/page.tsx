@@ -2,12 +2,12 @@ import Link from 'next/link';
 import { CompanyRequiredMessage } from '@/components/reports/CompanyRequiredMessage';
 import { ExportButtons } from '@/components/reports/ExportButtons';
 import { ReportFilters } from '@/components/reports/ReportFilters';
-import { exportEmployeesWithoutPunchesReport, getDistinctUsers, getEmployeesWithoutPunchesReport, type EmployeeWithoutPunchesReportRow } from '@/lib/api';
+import { exportEmployeesWithoutPunchesReport, getDepartments, getDistinctUsers, getEmployeesWithoutPunchesReport, getPositions, type EmployeeWithoutPunchesReportRow } from '@/lib/api';
 import { todayArgentinaDateKey } from '@/lib/argentina-date';
 import { formatEmployeeName } from '@/lib/format-employee';
 import { requireCurrentSession } from '@/lib/session';
 
-interface PageProps { searchParams: Promise<{ dateFrom?: string; dateTo?: string; employeeId?: string; companyId?: string }> }
+interface PageProps { searchParams: Promise<{ dateFrom?: string; dateTo?: string; employeeId?: string; companyId?: string; departmentId?: string; positionId?: string; includeInactive?: string }> }
 
 export default async function EmployeesWithoutPunchesPage({ searchParams }: PageProps) {
   const user = await requireCurrentSession();
@@ -16,11 +16,19 @@ export default async function EmployeesWithoutPunchesPage({ searchParams }: Page
   const dateTo = sp.dateTo || dateFrom;
   const employeeId = sp.employeeId || '';
   const companyId = sp.companyId || '';
+  const departmentId = sp.departmentId || '';
+  const positionId = sp.positionId || '';
+  const includeInactive = sp.includeInactive || '';
   if (user.isSuperAdmin && !companyId) {
     return <CompanyRequiredMessage reportName="Empleados sin fichadas" />;
   }
-  const params = { dateFrom, dateTo, employeeId, companyId };
-  const [rows, userOptions] = await Promise.all([getEmployeesWithoutPunchesReport(params), getDistinctUsers()]);
+  const params = { dateFrom, dateTo, employeeId, departmentId, positionId, includeInactive, companyId };
+  const [rows, userOptions, departments, positions] = await Promise.all([
+    getEmployeesWithoutPunchesReport(params),
+    getDistinctUsers(),
+    getDepartments(companyId ? { companyId } : {}).catch(() => []),
+    getPositions(companyId ? { companyId } : {}).catch(() => []),
+  ]);
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 pt-32">
@@ -29,7 +37,7 @@ export default async function EmployeesWithoutPunchesPage({ searchParams }: Page
         subtitle={`Personas que no tuvieron ninguna marcación en el período seleccionado. ${rows.length} registro(s).`}
         excelHref={exportEmployeesWithoutPunchesReport(params)}
       />
-      <ReportFilters action="/reports/employees-without-punches" userOptions={userOptions} dateFrom={dateFrom} dateTo={dateTo} employeeId={employeeId} companyId={companyId} />
+      <ReportFilters action="/reports/employees-without-punches" userOptions={userOptions} dateFrom={dateFrom} dateTo={dateTo} employeeId={employeeId} companyId={companyId} departmentId={departmentId} positionId={positionId} includeInactive={includeInactive} departments={departments} positions={positions} />
       <EmployeesWithoutPunchesTable rows={rows} />
     </main>
   );

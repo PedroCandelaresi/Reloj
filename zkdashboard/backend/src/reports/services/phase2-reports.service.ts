@@ -92,6 +92,15 @@ export class Phase2ReportsService {
     if (filters.employeeId || filters.userId) {
       qb.andWhere('summary.employee_id = :employeeId', { employeeId: filters.employeeId || filters.userId });
     }
+    if (filters.includeInactive !== 'true') {
+      qb.andWhere('employee.is_active = true');
+    }
+    if (filters.departmentId) {
+      qb.andWhere('employee.department_id = :departmentId', { departmentId: filters.departmentId });
+    }
+    if (filters.positionId) {
+      qb.andWhere('employee.position_id = :positionId', { positionId: filters.positionId });
+    }
 
     apply(qb);
     const summaries = await qb

@@ -9,12 +9,13 @@ import { ScheduleProfileDayInterval } from './schedule-profile-day-interval.enti
 import { ScheduleProfileDayRule } from './schedule-profile-day-rule.entity';
 import { ScheduleProfile } from './schedule-profile.entity';
 import { CompaniesController } from './companies.controller';
+import { AdminModule } from '../admin/admin.module';
 import { CompanyUsersController } from './company-users.controller';
 import { CompaniesService } from './companies.service';
 import { IsCuitConstraint } from './validation/cuit.validator';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Company, CompanyMembership, ScheduleProfile, ScheduleProfileDayRule, ScheduleProfileDayInterval, AdminUser, Employee])],
+  imports: [TypeOrmModule.forFeature([Company, CompanyMembership, ScheduleProfile, ScheduleProfileDayRule, ScheduleProfileDayInterval, AdminUser, Employee]), AdminModule],
   providers: [CompaniesService, IsCuitConstraint, SuperAdminGuard],
   controllers: [CompaniesController, CompanyUsersController],
   exports: [CompaniesService],

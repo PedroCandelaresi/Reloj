@@ -22,7 +22,11 @@ export class ReportQueryService {
     private readonly employeesRepo: Repository<Employee>,
   ) {}
 
-  async getEmployees(companyId: string | null, employeeId?: string): Promise<Employee[]> {
+  async getEmployees(
+    companyId: string | null,
+    employeeId?: string,
+    filters: Pick<ReportFiltersDto, 'departmentId' | 'positionId' | 'includeInactive'> = {},
+  ): Promise<Employee[]> {
     const qb = this.employeesRepo.createQueryBuilder('employee');
 
     if (companyId) {
@@ -33,6 +37,15 @@ export class ReportQueryService {
 
     if (employeeId) {
       qb.andWhere('employee.id = :employeeId', { employeeId });
+    }
+    if (filters.includeInactive !== 'true') {
+      qb.andWhere('employee.is_active = true');
+    }
+    if (filters.departmentId) {
+      qb.andWhere('employee.department_id = :departmentId', { departmentId: filters.departmentId });
+    }
+    if (filters.positionId) {
+      qb.andWhere('employee.position_id = :positionId', { positionId: filters.positionId });
     }
 
     qb.orderBy('employee.apellido', 'ASC').addOrderBy('employee.nombre', 'ASC').addOrderBy('employee.id', 'ASC');

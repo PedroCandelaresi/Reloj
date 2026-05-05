@@ -217,6 +217,7 @@ export function AdminCompanyDetailPanel({
             <AdminCompanyLink href={`/reports?companyId=${company.id}`}>Reportes</AdminCompanyLink>
             <AdminCompanyLink href={`/attendance/requests?companyId=${company.id}`}>Solicitudes</AdminCompanyLink>
             <AdminCompanyLink href={`/settings/holidays?companyId=${company.id}`}>Feriados</AdminCompanyLink>
+            <AdminCompanyLink href={`/settings/org-structure?companyId=${company.id}`}>Estructura</AdminCompanyLink>
           </div>
         </div>
       </div>

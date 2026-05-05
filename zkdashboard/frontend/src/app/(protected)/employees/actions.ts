@@ -4,20 +4,30 @@ import { revalidatePath } from 'next/cache';
 import {
   createEmployee,
   deleteEmployee,
+  confirmEmployeesImport,
   getDeviceUserReconciliation,
+  previewEmployeesImport,
   queryDeviceUsers,
   requestEmployeeExportToDevice,
   requestEmployeeImportFromDevice,
   syncDeviceEmployeeUser,
   updateEmployee,
 } from '@/lib/api';
-import type { DeviceUserReconciliation, EmployeeInput, EmployeeUpdateInput } from '@/lib/api';
+import type {
+  DeviceUserReconciliation,
+  EmployeeImportNormalizedRow,
+  EmployeeImportPreviewResult,
+  EmployeeInput,
+  EmployeeUpdateInput,
+} from '@/lib/api';
 
 export interface ActionResult {
   ok?: true;
   message?: string;
   error?: string;
 }
+
+export type ImportPreviewActionResult = ActionResult & { data?: EmployeeImportPreviewResult };
 
 function cleanText(value: string | null | undefined) {
   return value?.trim() ?? '';
@@ -42,6 +52,9 @@ export async function createEmployeeAction(input: EmployeeInput): Promise<Action
   const entryTime = cleanText(input.entryTime);
   const exitTime = cleanText(input.exitTime);
   const scheduleProfileId = cleanText(input.scheduleProfileId);
+  const departmentId = cleanText(input.departmentId);
+  const positionId = cleanText(input.positionId);
+  const inactiveReason = cleanText(input.inactiveReason);
 
   if (!id || !nombre || !apellido) {
     return { error: 'Completá DNI, nombre y apellido.' };
@@ -57,6 +70,10 @@ export async function createEmployeeAction(input: EmployeeInput): Promise<Action
       entryTime: entryTime || null,
       exitTime: exitTime || null,
       scheduleProfileId: scheduleProfileId || null,
+      departmentId: departmentId || null,
+      positionId: positionId || null,
+      isActive: input.isActive ?? true,
+      inactiveReason: inactiveReason || null,
     });
     revalidateEmployeeViews();
     return { ok: true };
@@ -77,6 +94,9 @@ export async function updateEmployeeAction(
   const entryTime = cleanText(input.entryTime);
   const exitTime = cleanText(input.exitTime);
   const scheduleProfileId = cleanText(input.scheduleProfileId);
+  const departmentId = cleanText(input.departmentId);
+  const positionId = cleanText(input.positionId);
+  const inactiveReason = cleanText(input.inactiveReason);
 
   if (!cleanId || !nombre || !apellido) {
     return { error: 'Completá DNI, nombre y apellido.' };
@@ -91,6 +111,10 @@ export async function updateEmployeeAction(
       entryTime: entryTime || null,
       exitTime: exitTime || null,
       scheduleProfileId: scheduleProfileId || null,
+      departmentId: departmentId || null,
+      positionId: positionId || null,
+      isActive: input.isActive,
+      inactiveReason: inactiveReason || null,
     });
     revalidateEmployeeViews();
     return { ok: true };
@@ -197,5 +221,46 @@ export async function syncDeviceEmployeeUserAction(
     return { ok: true, message: result.message };
   } catch (error) {
     return { error: getErrorMessage(error, 'No se pudo enviar el empleado al reloj.') };
+  }
+}
+
+export async function previewEmployeeImportAction(formData: FormData): Promise<ImportPreviewActionResult> {
+  const file = formData.get('file');
+  if (!(file instanceof File) || file.size === 0) {
+    return { error: 'Subí un archivo CSV o Excel para previsualizar.' };
+  }
+
+  try {
+    const data = await previewEmployeesImport(formData);
+    return { ok: true, data };
+  } catch (error) {
+    return { error: getErrorMessage(error, 'No se pudo previsualizar el archivo.') };
+  }
+}
+
+export async function confirmEmployeeImportAction(input: {
+  rows: EmployeeImportNormalizedRow[];
+  companyId?: string | null;
+}): Promise<ActionResult & { createdCount?: number; skippedCount?: number; errorCount?: number }> {
+  if (!input.rows.length) {
+    return { error: 'No hay filas válidas para importar.' };
+  }
+
+  try {
+    const result = await confirmEmployeesImport({
+      rows: input.rows,
+      companyId: input.companyId ?? null,
+      updateExisting: false,
+    });
+    revalidateEmployeeViews();
+    return {
+      ok: true,
+      createdCount: result.createdCount,
+      skippedCount: result.skippedCount,
+      errorCount: result.errorCount,
+      message: `La importación creó ${result.createdCount} empleado(s).`,
+    };
+  } catch (error) {
+    return { error: getErrorMessage(error, 'No se pudo confirmar la importación.') };
   }
 }

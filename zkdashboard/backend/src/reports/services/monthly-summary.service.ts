@@ -47,7 +47,7 @@ export class MonthlySummaryService {
     const companyId = resolveReportCompanyId(user, filters.companyId);
     const employeeId = filters.employeeId || filters.userId;
     const { dateFrom, dateTo } = monthDateRange(year, month);
-    const employees = await this.queries.getEmployees(companyId, employeeId);
+    const employees = await this.queries.getEmployees(companyId, employeeId, filters);
     const dates = eachDate(dateFrom, dateTo);
     const summaries = await this.getSummaries(companyId, employees.map((employee) => employee.id), dateFrom, dateTo);
 

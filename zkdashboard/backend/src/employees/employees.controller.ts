@@ -9,8 +9,11 @@ import {
   Post,
   Put,
   Query,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../auth/auth.guard';
 import { CompanyAdminGuard } from '../auth/guards/company-admin.guard';
 import { EmployeesService } from './employees.service';
@@ -26,8 +29,13 @@ export class EmployeesController {
   constructor(private readonly employees: EmployeesService) {}
 
   @Get()
-  findAll(@CurrentUser() user: AuthenticatedUser) {
-    return this.employees.findAll(user);
+  findAll(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query('includeInactive') includeInactive?: string,
+    @Query('departmentId') departmentId?: string,
+    @Query('positionId') positionId?: string,
+  ) {
+    return this.employees.findAll(user, { includeInactive, departmentId, positionId });
   }
 
   // Accesible a todos los roles autenticados (incluye read_only) porque el banco de horas
@@ -46,6 +54,26 @@ export class EmployeesController {
   @Get(':id')
   findOne(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
     return this.employees.findOne(id, user);
+  }
+
+  @Post('import/preview')
+  @UseGuards(CompanyAdminGuard)
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 5 * 1024 * 1024 } }))
+  previewImport(
+    @UploadedFile() file: any,
+    @Body('companyId') companyId: string | undefined,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.employees.previewImport(file, user, companyId);
+  }
+
+  @Post('import/confirm')
+  @UseGuards(CompanyAdminGuard)
+  confirmImport(
+    @Body() body: any,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.employees.confirmImport(body, user);
   }
 
   @Post()

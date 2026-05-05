@@ -19,6 +19,7 @@ import { CurrentUser } from '../auth/current-user.decorator';
 import { AuthenticatedUser } from '../auth/authenticated-user.interface';
 import { RecalculateAttendanceDto } from './dto/recalculate-attendance.dto';
 import { DaySummariesQueryDto } from './dto/day-summaries-query.dto';
+import { AdminAuditService } from '../admin/admin-audit.service';
 
 @Controller('attendance')
 @UseGuards(JwtAuthGuard)
@@ -28,6 +29,7 @@ export class AttendanceController {
     private readonly calculations: AttendanceCalculationService,
     private readonly exports: ExportService,
     private readonly devices: DevicesService,
+    private readonly adminAuditService: AdminAuditService,
   ) {}
 
   @Get('stats')
@@ -56,17 +58,41 @@ export class AttendanceController {
   }
 
   @Post('recalculate')
-  recalculate(
+  async recalculate(
     @Body() dto: RecalculateAttendanceDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
     const companyId = this.calculations.resolveWritableCompanyId(user, dto.companyId);
-    return this.calculations.recalculateCompanyRange(
+    const log = await this.adminAuditService.logRecalculationStart(
       companyId,
+      user.id,
       dto.dateFrom,
       dto.dateTo,
-      dto.employeeId,
+      dto.employeeId ?? null,
     );
+
+    try {
+      const result = await this.calculations.recalculateCompanyRange(
+        companyId,
+        dto.dateFrom,
+        dto.dateTo,
+        dto.employeeId,
+      );
+
+      await this.adminAuditService.logRecalculationComplete(
+        log.id,
+        result.employeesProcessed,
+        result.daysProcessed,
+      );
+
+      return result;
+    } catch (error) {
+      await this.adminAuditService.logRecalculationFailed(
+        log.id,
+        error?.message ?? 'Unknown error',
+      );
+      throw error;
+    }
   }
 
   @Get('day-summaries')

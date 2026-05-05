@@ -4,8 +4,10 @@ import { ExportButtons } from '@/components/reports/ExportButtons';
 import { ReportFilters } from '@/components/reports/ReportFilters';
 import {
   exportMonthlyClosingReport,
+  getDepartments,
   getDistinctUsers,
   getMonthlyClosingReport,
+  getPositions,
   type MonthlyClosingReport,
   type MonthlyClosingReportRow,
   type MonthlyClosingStatus,
@@ -19,6 +21,9 @@ interface PageProps {
     month?: string;
     employeeId?: string;
     companyId?: string;
+    departmentId?: string;
+    positionId?: string;
+    includeInactive?: string;
   }>;
 }
 
@@ -30,18 +35,23 @@ export default async function MonthlyClosingPage({ searchParams }: PageProps) {
   const month = sp.month || fallback.month;
   const employeeId = sp.employeeId || '';
   const companyId = sp.companyId || '';
+  const departmentId = sp.departmentId || '';
+  const positionId = sp.positionId || '';
+  const includeInactive = sp.includeInactive || '';
 
   if (user.isSuperAdmin && !companyId) {
     return <CompanyRequiredMessage reportName="Cierre mensual" />;
   }
 
-  const params = { year, month, employeeId, companyId };
+  const params = { year, month, employeeId, departmentId, positionId, includeInactive, companyId };
   const paddedMonth = String(month).padStart(2, '0');
   const dateFrom = `${year}-${paddedMonth}-01`;
   const dateTo = `${year}-${paddedMonth}-${String(new Date(Number(year), Number(month), 0).getDate()).padStart(2, '0')}`;
-  const [report, userOptions] = await Promise.all([
+  const [report, userOptions, departments, positions] = await Promise.all([
     getMonthlyClosingReport(params),
     getDistinctUsers(),
+    getDepartments(companyId ? { companyId } : {}).catch(() => []),
+    getPositions(companyId ? { companyId } : {}).catch(() => []),
   ]);
 
   return (
@@ -68,6 +78,11 @@ export default async function MonthlyClosingPage({ searchParams }: PageProps) {
         month={month}
         employeeId={employeeId}
         companyId={companyId}
+        departmentId={departmentId}
+        positionId={positionId}
+        includeInactive={includeInactive}
+        departments={departments}
+        positions={positions}
       />
 
       <CoverageNotice report={report} dateFrom={dateFrom} dateTo={dateTo} employeeId={employeeId} companyId={companyId} />

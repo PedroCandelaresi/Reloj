@@ -26,7 +26,7 @@ export class IncompleteRecordsService {
     assertMaxRangeDays(dateFrom, dateTo, 62);
     const employeeId = filters.employeeId || filters.userId;
     const [employees, recordGroups] = await Promise.all([
-      this.queries.getEmployees(companyId, employeeId),
+      this.queries.getEmployees(companyId, employeeId, filters),
       this.queries.getRecordGroups({
         companyId,
         dateFrom,

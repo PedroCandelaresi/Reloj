@@ -1,5 +1,6 @@
 import { Transform } from 'class-transformer';
 import {
+  IsBoolean,
   IsEmail,
   IsNotEmpty,
   IsOptional,
@@ -77,4 +78,24 @@ export class CreateEmployeeDto {
   @IsOptional()
   @IsUUID()
   scheduleProfileId?: string | null;
+
+  @Transform(trimNullableValue)
+  @IsOptional()
+  @IsUUID()
+  departmentId?: string | null;
+
+  @Transform(trimNullableValue)
+  @IsOptional()
+  @IsUUID()
+  positionId?: string | null;
+
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
+
+  @Transform(trimNullableValue)
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  inactiveReason?: string | null;
 }
