@@ -14,18 +14,18 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
           src="/brand/conflunet-isotipo.svg"
           alt=""
           aria-hidden="true"
-          className="absolute left-[8%] top-[8%] h-[24rem] w-auto opacity-10 blur-3xl"
+          className="absolute left-[8%] top-[8%] h-[24rem] w-auto opacity-8 blur-3xl"
         />
         <img
           src="/brand/conflunet-wordmark-brushed-steel.svg"
           alt=""
           aria-hidden="true"
-          className="absolute right-[-6%] top-[30%] h-[18rem] w-auto opacity-12 blur-3xl"
+          className="absolute right-[-6%] top-[30%] h-[18rem] w-auto opacity-8 blur-3xl"
         />
       </div>
 
       <MarketingTopbar />
-      <main className="relative z-10 pt-24 scroll-smooth">{children}</main>
+      <main className="relative z-10 pt-20 scroll-smooth">{children}</main>
       <MarketingFooter />
       <WhatsAppFloatButton />
     </div>
