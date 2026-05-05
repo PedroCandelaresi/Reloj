@@ -22,14 +22,18 @@ export function MarketingIntroAnimation({ children }: { children: React.ReactNod
   // Intro phase: Logo and "Conflunet" text
   if (phase === 'intro') {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#050909]">
-        <div className="text-center">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#050909] text-center">
+        <div className="space-y-6">
           <img
             src="/brand/conflunet-isotipo.svg"
             alt="Conflunet Logo"
-            className="mx-auto h-32 w-32 mb-8 animate-pulse"
+            className="mx-auto h-28 w-28 animate-pulse"
           />
-          <h1 className="text-6xl font-bold text-white animate-pulse">Conflunet</h1>
+          <img
+            src="/brand/conflunet-wordmark-brushed-steel.svg"
+            alt="Conflunet"
+            className="mx-auto h-10 w-auto opacity-80"
+          />
         </div>
       </div>
     );
@@ -38,33 +42,43 @@ export function MarketingIntroAnimation({ children }: { children: React.ReactNod
   // Welcome phase: Show "Bienvenido a Conflunet"
   if (phase === 'welcome') {
     return (
-      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#050909]">
-        <div className="text-center mb-16">
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#050909] text-center px-4">
+        <div className="space-y-6">
           <img
             src="/brand/conflunet-isotipo.svg"
             alt="Conflunet Logo"
-            className="mx-auto h-32 w-32 mb-8"
+            className="mx-auto h-28 w-28"
           />
-          <h1 className="text-6xl font-bold text-white">Conflunet</h1>
+          <img
+            src="/brand/conflunet-wordmark-brushed-steel.svg"
+            alt="Conflunet"
+            className="mx-auto h-12 w-auto"
+          />
         </div>
-        <h2 className="text-4xl font-semibold text-emerald-400 animate-pulse">Bienvenido a Conflunet</h2>
+        <h2 className="mt-10 text-3xl font-semibold text-emerald-400 sm:text-4xl">Bienvenido a Conflunet</h2>
       </div>
     );
   }
 
-  // Blur phase: Logo becomes blurred
+  // Blur phase: Logo and wordmark become blurred and remain visible as overlay
   if (phase === 'blur') {
     return (
-      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#050909]">
-        <div className="text-center mb-16 filter blur-md">
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#050909] text-center px-4">
+        <div className="space-y-8 filter blur-2xl opacity-80">
           <img
             src="/brand/conflunet-isotipo.svg"
             alt="Conflunet Logo"
-            className="mx-auto h-32 w-32 mb-8"
+            className="mx-auto h-40 w-40"
           />
-          <h1 className="text-6xl font-bold text-white">Conflunet</h1>
+          <img
+            src="/brand/conflunet-wordmark-brushed-steel.svg"
+            alt="Conflunet"
+            className="mx-auto h-16 w-auto"
+          />
         </div>
-        <h2 className="text-4xl font-semibold text-emerald-400 opacity-50">Bienvenido a Conflunet</h2>
+        <p className="mt-10 max-w-xl text-lg leading-8 text-slate-300/80">
+          Tu portal de control de asistencia con navegación suave, diseño moderno y una base sólida para RRHH.
+        </p>
       </div>
     );
   }
