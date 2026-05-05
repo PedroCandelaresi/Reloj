@@ -10,11 +10,11 @@
 html {
   scroll-behavior: smooth;
   scrollbar-gutter: stable;
-  scroll-padding-top: calc(var(--header-control-height, 56px) + 72px);
+  scroll-padding-top: calc(var(--header-control-height, 56px) + 88px);
 }
 
 section[id] {
-  scroll-margin-top: calc(var(--header-control-height, 56px) + 72px);
+  scroll-margin-top: calc(var(--header-control-height, 56px) + 88px);
 }
 
 @media (prefers-reduced-motion: reduce) {

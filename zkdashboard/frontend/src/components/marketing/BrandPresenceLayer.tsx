@@ -28,7 +28,7 @@ export function BrandPresenceLayer() {
   }, [introState]);
 
   return (
-    <div className="pointer-events-none fixed inset-0 z-1 flex items-center justify-center isolate">
+    <div className="pointer-events-none fixed inset-0 z-1 flex items-center justify-center isolate overflow-hidden">
       <div
         className={`transition-all duration-1000 ease-out ${
           phase === 'initial' ? 'opacity-0 scale-95' :
