@@ -146,7 +146,6 @@ export default function MarketingHomePage() {
       </section>
 
       <div id="servicios-anchor" className="section-scroll-anchor" aria-hidden="true" />
-      <div className="section-scroll-gap" aria-hidden="true" />
       <section id="servicios" className="py-8 md:py-12">
         <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
           <div className="rounded-[2rem] border border-white/15 bg-[#0b1111]/75 p-6 backdrop-blur-xl sm:p-8">
@@ -179,7 +178,6 @@ export default function MarketingHomePage() {
       </section>
 
       <div id="rrhh-anchor" className="section-scroll-anchor" aria-hidden="true" />
-      <div className="section-scroll-gap" aria-hidden="true" />
       <section id="sistema-rrhh" className="py-8 md:py-12">
         <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
           <div className="rounded-[2rem] border border-white/15 bg-[#0b1111]/75 p-6 backdrop-blur-xl sm:p-8">
@@ -277,7 +275,6 @@ export default function MarketingHomePage() {
       </section>
 
       <div id="contacto-anchor" className="section-scroll-anchor" aria-hidden="true" />
-      <div className="section-scroll-gap" aria-hidden="true" />
       <MarketingContactSection />
     </>
   );

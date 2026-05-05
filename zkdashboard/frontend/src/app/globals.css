@@ -13,26 +13,37 @@ html {
   overflow-y: scroll;
   overflow-x: clip;
   scroll-behavior: smooth;
-  scroll-padding-top: calc(
-    var(--header-top, 16px) + var(--header-control-height, 56px) + var(--section-anchor-air, 88px)
-  );
+
+  /*
+    Importante:
+    No usar scroll-padding-top para estas anclas,
+    porque hace que quede visible contenido anterior arriba.
+  */
+  scroll-padding-top: 0;
 }
 
 .section-scroll-anchor {
-  position: relative;
   display: block;
-  height: 1px;
   width: 100%;
-  scroll-margin-top: calc(
-    var(--header-top, 16px) + var(--header-control-height, 56px) + var(--section-anchor-air, 88px)
+
+  /*
+    Este es el espacio vacío real donde va a quedar flotando la topbar.
+    La ancla ya no es de 1px: la ancla ES el espacio limpio.
+  */
+  height: calc(
+    var(--header-top, 16px) +
+    var(--header-control-height, 56px) +
+    var(--section-anchor-air, 104px)
   );
+
+  scroll-margin-top: 0;
   pointer-events: none;
+  visibility: hidden;
 }
 
 .section-scroll-gap {
-  height: clamp(22px, 3vw, 40px);
-  width: 100%;
-  pointer-events: none;
+  display: none !important;
+  height: 0 !important;
 }
 
 #inicio {
