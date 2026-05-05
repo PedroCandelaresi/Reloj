@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { ReactNode } from 'react';
 import { MarketingTopbar } from '@/components/marketing/MarketingTopbar';
 import { MarketingFooter } from '@/components/marketing/MarketingFooter';
@@ -8,6 +9,23 @@ import { IntroProvider } from '@/components/marketing/IntroProvider';
 
 // Force dynamic rendering for the entire marketing route
 export const dynamic = 'force-dynamic';
+
+export const metadata: Metadata = {
+  title: 'Conflunet | Servicios informáticos en Neuquén',
+  description:
+    'Servicio técnico, diseño web comercial, instalaciones y sistema de control de asistencia para comercios e industrias de Neuquén.',
+  keywords: [
+    'servicio técnico Neuquén',
+    'reparación de PC',
+    'reparación de notebooks',
+    'diseño web comercial',
+    'tiendas online',
+    'instalación de cámaras',
+    'relojes de asistencia',
+    'control de fichadas',
+    'sistema de RRHH',
+  ],
+};
 
 export default function MarketingLayout({ children }: { children: ReactNode }) {
   return (

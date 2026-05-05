@@ -19,9 +19,12 @@ export function MarketingFooter() {
         <div className="grid gap-8 md:grid-cols-[1.2fr_0.8fr] md:items-start">
           <div>
             <p className="text-xs uppercase tracking-[0.24em] text-emerald-300/80">Conflunet</p>
-            <h2 className="mt-3 text-2xl font-semibold text-white">Control de asistencia y gestión de fichadas</h2>
+            <h2 className="mt-3 text-2xl font-semibold text-white">Servicios informáticos para comercios e industrias</h2>
             <p className="mt-3 max-w-xl text-sm leading-7 text-slate-300">
-              Plataforma enfocada en ordenar operación diaria, mejorar trazabilidad y acelerar decisiones con soporte cercano.
+              Soporte técnico, diseño web comercial, instalaciones y sistema de asistencia para resolver lo técnico de forma práctica.
+            </p>
+            <p className="mt-3 text-sm text-slate-300">
+              Neuquén, Argentina. <a href={`mailto:${marketingConfig.contactEmail}`} className="text-emerald-200 hover:text-emerald-100">{marketingConfig.contactEmail}</a>
             </p>
           </div>
 
@@ -43,8 +46,8 @@ export function MarketingFooter() {
           </div>
         </div>
 
-        <p className="mt-8 border-t border-white/10 pt-6 text-xs uppercase tracking-[0.18em] text-slate-500">
-          {new Date().getFullYear()} {marketingConfig.brandName}. Todos los derechos reservados.
+        <p className="mt-8 border-t border-white/10 pt-6 text-xs uppercase tracking-[0.08em] text-slate-500">
+          © 2026 Conflunet. Servicios informáticos, instalaciones y sistemas para comercios e industrias.
         </p>
       </div>
     </footer>

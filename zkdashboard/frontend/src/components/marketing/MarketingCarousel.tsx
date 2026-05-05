@@ -4,19 +4,19 @@ import { useEffect, useMemo, useState } from 'react';
 
 const slides = [
   {
-    title: 'Turnos y fichadas en un solo lugar',
+    title: 'Soporte técnico para tu operación diaria',
     description:
-      'Visualizá entradas, salidas y ausencias desde un panel único para tu equipo y tus supervisores.',
+      'Reparamos y optimizamos PC y notebooks para que tu equipo trabaje sin frenar la operación.',
   },
   {
-    title: 'Reportes claros para decisiones rápidas',
+    title: 'Web comercial clara y lista para vender',
     description:
-      'Obtené métricas de presencia, horas trabajadas y licencias con información lista para actuar.',
+      'Armamos landings, tiendas y menús online simples para mostrar lo que ofrecés y recibir consultas.',
   },
   {
-    title: 'Soporte directo por WhatsApp',
+    title: 'Instalación y control de asistencia',
     description:
-      'Implementación acompañada y atención inmediata para resolver dudas y poner tu sistema en marcha.',
+      'Instalamos relojes, cámaras y redes, y te ayudamos a ordenar fichadas y reportes de RRHH.',
   },
 ];
 
@@ -42,7 +42,7 @@ export function MarketingCarousel() {
           className={`h-2.5 w-2.5 rounded-full transition ${
             index === activeIndex ? 'bg-emerald-400' : 'bg-white/35'
           }`}
-          aria-label={`Ver ${index + 1}° beneficio`}
+          aria-label={`Ver ${index + 1}° servicio`}
         />
       )),
     [activeIndex],
@@ -75,7 +75,7 @@ export function MarketingCarousel() {
                 : 'border-white/10 bg-white/5 text-slate-300 hover:border-white/20 hover:bg-white/10'
             }`}
           >
-            <p className="text-sm uppercase tracking-[0.2em] text-emerald-200/90">Paso {index + 1}</p>
+            <p className="text-sm uppercase tracking-[0.2em] text-emerald-200/90">Área {index + 1}</p>
             <p className="mt-3 font-semibold text-white">{slide.title}</p>
           </button>
         ))}

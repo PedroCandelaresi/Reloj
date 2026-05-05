@@ -33,19 +33,19 @@ export function BrandPresenceLayer() {
         className={`transition-all duration-1000 ease-out ${
           phase === 'initial' ? 'opacity-0 scale-95' :
           phase === 'intro' ? 'opacity-100 scale-100 blur-0' :
-          phase === 'transforming' ? 'opacity-60 scale-102 blur-[6px]' :
-          'opacity-18 scale-105 blur-[12px] translate-y-5 saturate-105'
+          phase === 'transforming' ? 'opacity-60 scale-[1.02] blur-[6px]' :
+          'opacity-[0.22] scale-[1.06] blur-[12px] translate-y-5 saturate-105'
         }`}
       >
         <img
           src="/brand/conflunet-isotipo.svg"
           alt=""
           aria-hidden="true"
-          className={`mx-auto mb-8 object-contain transition-all duration-1000 ease-out ${
+          className={`mx-auto mb-10 object-contain transition-all duration-1000 ease-out sm:mb-12 ${
             phase === 'initial' ? 'h-0 w-0' :
-            phase === 'intro' ? 'h-32 w-32 sm:h-40 sm:w-40' :
-            phase === 'transforming' ? 'h-28 w-28 sm:h-36 sm:w-36' :
-            'h-32 w-32 sm:h-40 sm:w-40'
+            phase === 'intro' ? 'h-[clamp(180px,18vw,290px)] w-[clamp(180px,18vw,290px)]' :
+            phase === 'transforming' ? 'h-[clamp(168px,17vw,270px)] w-[clamp(168px,17vw,270px)]' :
+            'h-[clamp(210px,21vw,360px)] w-[clamp(210px,21vw,360px)]'
           }`}
         />
         <img

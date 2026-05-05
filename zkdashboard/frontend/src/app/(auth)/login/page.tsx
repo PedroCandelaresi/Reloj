@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 import { useFormState, useFormStatus } from 'react-dom';
 import { login } from '@/lib/actions';
@@ -33,6 +34,14 @@ function UserIcon() {
   );
 }
 
+function ArrowLeftIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="h-4 w-4">
+      <path d="M5 12h14M5 12l5-5M5 12l5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 function SubmitButton() {
   const { pending } = useFormStatus();
 
@@ -54,6 +63,13 @@ export default function LoginPage() {
   return (
     <main className="grid min-h-screen bg-white text-slate-950 lg:grid-cols-[minmax(0,0.96fr)_minmax(520px,1.04fr)]">
       <section className="login-soft-panel relative flex min-h-screen flex-col px-6 py-8 sm:px-10 lg:px-12">
+        <Link
+          href="/"
+          className="absolute left-4 top-4 z-30 inline-flex min-h-10 items-center gap-2 rounded-full border border-slate-300/70 bg-white/85 px-4 text-sm font-medium text-slate-700 backdrop-blur-sm transition hover:border-emerald-300/80 hover:text-emerald-700 sm:left-6 sm:top-6"
+        >
+          <ArrowLeftIcon />
+          <span>Volver al inicio</span>
+        </Link>
         <div className="relative z-10 flex flex-1 items-center justify-center py-12">
           <div className="w-full max-w-[390px]">
             {state?.error && (

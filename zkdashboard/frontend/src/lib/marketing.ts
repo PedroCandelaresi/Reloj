@@ -2,21 +2,23 @@ export const marketingConfig = {
   brandName: 'Conflunet',
   whatsappNumber: (process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '5492994668764').replace(/\D/g, ''),
   whatsappDisplay: '+54 9 299 466-8764',
-  supportTagline: 'Soporte rápido por WhatsApp',
+  contactEmail: 'info@conflunet.com.ar',
+  supportTagline: 'Atención cercana y soporte real',
 } as const;
 
 export const marketingNavItems = [
   { href: '#inicio', label: 'Inicio' },
   { href: '#servicios', label: 'Servicios' },
+  { href: '#sistema-rrhh', label: 'Sistema RRHH' },
   { href: '#contacto', label: 'Contacto' },
 ] as const;
 
 export const contactServiceOptions = [
-  'Control de asistencia',
-  'Gestión de fichadas',
-  'Reportes y métricas',
-  'Implementación a medida',
-  'Soporte operativo',
+  'Servicio técnico',
+  'Diseño web comercial',
+  'Instalaciones técnicas',
+  'Sistema de RRHH y fichadas',
+  'Consulta general',
 ] as const;
 
 export type ContactService = (typeof contactServiceOptions)[number];

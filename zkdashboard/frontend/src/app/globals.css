@@ -3,9 +3,18 @@
 @tailwind utilities;
 
 /* ── Smooth scroll behavior ────────────────────────────────────── */
+:root {
+  --header-control-height: 56px;
+}
+
 html {
   scroll-behavior: smooth;
   scrollbar-gutter: stable;
+  scroll-padding-top: calc(var(--header-control-height, 56px) + 72px);
+}
+
+section[id] {
+  scroll-margin-top: calc(var(--header-control-height, 56px) + 72px);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -21,7 +30,6 @@ html {
 
 /* ── Header shared styles ────────────────────────────────────── */
 .header-control {
-  --header-control-height: 56px;
   height: var(--header-control-height);
   min-height: var(--header-control-height);
   display: flex;

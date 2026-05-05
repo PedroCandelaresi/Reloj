@@ -216,7 +216,7 @@ export function MarketingContactForm() {
           id="message"
           name="message"
           className={`${inputClassName} min-h-36 resize-y`}
-          placeholder="Contanos tu operación actual y qué querés mejorar en el control de asistencia."
+          placeholder="Contanos qué necesitás resolver: soporte técnico, web, instalaciones o sistema de asistencia."
           value={values.message}
           onChange={(event) => updateField('message', event.target.value)}
           aria-invalid={Boolean(errors.message)}
@@ -254,7 +254,7 @@ export function MarketingContactForm() {
           rel="noreferrer"
           className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/15 bg-white/5 px-6 text-sm font-semibold text-white transition hover:bg-white/10"
         >
-          Continuar por WhatsApp
+          Contactar por WhatsApp
         </a>
       </div>
 
