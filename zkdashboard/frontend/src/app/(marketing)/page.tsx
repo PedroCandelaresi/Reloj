@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { MarketingCarousel } from '@/components/marketing/MarketingCarousel';
 import { MarketingContactSection } from '@/components/marketing/MarketingContactSection';
 import { decodeJwtPayload, getDefaultAppPath } from '@/lib/auth-token';
