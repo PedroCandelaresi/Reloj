@@ -58,7 +58,7 @@ export function MarketingTopbar() {
           <div className="absolute right-0 top-0 z-20">
             <Link
               href="/login"
-              className="header-control animate-header-reveal rounded-full border border-white/15 bg-[#0b1111]/70 px-4 backdrop-blur-xl shadow-[0_16px_40px_rgba(0,0,0,0.35)] text-sm font-medium text-slate-200 transition hover:bg-white/10 hover:text-white"
+              className="header-control animate-header-reveal-delayed rounded-full border border-white/15 bg-[#0b1111]/70 px-4 backdrop-blur-xl shadow-[0_16px_40px_rgba(0,0,0,0.35)] text-sm font-medium text-slate-200 transition hover:bg-white/10 hover:text-white"
             >
               Ingresar
             </Link>

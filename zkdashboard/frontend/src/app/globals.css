@@ -29,33 +29,22 @@ html {
   line-height: 1;
 }
 
-/* ── Brand intro animations ────────────────────────────────────── */
-@keyframes brand-intro {
+/* ── Brand presence animations ────────────────────────────────────── */
+@keyframes content-reveal {
   0% {
     opacity: 0;
-    transform: scale(0.96);
+    transform: translateY(12px);
   }
   100% {
     opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes brand-intro-fade-out {
-  0% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  100% {
-    opacity: 0;
-    transform: scale(1.02);
+    transform: translateY(0);
   }
 }
 
 @keyframes header-reveal {
   0% {
     opacity: 0;
-    transform: translateY(-10px);
+    transform: translateY(-8px);
   }
   100% {
     opacity: 1;
@@ -63,28 +52,17 @@ html {
   }
 }
 
-@keyframes content-fade-in {
-  0% {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-brand-intro {
-  animation: brand-intro 1s ease-out, brand-intro-fade-out 1.3s ease-out 2s forwards;
+.animate-content-reveal {
+  opacity: 0;
+  animation: content-reveal 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 .animate-header-reveal {
-  animation: header-reveal 0.7s ease-out 3.4s both;
+  animation: header-reveal 0.8s cubic-bezier(0.22, 1, 0.36, 1) 2.8s both;
 }
 
-.animate-content-fade-in {
-  opacity: 0;
-  animation: content-fade-in 1s ease-out 3.4s forwards;
+.animate-header-reveal-delayed {
+  animation: header-reveal 0.8s cubic-bezier(0.22, 1, 0.36, 1) 3.0s both;
 }
 
 /* ── Light theme (GNOME Adwaita Light) ──────────────────────────── */

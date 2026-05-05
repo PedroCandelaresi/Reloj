@@ -3,7 +3,7 @@ import { MarketingTopbar } from '@/components/marketing/MarketingTopbar';
 import { MarketingFooter } from '@/components/marketing/MarketingFooter';
 import { WhatsAppFloatButton } from '@/components/marketing/WhatsAppFloatButton';
 import { BackgroundTextureLayer } from '@/components/marketing/BackgroundTextureLayer';
-import { PersistentBrandBackground } from '@/components/marketing/PersistentBrandBackground';
+import { BrandPresenceLayer } from '@/components/marketing/BrandPresenceLayer';
 
 export default function MarketingLayout({ children }: { children: ReactNode }) {
   return (
@@ -11,8 +11,8 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
       {/* Layer 0: Background texture */}
       <BackgroundTextureLayer />
 
-      {/* Layer 1: Persistent brand background - always visible */}
-      <PersistentBrandBackground />
+      {/* Layer 1: Continuous brand presence - from intro to background */}
+      <BrandPresenceLayer />
 
       {/* Layer 10+: Content */}
       <div className="relative z-10">

@@ -2,53 +2,41 @@
 
 import { useEffect, useState } from 'react';
 
-type AnimationPhase = 'intro' | 'hidden';
+type AnimationPhase = 'hidden' | 'revealing' | 'visible';
 
 export function MarketingIntroAnimation({ children }: { children: React.ReactNode }) {
-  const [phase, setPhase] = useState<AnimationPhase>('intro');
+  const [phase, setPhase] = useState<AnimationPhase>('hidden');
 
   useEffect(() => {
     const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     if (prefersReduced) {
-      setPhase('hidden');
+      setPhase('visible');
       return;
     }
 
-    // Intro sequence: 2s visible, then 1.3s fade out, then hidden
-    const timer1 = setTimeout(() => setPhase('hidden'), 3400);
+    // Content reveals progressively while brand transforms
+    const timer1 = setTimeout(() => setPhase('revealing'), 2600);
+    const timer2 = setTimeout(() => setPhase('visible'), 3400);
 
     return () => {
       clearTimeout(timer1);
+      clearTimeout(timer2);
     };
   }, []);
 
-  // Intro overlay: Show brand prominently, then fade out
-  if (phase === 'intro') {
-    return (
-      <>
-        {/* Intro overlay - temporary */}
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#050909] px-4">
-          <div className="animate-brand-intro text-center w-full max-w-[1200px] px-2 sm:px-0">
-            <img
-              src="/brand/conflunet-isotipo.svg"
-              alt="Conflunet Logo"
-              className="mx-auto mb-8 w-[clamp(140px,18vw,260px)] max-w-[260px] object-contain sm:mb-10"
-            />
-            <img
-              src="/brand/conflunet-wordmark-brushed-steel.svg"
-              alt="Conflunet"
-              className="mx-auto w-[80vw] max-w-[1200px] object-contain"
-            />
-          </div>
-        </div>
+  if (phase === 'hidden') {
+    return null; // Content hidden during brand intro
+  }
 
-        {/* Content behind intro - visible but covered */}
-        <div className="opacity-0">{children}</div>
-      </>
+  if (phase === 'revealing') {
+    return (
+      <div className="animate-content-reveal">
+        {children}
+      </div>
     );
   }
 
-  // Hidden: Intro overlay gone, show content normally
+  // Visible: Content fully shown
   return <>{children}</>;
 }
