@@ -16,7 +16,7 @@ export function MarketingIntroAnimation({ children }: { children: React.ReactNod
     }
 
     const timer1 = setTimeout(() => setPhase('dissolve'), 2000);
-    const timer2 = setTimeout(() => setPhase('complete'), 3200);
+    const timer2 = setTimeout(() => setPhase('complete'), 3400);
 
     return () => {
       clearTimeout(timer1);
@@ -48,7 +48,7 @@ export function MarketingIntroAnimation({ children }: { children: React.ReactNod
   if (phase === 'dissolve') {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#050909] px-4">
-        <div className="animate-brand-fade-out text-center w-full max-w-[1200px] px-2 sm:px-0">
+        <div className="animate-brand-to-background text-center w-full max-w-[1200px] px-2 sm:px-0">
           <img
             src="/brand/conflunet-isotipo.svg"
             alt="Conflunet Logo"

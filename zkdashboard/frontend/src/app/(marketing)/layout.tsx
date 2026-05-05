@@ -10,18 +10,26 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(31,199,119,0.22),transparent_32%),radial-gradient(circle_at_78%_16%,rgba(55,240,166,0.14),transparent_26%),linear-gradient(180deg,#050909_0%,#060d0d_54%,#040707_100%)]" />
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:44px_44px] opacity-45" />
 
-        <img
-          src="/brand/conflunet-isotipo.svg"
-          alt=""
-          aria-hidden="true"
-          className="absolute left-[8%] top-[8%] h-[24rem] w-auto opacity-8 blur-3xl"
-        />
-        <img
-          src="/brand/conflunet-wordmark-brushed-steel.svg"
-          alt=""
-          aria-hidden="true"
-          className="absolute right-[-6%] top-[30%] h-[18rem] w-auto opacity-8 blur-3xl"
-        />
+        {/* Subtle texture for glassmorphism enhancement */}
+        <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_20%_50%,rgba(31,199,119,0.05),transparent_50%),radial-gradient(circle_at_80%_20%,rgba(55,240,166,0.03),transparent_50%),radial-gradient(circle_at_40%_80%,rgba(31,199,119,0.04),transparent_50%)]" />
+
+        {/* Persistent brand background */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="opacity-8 blur-2xl scale-105">
+            <img
+              src="/brand/conflunet-isotipo.svg"
+              alt=""
+              aria-hidden="true"
+              className="mx-auto mb-8 h-32 w-32 object-contain sm:mb-10 sm:h-40 sm:w-40"
+            />
+            <img
+              src="/brand/conflunet-wordmark-brushed-steel.svg"
+              alt=""
+              aria-hidden="true"
+              className="mx-auto w-[80vw] max-w-[1200px] object-contain"
+            />
+          </div>
+        </div>
       </div>
 
       <MarketingTopbar />
