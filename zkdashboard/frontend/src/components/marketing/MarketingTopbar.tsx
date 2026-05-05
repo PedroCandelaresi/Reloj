@@ -29,8 +29,8 @@ export function MarketingTopbar() {
         {/* Desktop: Brand + Nav centered, Login button separate on the right */}
         <div className="hidden lg:block">
           <div className="absolute left-1/2 top-0 z-10 -translate-x-1/2">
-            <div className="header-control animate-header-reveal rounded-full border border-white/15 bg-[#0b1111]/70 px-7 xl:px-9 backdrop-blur-xl shadow-[0_16px_40px_rgba(0,0,0,0.35)]">
-              <div className="flex items-center gap-8 xl:gap-10">
+            <div className="header-control animate-header-reveal w-[min(920px,calc(100vw-420px))] min-w-[720px] xl:min-w-[760px] max-w-[920px] rounded-full border border-white/15 bg-[#0b1111]/70 px-7 xl:px-9 backdrop-blur-xl shadow-[0_16px_40px_rgba(0,0,0,0.35)]">
+              <div className="flex w-full items-center justify-between gap-10 xl:gap-12">
                 <Link href="/" className="inline-flex items-center gap-3 flex-shrink-0">
                   <img src="/brand/conflunet-isotipo.svg" alt="" aria-hidden="true" className="h-8 w-8 object-contain" />
                   <img
@@ -40,12 +40,12 @@ export function MarketingTopbar() {
                   />
                 </Link>
 
-                <nav className="flex items-center gap-2 xl:gap-3">
+                <nav className="flex items-center gap-5 xl:gap-7">
                   {marketingNavItems.map((item) => (
                     <a
                       key={item.href}
                       href={item.href}
-                      className="rounded-full px-5 py-2 text-sm whitespace-nowrap text-slate-200 transition hover:bg-white/10 hover:text-white"
+                      className="rounded-full px-3 py-2 text-sm whitespace-nowrap text-slate-200 transition hover:bg-white/10 hover:text-white"
                     >
                       {item.label}
                     </a>

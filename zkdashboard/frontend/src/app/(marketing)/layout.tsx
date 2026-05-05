@@ -30,7 +30,7 @@ export const metadata: Metadata = {
 export default function MarketingLayout({ children }: { children: ReactNode }) {
   return (
     <IntroProvider>
-      <div className="relative min-h-screen overflow-x-hidden text-slate-100">
+      <div className="relative min-h-screen overflow-x-clip text-slate-100">
         {/* Layer 0: Background texture */}
         <BackgroundTextureLayer />
 
