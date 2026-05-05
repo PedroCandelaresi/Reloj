@@ -22,7 +22,6 @@ function CloseIcon() {
 
 export function MarketingTopbar() {
   const [open, setOpen] = useState(false);
-  const whatsappUrl = buildMarketingWhatsAppUrl();
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 px-4 pt-4 sm:px-6">
