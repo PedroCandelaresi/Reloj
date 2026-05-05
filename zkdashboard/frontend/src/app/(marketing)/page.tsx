@@ -1,10 +1,15 @@
-import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
+'use client';
+
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { MarketingCarousel } from '@/components/marketing/MarketingCarousel';
 import { MarketingContactSection } from '@/components/marketing/MarketingContactSection';
 import { MarketingIntroAnimation } from '@/components/marketing/MarketingIntroAnimation';
 import { decodeJwtPayload, getDefaultAppPath } from '@/lib/auth-token';
 import { buildMarketingWhatsAppUrl } from '@/lib/marketing';
+
+// Force dynamic rendering to avoid SSR issues
+export const dynamic = 'force-dynamic';
 
 const highlights = [
   {
@@ -39,13 +44,20 @@ const steps = [
   },
 ] as const;
 
-export default async function MarketingHomePage() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get('token')?.value;
+export default function MarketingHomePage() {
+  const router = useRouter();
 
-  if (token) {
-    redirect(getDefaultAppPath(decodeJwtPayload(token)));
-  }
+  useEffect(() => {
+    // Check for token on client side
+    const token = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('token='))
+      ?.split('=')[1];
+
+    if (token) {
+      router.replace(getDefaultAppPath(decodeJwtPayload(token)));
+    }
+  }, [router]);
 
   const content = (
     <>

@@ -13,8 +13,15 @@ const IntroContext = createContext<IntroContextType | undefined>(undefined);
 
 export function IntroProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<IntroState>('loading');
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+
     const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     if (prefersReduced) {
@@ -32,7 +39,7 @@ export function IntroProvider({ children }: { children: ReactNode }) {
       clearTimeout(timer2);
       clearTimeout(timer3);
     };
-  }, []);
+  }, [mounted]);
 
   const isIntroComplete = state === 'complete';
 

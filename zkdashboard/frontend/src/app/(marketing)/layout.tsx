@@ -6,6 +6,9 @@ import { BackgroundTextureLayer } from '@/components/marketing/BackgroundTexture
 import { BrandPresenceLayer } from '@/components/marketing/BrandPresenceLayer';
 import { IntroProvider } from '@/components/marketing/IntroProvider';
 
+// Force dynamic rendering for the entire marketing route
+export const dynamic = 'force-dynamic';
+
 export default function MarketingLayout({ children }: { children: ReactNode }) {
   return (
     <IntroProvider>

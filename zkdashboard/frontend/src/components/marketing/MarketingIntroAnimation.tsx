@@ -14,7 +14,12 @@ export function MarketingIntroAnimation({ children }: { children: React.ReactNod
     }
   }, []);
 
-  if (state === 'loading' || state === 'intro') {
+  // During SSR or initial load, show nothing to prevent hydration mismatch
+  if (state === 'loading') {
+    return null;
+  }
+
+  if (state === 'intro') {
     return null; // Content hidden during brand intro
   }
 
