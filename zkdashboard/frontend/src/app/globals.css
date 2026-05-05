@@ -6,7 +6,7 @@
 :root {
   --header-top: 16px;
   --header-control-height: 56px;
-  --section-anchor-air: 60px;
+  --section-anchor-air: 25px;
 }
 
 html {
