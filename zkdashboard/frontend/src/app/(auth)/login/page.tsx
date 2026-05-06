@@ -50,9 +50,9 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="h-14 w-full rounded-md bg-emerald-400 px-4 text-sm font-semibold text-slate-950 shadow-[0_16px_34px_rgba(31,199,119,0.28)] transition-colors hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-60"
+      className="h-14 w-full rounded-md bg-emerald-500 px-4 text-sm font-semibold text-slate-950 shadow-[0_16px_34px_rgba(5,115,77,0.34)] transition-colors hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60"
     >
-      {pending ? 'Accediendo...' : 'Seguir adelante'}
+      {pending ? 'Accediendo...' : 'Ingresar'}
     </button>
   );
 }
@@ -162,7 +162,7 @@ export default function LoginPage() {
                     required
                     autoComplete="username"
                     placeholder="tu.usuario"
-                    className="min-w-0 flex-1 bg-transparent text-sm text-slate-100 outline-none placeholder:text-slate-400"
+                    className="min-w-0 flex-1 appearance-none bg-transparent text-sm text-slate-100 outline-none placeholder:text-slate-400"
                   />
                   <span className="text-slate-400">
                     <UserIcon />
@@ -179,7 +179,7 @@ export default function LoginPage() {
                     required
                     autoComplete="current-password"
                     placeholder="••••••••"
-                    className="min-w-0 flex-1 bg-transparent text-sm text-slate-100 outline-none placeholder:text-slate-400"
+                    className="min-w-0 flex-1 appearance-none bg-transparent text-sm text-slate-100 outline-none placeholder:text-slate-400"
                   />
                   <button
                     type="button"
@@ -210,7 +210,7 @@ export default function LoginPage() {
 
       <section className="relative hidden min-h-screen overflow-hidden lg:block">
         <div className="absolute inset-0 login-brand-art" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_72%_20%,rgba(255,255,255,0.16),transparent_28%),radial-gradient(ellipse_at_16%_86%,rgba(109,255,202,0.16),transparent_26%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.18),rgba(0,0,0,0.28)),radial-gradient(ellipse_at_72%_20%,rgba(255,255,255,0.08),transparent_28%),radial-gradient(ellipse_at_16%_86%,rgba(109,255,202,0.1),transparent_26%)]" />
 
         <div className="absolute right-10 top-10 z-20">
           <BrandLogo
@@ -245,34 +245,40 @@ export default function LoginPage() {
 
         .subtle-service-card {
           background:
-            linear-gradient(140deg, rgba(11, 17, 17, 0.88), rgba(11, 17, 17, 0.72)),
-            radial-gradient(ellipse at 72% 18%, rgba(96, 255, 197, 0.16), transparent 30%);
-          box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+            linear-gradient(140deg, rgba(7, 14, 13, 0.95), rgba(7, 14, 13, 0.84)),
+            radial-gradient(ellipse at 72% 18%, rgba(58, 184, 142, 0.16), transparent 30%);
+          box-shadow: 0 16px 40px rgba(0, 0, 0, 0.44);
         }
 
         .login-outline-field {
           position: relative;
           border: 1px solid rgba(255, 255, 255, 0.16);
           border-radius: 8px;
-          background: rgba(255, 255, 255, 0.04);
+          background: rgba(255, 255, 255, 0.03);
           transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
         }
 
         .login-outline-field:focus-within {
           border-color: rgba(110, 231, 183, 0.74);
           box-shadow: 0 0 0 3px rgba(31, 199, 119, 0.18);
-          background: rgba(255, 255, 255, 0.07);
+          background: rgba(255, 255, 255, 0.05);
+        }
+
+        .login-outline-field input {
+          background: transparent !important;
+          box-shadow: none !important;
         }
 
         .login-outline-field > span {
           position: absolute;
           top: -0.72rem;
           left: 1rem;
-          background: #0a1312;
-          padding: 0 0.45rem;
+          background: transparent;
+          padding: 0;
           color: #9ee6c7;
           font-size: 0.82rem;
           font-weight: 600;
+          text-shadow: 0 1px 8px rgba(0, 0, 0, 0.45);
         }
 
         .login-soft-panel {
@@ -313,13 +319,13 @@ export default function LoginPage() {
 
         .login-brand-art {
           background:
-            radial-gradient(circle at 78% 8%, rgba(255, 255, 255, 0.36) 0 1px, transparent 2px),
-            radial-gradient(circle at 20% 22%, rgba(255, 255, 255, 0.3) 0 1px, transparent 2px),
-            radial-gradient(circle at 72% 70%, rgba(255, 255, 255, 0.24) 0 2px, transparent 3px),
-            linear-gradient(128deg, rgba(255, 255, 255, 0.24) 0 3%, transparent 14% 100%),
-            linear-gradient(112deg, transparent 0 12%, rgba(255, 255, 255, 0.12) 16% 18%, transparent 25% 100%),
-            linear-gradient(128deg, transparent 0 32%, rgba(0, 69, 47, 0.58) 39% 43%, transparent 54% 100%),
-            linear-gradient(142deg, #7ee8c0 0%, #2cb57d 24%, #07965e 48%, #07583c 70%, #04140f 100%);
+            radial-gradient(circle at 78% 8%, rgba(255, 255, 255, 0.22) 0 1px, transparent 2px),
+            radial-gradient(circle at 20% 22%, rgba(255, 255, 255, 0.18) 0 1px, transparent 2px),
+            radial-gradient(circle at 72% 70%, rgba(255, 255, 255, 0.14) 0 2px, transparent 3px),
+            linear-gradient(128deg, rgba(255, 255, 255, 0.14) 0 3%, transparent 14% 100%),
+            linear-gradient(112deg, transparent 0 12%, rgba(255, 255, 255, 0.07) 16% 18%, transparent 25% 100%),
+            linear-gradient(128deg, transparent 0 32%, rgba(0, 52, 36, 0.6) 39% 43%, transparent 54% 100%),
+            linear-gradient(142deg, #3ea885 0%, #1f7e5f 24%, #0d694d 48%, #0a4f3b 70%, #031d17 100%);
         }
 
         input:-webkit-autofill,
@@ -329,7 +335,7 @@ export default function LoginPage() {
           -webkit-text-fill-color: #e2e8f0;
           caret-color: #e2e8f0;
           transition: background-color 9999s ease-in-out 0s;
-          box-shadow: 0 0 0 1000px rgba(10, 19, 18, 0.95) inset;
+          box-shadow: 0 0 0 1000px rgba(255, 255, 255, 0.01) inset;
         }
       `}</style>
     </main>
