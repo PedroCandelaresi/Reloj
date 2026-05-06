@@ -1,12 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useFormState, useFormStatus } from 'react-dom';
 import { login } from '@/lib/actions';
 import { BrandLogo } from '@/components/BrandLogo';
-import { BackgroundTextureLayer } from '@/components/marketing/BackgroundTextureLayer';
-import { buildMarketingWhatsAppUrl, marketingConfig } from '@/lib/marketing';
+import { marketingConfig } from '@/lib/marketing';
 
 function EyeIcon({ open }: { open: boolean }) {
   if (open) {
@@ -51,165 +50,278 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="h-14 w-full rounded-full bg-emerald-400 px-4 text-sm font-semibold uppercase tracking-[0.14em] text-slate-950 shadow-[0_16px_34px_rgba(31,199,119,0.28)] transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-60"
+      className="h-14 w-full rounded-md bg-emerald-400 px-4 text-sm font-semibold text-slate-950 shadow-[0_16px_34px_rgba(31,199,119,0.28)] transition-colors hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-60"
     >
-      {pending ? 'Accediendo...' : 'Ingresar al sistema'}
+      {pending ? 'Accediendo...' : 'Seguir adelante'}
     </button>
   );
 }
 
-const highlights = [
-  'Control de fichadas para empresas y equipos.',
-  'Reportes y gestión diaria para RRHH.',
-  'Soporte técnico cercano para la operación.',
-  'Implementación real para comercios e industrias.',
+const serviceSlides = [
+  {
+    label: 'Servicio técnico',
+    title: 'Si una PC falla, lo resolvemos sin vueltas.',
+    description: 'Diagnóstico, arreglo y puesta a punto para que tu trabajo siga.',
+  },
+  {
+    label: 'Diseño web comercial',
+    title: 'Tu negocio en internet, claro y fácil de entender.',
+    description: 'Landings, tiendas y menús online pensados para vender mejor.',
+  },
+  {
+    label: 'Instalaciones técnicas',
+    title: 'Cámaras, red y relojes instalados como corresponde.',
+    description: 'Todo conectado y funcionando para evitar dolores de cabeza.',
+  },
+  {
+    label: 'Sistema RRHH',
+    title: 'Fichadas y reportes ordenados, sin planillas eternas.',
+    description: 'Control de asistencia simple para comercios e industrias.',
+  },
 ] as const;
+
+function ServiceCarousel() {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const activeSlide = serviceSlides[activeIndex];
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setActiveIndex((current) => (current + 1) % serviceSlides.length);
+    }, 5600);
+
+    return () => window.clearInterval(timer);
+  }, []);
+
+  return (
+    <div className="subtle-service-card rounded-3xl border border-white/15 p-5 backdrop-blur-xl">
+      <div className="flex items-center justify-between gap-3">
+        <span className="rounded-full border border-emerald-300/35 bg-emerald-300/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-200">
+          Soluciones Conflunet
+        </span>
+        <div className="flex items-center gap-1.5">
+          {serviceSlides.map((slide, index) => (
+            <button
+              key={slide.label}
+              type="button"
+              onClick={() => setActiveIndex(index)}
+              className={`h-2 w-2 rounded-full transition ${
+                index === activeIndex ? 'bg-emerald-300' : 'bg-white/35'
+              }`}
+              aria-label={`Ver servicio ${slide.label}`}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div key={activeIndex} className="service-fade-in mt-4 min-h-[118px]">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-100/85">{activeSlide.label}</p>
+        <h2 className="mt-2 text-xl font-semibold leading-tight text-white">{activeSlide.title}</h2>
+        <p className="mt-3 text-sm leading-6 text-slate-300">{activeSlide.description}</p>
+      </div>
+    </div>
+  );
+}
 
 export default function LoginPage() {
   const [state, action] = useFormState(login, undefined);
   const [showPassword, setShowPassword] = useState(false);
-  const supportUrl = buildMarketingWhatsAppUrl({ service: 'Consulta general' });
 
   return (
-    <main className="relative min-h-screen overflow-hidden text-slate-100">
-      <BackgroundTextureLayer />
-      <div className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.07),transparent_48%),radial-gradient(ellipse_at_80%_20%,rgba(55,240,166,0.08),transparent_34%)]" />
+    <main className="grid min-h-screen bg-[#030b0a] text-slate-100 lg:grid-cols-[minmax(0,0.96fr)_minmax(520px,1.04fr)]">
+      <section className="login-soft-panel relative flex min-h-screen flex-col px-6 py-8 sm:px-10 lg:px-12">
+        <Link
+          href="/"
+          className="absolute left-4 top-4 z-30 inline-flex min-h-10 items-center gap-2 rounded-full border border-white/20 bg-[#0b1111]/72 px-4 text-sm font-medium text-slate-200 backdrop-blur-md transition hover:border-emerald-300/60 hover:text-emerald-100 sm:left-6 sm:top-6"
+        >
+          <ArrowLeftIcon />
+          <span>Volver al inicio</span>
+        </Link>
 
-      <div className="relative z-10 min-h-screen px-4 pb-8 pt-6 sm:px-6 sm:pt-8">
-        <div className="mx-auto flex w-full max-w-6xl justify-start">
-          <Link
-            href="/"
-            className="inline-flex min-h-10 items-center gap-2 rounded-full border border-white/15 bg-[#0b1111]/70 px-4 text-sm font-medium text-slate-200 backdrop-blur-xl transition hover:bg-white/10 hover:text-white"
-          >
-            <ArrowLeftIcon />
-            <span>Volver al inicio</span>
-          </Link>
-        </div>
-
-        <div className="mx-auto mt-5 grid w-full max-w-6xl gap-6 lg:mt-8 lg:grid-cols-[1.08fr_0.92fr] lg:gap-8">
-          <section className="order-2 hidden rounded-[2rem] border border-white/15 bg-[#0b1111]/70 p-8 backdrop-blur-xl shadow-[0_16px_40px_rgba(0,0,0,0.35)] lg:flex lg:flex-col">
-            <span className="inline-flex w-fit rounded-full border border-emerald-300/40 bg-emerald-300/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-200">
-              {marketingConfig.brandName}
-            </span>
-            <h2 className="mt-5 text-3xl font-semibold leading-tight text-white xl:text-4xl">
-              Acceso profesional al sistema de gestión Conflunet.
-            </h2>
-            <p className="mt-4 max-w-2xl text-base leading-8 text-slate-300">
-              La misma estética y enfoque del sitio principal, ahora aplicada a tu ingreso operativo diario.
-            </p>
-
-            <div className="mt-8 grid gap-3 sm:grid-cols-2">
-              {highlights.map((highlight) => (
-                <article key={highlight} className="rounded-2xl border border-white/12 bg-white/5 px-4 py-3 text-sm text-slate-200">
-                  {highlight}
-                </article>
-              ))}
-            </div>
-
-            <div className="mt-auto pt-8">
-              <a
-                href={supportUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/15 bg-white/5 px-6 text-sm font-semibold text-white transition hover:bg-white/10"
-              >
-                Soporte por WhatsApp · {marketingConfig.whatsappDisplay}
-              </a>
-            </div>
-          </section>
-
-          <section className="order-1 relative overflow-hidden rounded-[2rem] border border-white/15 bg-[#0b1111]/80 p-6 backdrop-blur-xl shadow-[0_16px_40px_rgba(0,0,0,0.35)] sm:p-8 lg:order-2 lg:p-10">
-            <img
-              src="/brand/conflunet-isotipo.svg"
-              alt=""
-              aria-hidden="true"
-              className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 opacity-[0.12] saturate-0"
-            />
-
-            <div className="relative z-10">
-              <BrandLogo
-                variant="steel"
-                layout="horizontal"
-                className="justify-start"
-                iconClassName="w-14"
-                wordmarkClassName="w-52 sm:w-56"
-              />
-
-              <p className="mt-6 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-200/85">Acceso seguro</p>
-              <h1 className="mt-3 text-3xl font-semibold leading-tight text-white sm:text-4xl">
-                Ingresá a tu panel de trabajo
-              </h1>
-              <p className="mt-4 max-w-lg text-sm leading-7 text-slate-300 sm:text-base">
-                Gestioná empresas, usuarios y fichadas desde una experiencia alineada con la identidad visual de Conflunet.
+        <div className="relative z-10 flex flex-1 items-center justify-center py-12">
+          <div className="w-full max-w-[390px]">
+            <div className="mb-7">
+              <BrandLogo variant="steel" layout="wordmark" className="w-52 max-w-full" />
+              <p className="mt-4 text-sm leading-7 text-slate-300">
+                Acceso al sistema de gestión de {marketingConfig.brandName}.
               </p>
+            </div>
 
-              {state?.error && (
-                <div className="mt-7 rounded-xl border border-red-400/35 bg-red-500/10 px-4 py-3 text-sm text-red-100">
-                  {state.error}
+            {state?.error && (
+              <div className="mb-8 rounded-md border border-red-400/35 bg-red-500/10 px-4 py-3 text-sm text-red-100">
+                {state.error}
+              </div>
+            )}
+
+            <form action={action} className="space-y-7">
+              <label className="login-outline-field block">
+                <span>Usuario</span>
+                <div className="flex h-14 items-center gap-3 px-4">
+                  <input
+                    name="username"
+                    type="text"
+                    required
+                    autoComplete="username"
+                    placeholder="tu.usuario"
+                    className="min-w-0 flex-1 bg-transparent text-sm text-slate-100 outline-none placeholder:text-slate-400"
+                  />
+                  <span className="text-slate-400">
+                    <UserIcon />
+                  </span>
                 </div>
-              )}
+              </label>
 
-              <form action={action} className="mt-8 space-y-5">
-                <label className="block">
-                  <span className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-100/80">Usuario</span>
-                  <div className="mt-2 flex h-14 items-center gap-3 rounded-xl border border-white/15 bg-white/5 px-4 transition focus-within:border-emerald-300/60 focus-within:bg-white/10">
-                    <input
-                      name="username"
-                      type="text"
-                      required
-                      autoComplete="username"
-                      placeholder="tu.usuario"
-                      className="min-w-0 flex-1 bg-transparent text-sm text-slate-100 outline-none placeholder:text-slate-400"
-                    />
-                    <span className="text-slate-400">
-                      <UserIcon />
-                    </span>
-                  </div>
-                </label>
+              <label className="login-outline-field block">
+                <span>Contraseña</span>
+                <div className="flex h-14 items-center gap-3 px-4">
+                  <input
+                    name="password"
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    autoComplete="current-password"
+                    placeholder="••••••••"
+                    className="min-w-0 flex-1 bg-transparent text-sm text-slate-100 outline-none placeholder:text-slate-400"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((current) => !current)}
+                    aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                    className="text-slate-400 transition-colors hover:text-emerald-200"
+                  >
+                    <EyeIcon open={showPassword} />
+                  </button>
+                </div>
+              </label>
 
-                <label className="block">
-                  <span className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-100/80">Contraseña</span>
-                  <div className="mt-2 flex h-14 items-center gap-3 rounded-xl border border-white/15 bg-white/5 px-4 transition focus-within:border-emerald-300/60 focus-within:bg-white/10">
-                    <input
-                      name="password"
-                      type={showPassword ? 'text' : 'password'}
-                      required
-                      autoComplete="current-password"
-                      placeholder="••••••••"
-                      className="min-w-0 flex-1 bg-transparent text-sm text-slate-100 outline-none placeholder:text-slate-400"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((current) => !current)}
-                      aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                      className="text-slate-400 transition-colors hover:text-emerald-200"
-                    >
-                      <EyeIcon open={showPassword} />
-                    </button>
-                  </div>
-                </label>
-
-                <SubmitButton />
-              </form>
-
-              <p className="mt-6 text-sm text-slate-300">
-                ¿Necesitás ayuda para ingresar?{' '}
-                <a
-                  href={supportUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="font-semibold text-emerald-200 transition hover:text-emerald-100"
-                >
-                  Contactar soporte
-                </a>
-                .
-              </p>
-            </div>
-          </section>
+              <SubmitButton />
+            </form>
+          </div>
         </div>
-      </div>
+
+        <div className="absolute bottom-6 right-6 z-20 lg:hidden">
+          <BrandLogo
+            variant="steel"
+            layout="horizontal"
+            className="justify-end"
+            iconClassName="w-14"
+            wordmarkClassName="w-48 max-w-[64vw]"
+          />
+        </div>
+      </section>
+
+      <section className="relative hidden min-h-screen overflow-hidden lg:block">
+        <div className="absolute inset-0 login-brand-art" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_72%_20%,rgba(255,255,255,0.16),transparent_28%),radial-gradient(ellipse_at_16%_86%,rgba(109,255,202,0.16),transparent_26%)]" />
+
+        <div className="absolute right-10 top-10 z-20">
+          <BrandLogo
+            variant="steel"
+            layout="horizontal"
+            className="justify-end"
+            iconClassName="w-20"
+            wordmarkClassName="w-72 max-w-[34vw]"
+          />
+        </div>
+
+        <div className="absolute bottom-10 left-10 z-20 w-[min(460px,calc(100%-5rem))]">
+          <ServiceCarousel />
+        </div>
+      </section>
 
       <style jsx>{`
+        @keyframes service-fade-in {
+          0% {
+            opacity: 0;
+            transform: translateY(4px);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .service-fade-in {
+          animation: service-fade-in 300ms ease-out;
+        }
+
+        .subtle-service-card {
+          background:
+            linear-gradient(140deg, rgba(11, 17, 17, 0.88), rgba(11, 17, 17, 0.72)),
+            radial-gradient(ellipse at 72% 18%, rgba(96, 255, 197, 0.16), transparent 30%);
+          box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+        }
+
+        .login-outline-field {
+          position: relative;
+          border: 1px solid rgba(255, 255, 255, 0.16);
+          border-radius: 8px;
+          background: rgba(255, 255, 255, 0.04);
+          transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+        }
+
+        .login-outline-field:focus-within {
+          border-color: rgba(110, 231, 183, 0.74);
+          box-shadow: 0 0 0 3px rgba(31, 199, 119, 0.18);
+          background: rgba(255, 255, 255, 0.07);
+        }
+
+        .login-outline-field > span {
+          position: absolute;
+          top: -0.72rem;
+          left: 1rem;
+          background: #0a1312;
+          padding: 0 0.45rem;
+          color: #9ee6c7;
+          font-size: 0.82rem;
+          font-weight: 600;
+        }
+
+        .login-soft-panel {
+          overflow: hidden;
+          background:
+            radial-gradient(circle at 16% 10%, rgba(126, 232, 192, 0.11), transparent 36%),
+            radial-gradient(circle at 80% 86%, rgba(44, 181, 125, 0.09), transparent 40%),
+            linear-gradient(158deg, #06100f 0%, #091615 44%, #0b1111 100%);
+        }
+
+        .login-soft-panel::before,
+        .login-soft-panel::after {
+          content: '';
+          position: absolute;
+          inset: -12%;
+          pointer-events: none;
+        }
+
+        .login-soft-panel::before {
+          background:
+            radial-gradient(circle at 22% 8%, rgba(153, 255, 222, 0.11) 0 1px, transparent 2px),
+            radial-gradient(circle at 78% 24%, rgba(153, 255, 222, 0.1) 0 1px, transparent 2px),
+            linear-gradient(56deg, transparent 0 34%, rgba(31, 199, 119, 0.12) 40% 42%, transparent 54% 100%);
+          filter: blur(0.2px) saturate(0.95);
+          opacity: 0.72;
+          transform: rotate(-2deg);
+        }
+
+        .login-soft-panel::after {
+          background:
+            radial-gradient(ellipse at 76% 30%, rgba(31, 199, 119, 0.14), transparent 18%),
+            radial-gradient(ellipse at 30% 74%, rgba(7, 88, 60, 0.2), transparent 26%),
+            linear-gradient(58deg, transparent 0 18%, rgba(31, 199, 119, 0.1) 24% 27%, transparent 36% 100%);
+          filter: blur(10px) saturate(0.9);
+          opacity: 0.72;
+          transform: rotate(5deg);
+        }
+
+        .login-brand-art {
+          background:
+            radial-gradient(circle at 78% 8%, rgba(255, 255, 255, 0.36) 0 1px, transparent 2px),
+            radial-gradient(circle at 20% 22%, rgba(255, 255, 255, 0.3) 0 1px, transparent 2px),
+            radial-gradient(circle at 72% 70%, rgba(255, 255, 255, 0.24) 0 2px, transparent 3px),
+            linear-gradient(128deg, rgba(255, 255, 255, 0.24) 0 3%, transparent 14% 100%),
+            linear-gradient(112deg, transparent 0 12%, rgba(255, 255, 255, 0.12) 16% 18%, transparent 25% 100%),
+            linear-gradient(128deg, transparent 0 32%, rgba(0, 69, 47, 0.58) 39% 43%, transparent 54% 100%),
+            linear-gradient(142deg, #7ee8c0 0%, #2cb57d 24%, #07965e 48%, #07583c 70%, #04140f 100%);
+        }
+
         input:-webkit-autofill,
         input:-webkit-autofill:hover,
         input:-webkit-autofill:focus,
@@ -217,7 +329,7 @@ export default function LoginPage() {
           -webkit-text-fill-color: #e2e8f0;
           caret-color: #e2e8f0;
           transition: background-color 9999s ease-in-out 0s;
-          box-shadow: 0 0 0 1000px rgba(11, 17, 17, 0.92) inset;
+          box-shadow: 0 0 0 1000px rgba(10, 19, 18, 0.95) inset;
         }
       `}</style>
     </main>
