@@ -153,9 +153,9 @@ export default function LoginPage() {
             )}
 
             <form action={action} className="space-y-7">
-              <label className="login-outline-field block">
-                <span>Usuario</span>
-                <div className="flex h-14 items-center gap-3 px-4">
+              <label className="block">
+                <span className="login-field-label">Usuario</span>
+                <div className="login-outline-field flex h-14 items-center gap-3 px-4">
                   <input
                     name="username"
                     type="text"
@@ -170,9 +170,9 @@ export default function LoginPage() {
                 </div>
               </label>
 
-              <label className="login-outline-field block">
-                <span>Contraseña</span>
-                <div className="flex h-14 items-center gap-3 px-4">
+              <label className="block">
+                <span className="login-field-label">Contraseña</span>
+                <div className="login-outline-field flex h-14 items-center gap-3 px-4">
                   <input
                     name="password"
                     type={showPassword ? 'text' : 'password'}
@@ -212,14 +212,21 @@ export default function LoginPage() {
         <div className="absolute inset-0 login-brand-art" />
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.34),rgba(0,0,0,0.48)),radial-gradient(ellipse_at_72%_20%,rgba(255,255,255,0.04),transparent_30%),radial-gradient(ellipse_at_16%_86%,rgba(109,255,202,0.06),transparent_28%)]" />
 
-        <div className="absolute right-10 top-10 z-20">
-          <BrandLogo
-            variant="steel"
-            layout="horizontal"
-            className="justify-end"
-            iconClassName="w-20"
-            wordmarkClassName="w-72 max-w-[34vw]"
-          />
+        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center px-8">
+          <div className="login-brand-presence">
+            <img
+              src="/brand/conflunet-isotipo.svg"
+              alt=""
+              aria-hidden="true"
+              className="mx-auto mb-8 w-[clamp(170px,16vw,290px)] object-contain"
+            />
+            <img
+              src="/brand/conflunet-wordmark-brushed-steel.svg"
+              alt=""
+              aria-hidden="true"
+              className="w-[min(86vw,920px)] max-w-full object-contain"
+            />
+          </div>
         </div>
 
         <div className="absolute bottom-10 left-10 z-20 w-[min(460px,calc(100%-5rem))]">
@@ -248,6 +255,22 @@ export default function LoginPage() {
             linear-gradient(140deg, rgba(6, 12, 11, 0.97), rgba(6, 12, 11, 0.9)),
             radial-gradient(ellipse at 72% 18%, rgba(35, 122, 94, 0.16), transparent 30%);
           box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .login-brand-presence {
+          opacity: 0.26;
+          transform: scale(1.06) translateY(20px);
+          filter: blur(12px) saturate(105%);
+        }
+
+        .login-field-label {
+          display: block;
+          margin-bottom: 0.5rem;
+          color: #9ee6c7;
+          font-size: 0.9rem;
+          font-weight: 600;
+          letter-spacing: 0.01em;
+          text-shadow: 0 1px 8px rgba(0, 0, 0, 0.45);
         }
 
         .login-outline-field {
@@ -306,18 +329,6 @@ export default function LoginPage() {
 
         .login-outline-field input::-webkit-textfield-decoration-container {
           background: transparent !important;
-        }
-
-        .login-outline-field > span {
-          position: absolute;
-          top: -0.72rem;
-          left: 1rem;
-          background: transparent;
-          padding: 0;
-          color: #9ee6c7;
-          font-size: 0.82rem;
-          font-weight: 600;
-          text-shadow: 0 1px 8px rgba(0, 0, 0, 0.45);
         }
 
         .login-soft-panel {
