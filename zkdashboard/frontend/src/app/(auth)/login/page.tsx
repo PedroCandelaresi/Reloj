@@ -50,7 +50,7 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="h-14 w-full rounded-md bg-emerald-500 px-4 text-sm font-semibold text-slate-950 shadow-[0_16px_34px_rgba(5,115,77,0.34)] transition-colors hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60"
+      className="h-14 w-full rounded-md bg-emerald-600 px-4 text-sm font-semibold text-slate-100 shadow-[0_16px_34px_rgba(4,84,59,0.42)] transition-colors hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-60"
     >
       {pending ? 'Accediendo...' : 'Ingresar'}
     </button>
@@ -210,7 +210,7 @@ export default function LoginPage() {
 
       <section className="relative hidden min-h-screen overflow-hidden lg:block">
         <div className="absolute inset-0 login-brand-art" />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.18),rgba(0,0,0,0.28)),radial-gradient(ellipse_at_72%_20%,rgba(255,255,255,0.08),transparent_28%),radial-gradient(ellipse_at_16%_86%,rgba(109,255,202,0.1),transparent_26%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.34),rgba(0,0,0,0.48)),radial-gradient(ellipse_at_72%_20%,rgba(255,255,255,0.04),transparent_30%),radial-gradient(ellipse_at_16%_86%,rgba(109,255,202,0.06),transparent_28%)]" />
 
         <div className="absolute right-10 top-10 z-20">
           <BrandLogo
@@ -245,9 +245,9 @@ export default function LoginPage() {
 
         .subtle-service-card {
           background:
-            linear-gradient(140deg, rgba(7, 14, 13, 0.95), rgba(7, 14, 13, 0.84)),
-            radial-gradient(ellipse at 72% 18%, rgba(58, 184, 142, 0.16), transparent 30%);
-          box-shadow: 0 16px 40px rgba(0, 0, 0, 0.44);
+            linear-gradient(140deg, rgba(6, 12, 11, 0.97), rgba(6, 12, 11, 0.9)),
+            radial-gradient(ellipse at 72% 18%, rgba(35, 122, 94, 0.16), transparent 30%);
+          box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
         }
 
         .login-outline-field {
@@ -269,6 +269,45 @@ export default function LoginPage() {
           box-shadow: none !important;
         }
 
+        .login-outline-field input:focus,
+        .login-outline-field input:active,
+        .login-outline-field input:hover {
+          background: transparent !important;
+        }
+
+        .login-outline-field input:-webkit-autofill,
+        .login-outline-field input:-webkit-autofill:hover,
+        .login-outline-field input:-webkit-autofill:focus,
+        .login-outline-field input:-webkit-autofill:active,
+        .login-outline-field input:autofill,
+        .login-outline-field input:autofill:hover,
+        .login-outline-field input:autofill:focus,
+        .login-outline-field input:autofill:active {
+          -webkit-text-fill-color: #e2e8f0 !important;
+          caret-color: #e2e8f0 !important;
+          background-color: transparent !important;
+          background-image: none !important;
+          -webkit-background-clip: text !important;
+          background-clip: text !important;
+          -webkit-box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0) inset !important;
+          box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0) inset !important;
+          transition: background-color 9999s ease-in-out 0s;
+        }
+
+        .login-outline-field input::-webkit-credentials-auto-fill-button,
+        .login-outline-field input::-webkit-contacts-auto-fill-button {
+          visibility: hidden;
+          pointer-events: none;
+          position: absolute;
+          right: 0;
+          width: 0;
+          margin: 0;
+        }
+
+        .login-outline-field input::-webkit-textfield-decoration-container {
+          background: transparent !important;
+        }
+
         .login-outline-field > span {
           position: absolute;
           top: -0.72rem;
@@ -282,6 +321,7 @@ export default function LoginPage() {
         }
 
         .login-soft-panel {
+          color-scheme: dark;
           overflow: hidden;
           background:
             radial-gradient(circle at 16% 10%, rgba(126, 232, 192, 0.11), transparent 36%),
@@ -325,17 +365,7 @@ export default function LoginPage() {
             linear-gradient(128deg, rgba(255, 255, 255, 0.14) 0 3%, transparent 14% 100%),
             linear-gradient(112deg, transparent 0 12%, rgba(255, 255, 255, 0.07) 16% 18%, transparent 25% 100%),
             linear-gradient(128deg, transparent 0 32%, rgba(0, 52, 36, 0.6) 39% 43%, transparent 54% 100%),
-            linear-gradient(142deg, #3ea885 0%, #1f7e5f 24%, #0d694d 48%, #0a4f3b 70%, #031d17 100%);
-        }
-
-        input:-webkit-autofill,
-        input:-webkit-autofill:hover,
-        input:-webkit-autofill:focus,
-        input:-webkit-autofill:active {
-          -webkit-text-fill-color: #e2e8f0;
-          caret-color: #e2e8f0;
-          transition: background-color 9999s ease-in-out 0s;
-          box-shadow: 0 0 0 1000px rgba(255, 255, 255, 0.01) inset;
+            linear-gradient(142deg, #2b8a69 0%, #19694f 24%, #0b533d 48%, #083b2d 70%, #02120e 100%);
         }
       `}</style>
     </main>
