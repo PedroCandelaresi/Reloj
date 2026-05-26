@@ -41,97 +41,113 @@ export default async function ReportsHubPage({
   const requestSuffix = companyId ? `&companyId=${companyId}` : '';
   const canSeeOperationalAudit = user.isSuperAdmin || user.companyRole === 'company_admin';
 
-  const assistanceReports = [
+  const dailyControlReports = [
     {
       href: `/reports/daily-presence${suffix}`,
-      title: 'Asistencia diaria',
-      description: 'Primera y última fichada por empleado.',
-    },
-    {
-      href: `/reports/monthly-summary${suffix}`,
-      title: 'Resumen mensual',
-      description: 'Totales del mes por empleado.',
-    },
-    {
-      href: `/reports/monthly-closing${suffix}`,
-      title: 'Cierre mensual',
-      description: 'Control del mes antes de liquidar sueldos.',
+      title: 'Quién vino hoy',
+      description: 'Entradas y salidas del día.',
+      priority: 'primary' as const,
     },
     {
       href: `/reports/absences${suffix}`,
-      title: 'Ausencias',
-      description: 'Días laborales sin fichadas.',
+      title: 'Quién faltó',
+      description: 'Personas sin asistencia.',
+      priority: 'normal' as const,
     },
     {
       href: `/reports/late-arrivals${suffix}`,
       title: 'Llegadas tarde',
-      description: 'Entradas fuera del horario permitido.',
+      description: 'Entradas después del horario.',
+      priority: 'normal' as const,
+    },
+    {
+      href: `/reports/incomplete-records${suffix}`,
+      title: 'Falta entrada o salida',
+      description: 'Días con fichada incompleta.',
+      priority: 'normal' as const,
+    },
+    {
+      href: `/reports/early-departures${suffix}`,
+      title: 'Salidas tempranas',
+      description: 'Salidas antes de horario.',
+      priority: 'secondary' as const,
+    },
+  ];
+
+  const monthlyClosingReports = [
+    {
+      href: `/reports/monthly-closing${suffix}`,
+      title: 'Controlar el mes',
+      description: 'Revisión previa a liquidación.',
+      priority: 'primary' as const,
+    },
+    {
+      href: `/reports/monthly-summary${suffix}`,
+      title: 'Resumen mensual',
+      description: 'Totales por persona.',
+      priority: 'normal' as const,
     },
     {
       href: `/reports/worked-hours${suffix}`,
       title: 'Horas trabajadas',
-      description: 'Tiempo calculado con fichadas y horarios.',
+      description: 'Horas calculadas del período.',
+      priority: 'normal' as const,
+    },
+    {
+      href: `/reports/day-summaries${suffix}`,
+      title: 'Días calculados',
+      description: 'Base para cierre y ausencias.',
+      priority: 'secondary' as const,
     },
   ];
 
   const peopleReports = [
     {
       href: `/reports/employees-without-schedule${suffix}`,
-      title: 'Empleados sin horario',
-      description: 'Personas sin perfil para calcular asistencia.',
+      title: 'Sin horario asignado',
+      description: 'No se puede calcular asistencia.',
+      priority: 'normal' as const,
     },
     {
       href: `/reports/employees-without-punches${suffix}`,
-      title: 'Empleados sin fichadas',
-      description: 'Personas sin marcaciones en el período.',
+      title: 'Sin fichadas',
+      description: 'Personas sin marcaciones.',
+      priority: 'normal' as const,
     },
   ];
 
   const requestReports = [
     {
       href: `/attendance/requests?status=pending${requestSuffix}`,
-      title: 'Solicitudes pendientes',
-      description: 'Correcciones y justificaciones por revisar.',
+      title: 'Pendientes',
+      description: 'Requieren aprobación o rechazo.',
+      priority: 'primary' as const,
     },
     {
       href: `/attendance/requests?status=approved${requestSuffix}`,
-      title: 'Solicitudes aprobadas',
-      description: 'Historial aprobado para control operativo.',
+      title: 'Aprobadas',
+      description: 'Ya revisadas.',
+      priority: 'normal' as const,
     },
     {
       href: `/attendance/requests?status=rejected${requestSuffix}`,
-      title: 'Solicitudes rechazadas',
-      description: 'Casos revisados sin aplicación de cambios.',
-    },
-  ];
-
-  const auditReports = [
-    {
-      href: `/reports/incomplete-records${suffix}`,
-      title: 'Fichadas incompletas',
-      description: 'Días donde falta una entrada o salida.',
-    },
-    {
-      href: `/reports/day-summaries${suffix}`,
-      title: 'Resúmenes diarios',
-      description: 'Estado calculado por día, empleado y horario.',
-    },
-    {
-      href: `/reports/early-departures${suffix}`,
-      title: 'Salidas tempranas',
-      description: 'Salidas anteriores al horario esperado.',
+      title: 'Rechazadas',
+      description: 'No aplicadas.',
+      priority: 'normal' as const,
     },
     ...(canSeeOperationalAudit
       ? [
           {
             href: `/reports/corrected-punches${suffix}`,
-            title: 'Fichadas corregidas',
-            description: 'Cambios hechos sobre registros existentes.',
+            title: 'Correcciones',
+            description: 'Cambios sobre fichadas.',
+            priority: 'secondary' as const,
           },
           {
             href: `/reports/manual-punches${suffix}`,
             title: 'Fichadas manuales',
-            description: 'Carga excepcional usada por administración.',
+            description: 'Uso excepcional.',
+            priority: 'secondary' as const,
           },
         ]
       : []),
@@ -143,14 +159,14 @@ export default async function ReportsHubPage({
         <div className="mb-8">
           <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Reportes</h1>
           <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
-            Elegí qué querés revisar. Cada reporte permite exportar desde su propia pantalla.
+            Elegí qué necesitás controlar.
           </p>
         </div>
 
-        <ReportSection title="Asistencia" description="Control diario, mensual, ausencias, llegadas tarde y horas trabajadas." reports={assistanceReports} />
-        <ReportSection title="Personal" description="Datos necesarios para que la asistencia pueda calcularse correctamente." reports={peopleReports} />
-        <ReportSection title="Solicitudes y justificaciones" description="Seguimiento operativo de pedidos pendientes, aprobados y rechazados." reports={requestReports} />
-        <ReportSection title="Auditoría y control" description="Registros incompletos, correcciones y validaciones del cálculo diario." reports={auditReports} />
+        <ReportSection title="Control Diario" description="Qué pasó hoy." reports={dailyControlReports} primary />
+        <ReportSection title="Cierre Mensual" description="Control previo a liquidación." reports={monthlyClosingReports} primary />
+        <ReportSection title="Personal" description="Qué empleado necesita revisión." reports={peopleReports} />
+        <ReportSection title="Solicitudes y Correcciones" description="Intervención humana." reports={requestReports} primary />
       </main>
     </>
   );
@@ -160,20 +176,22 @@ function ReportSection({
   title,
   description,
   reports,
+  primary = false,
 }: {
   title: string;
   description: string;
-  reports: Array<{ href: string; title: string; description: string }>;
+  reports: Array<{ href: string; title: string; description: string; priority?: 'primary' | 'normal' | 'secondary' }>;
+  primary?: boolean;
 }) {
   return (
     <section className="mb-9">
       <div className="mb-3">
-        <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>{title}</h2>
+        <h2 className={`${primary ? 'text-xl' : 'text-lg'} font-semibold`} style={{ color: primary ? 'var(--brand-text)' : 'var(--text-primary)' }}>{title}</h2>
         <p className="mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>{description}</p>
       </div>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {reports.map((report) => (
-          <ReportCard key={report.href} href={report.href} title={report.title} description={report.description} />
+          <ReportCard key={report.href} href={report.href} title={report.title} description={report.description} priority={report.priority} />
         ))}
       </div>
     </section>
