@@ -44,6 +44,7 @@ export default async function DashboardPage() {
   const recent = summary.recentRecords;
   const devices = summary.devices;
   const devicesById = new Map(devices.map((device) => [device.id, device]));
+  const attentionCount = summary.devicesOffline + summary.pendingCommands + summary.recentDeviceErrorCount;
   const activeCompany =
     user.memberships.find((membership) => membership.companyId === user.companyId)?.company;
   const activeCompanyName =
@@ -52,16 +53,16 @@ export default async function DashboardPage() {
   return (
     <>
       <main className="max-w-7xl mx-auto px-4 py-8 pt-32">
-        <div className="mb-8">
+        <div className="mb-6">
           <h1 className="text-2xl font-bold dark:text-white text-gray-900 drop-shadow-sm">Panel de la empresa</h1>
           <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
-            Resumen operativo de asistencia de {activeCompanyName}.
+            Control diario de asistencia de {activeCompanyName}.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-5 mb-8">
+        <section className="mb-8 grid grid-cols-1 gap-4 lg:grid-cols-4">
           <StatCard
-            label="Personas presentes hoy"
+            label="Presentes hoy"
             value={summary.presentToday}
             color="text-emerald-600 dark:text-emerald-400"
             hint="Empleados que registraron al menos una fichada hoy."
@@ -73,65 +74,76 @@ export default async function DashboardPage() {
             hint="Cada entrada o salida registrada en el reloj cuenta como una fichada."
           />
           <StatCard
-            label="Relojes conectados"
-            value={summary.devicesOnline}
-            color="text-green-600 dark:text-green-400"
-            hint="Relojes que se comunicaron recientemente con el sistema."
-          />
-          <StatCard
-            label="Relojes sin conexión"
-            value={summary.devicesOffline}
-            color="text-red-600 dark:text-red-400"
-            hint="Relojes que no se comunican recientemente con el sistema."
-          />
-          <StatCard
-            label="Tareas pendientes del reloj"
-            value={summary.pendingCommands}
-            color="text-amber-600 dark:text-amber-400"
-            hint="Instrucciones enviadas al reloj que todavía no fueron confirmadas."
+            label="Requiere revisión"
+            value={attentionCount}
+            color={attentionCount > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}
+            hint="Suma relojes sin conexión, comandos pendientes y errores recientes."
           />
           <InfoCard label="Última sincronización" value={formatOptionalDate(summary.lastSyncAt)} />
-        </div>
-
-        <section className="card rounded-xl p-6 mb-8">
-          <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Para que los reportes funcionen correctamente</h2>
-          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-            <ChecklistLink href="/employees" label="Empleados cargados" />
-            <ChecklistLink href="#estado-relojes" label="Reloj asignado" />
-            <ChecklistLink href="/settings" label="Horarios configurados" />
-            <ChecklistLink href="/settings/holidays" label="Feriados cargados" />
-            <ChecklistLink href="/reports/monthly-summary" label="Período recalculado" />
-          </div>
         </section>
 
-        <div className="grid grid-cols-1 gap-5 mb-8">
-          <div className="card rounded-xl p-6">
-            <p className="text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>Relojes asignados</p>
-            <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">{devices.length}</p>
-            {devices.length === 0 ? (
-              <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
-                Esta empresa no tiene relojes asignados. Contactá al administrador del sistema para asignar uno.
-              </p>
-            ) : (
-              devices.map((d) => (
-                <p key={d.id} className="text-xs mt-1 truncate" style={{ color: 'var(--text-muted)' }}>
-                  {getCompanyDeviceName(d)} · {getCompanyDeviceModel(d)} · {formatLastCommunication(d)}
-                </p>
-              ))
-            )}
-          </div>
-        </div>
+        <section className="mb-8 grid grid-cols-1 gap-4 lg:grid-cols-4">
+          <ActionCard href="/records" title="Revisar asistencia" description="Ver fichadas del día y registros que requieren corrección." primary />
+          <ActionCard href="/reports/absences" title="Ver ausencias" description="Detectar quién falta cuando el período ya fue calculado." />
+          <ActionCard href="/reports/late-arrivals" title="Ver tardanzas" description="Controlar llegadas fuera de horario." />
+          <ActionCard href="/attendance/requests?status=pending" title="Solicitudes pendientes" description="Aprobar o rechazar justificaciones y correcciones." />
+        </section>
 
-        <div id="estado-relojes" className="mb-8">
-          <DeviceStatusPanel
-            devices={devices}
-            canSync={
-              user.isSuperAdmin ||
-              user.companyRole === 'company_admin' ||
-              user.companyRole === 'operator'
-            }
-          />
-        </div>
+        {summary.technicalNews.length > 0 && (
+          <section className="mb-8 rounded-lg border px-4 py-3 text-sm" style={{ background: 'var(--amber-soft)', borderColor: 'rgba(251,191,36,0.3)', color: 'var(--amber-text)' }}>
+            <p className="font-semibold">Hay avisos técnicos para revisar.</p>
+            <ul className="mt-2 space-y-1">
+              {summary.technicalNews.map((news) => (
+                <li key={news}>{news}</li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        <details className="mb-8">
+          <summary className="cursor-pointer text-sm font-medium" style={{ color: 'var(--brand-text)' }}>
+            Estado de relojes y configuración
+          </summary>
+          <div className="mt-4 grid grid-cols-1 gap-5">
+            <div className="card rounded-xl p-6">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                  <p className="text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>Relojes asignados</p>
+                  <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">{devices.length}</p>
+                </div>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                  <ChecklistLink href="/employees" label="Personal" />
+                  <ChecklistLink href="#estado-relojes" label="Relojes" />
+                  <ChecklistLink href="/settings" label="Horarios" />
+                  <ChecklistLink href="/settings/holidays" label="Calendario" />
+                </div>
+              </div>
+              {devices.length === 0 ? (
+                <p className="text-xs mt-4" style={{ color: 'var(--text-muted)' }}>
+                  Esta empresa no tiene relojes asignados. Contactá al administrador del sistema para asignar uno.
+                </p>
+              ) : (
+                <div className="mt-4 grid grid-cols-1 gap-2 lg:grid-cols-2">
+                  {devices.map((d) => (
+                    <p key={d.id} className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>
+                      {getCompanyDeviceName(d)} · {getCompanyDeviceModel(d)} · {formatLastCommunication(d)}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div id="estado-relojes">
+              <DeviceStatusPanel
+                devices={devices}
+                canSync={
+                  user.isSuperAdmin ||
+                  user.companyRole === 'company_admin' ||
+                  user.companyRole === 'operator'
+                }
+              />
+            </div>
+          </div>
+        </details>
 
         <div className="card rounded-xl">
           <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid var(--border)' }}>
@@ -191,6 +203,29 @@ function StatCard({ label, value, color, hint }: { label: string; value: number;
       <p className="text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>{label}</p>
       <p className={`text-3xl font-bold ${color}`}>{value}</p>
     </div>
+  );
+}
+
+function ActionCard({
+  href,
+  title,
+  description,
+  primary = false,
+}: {
+  href: string;
+  title: string;
+  description: string;
+  primary?: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className="card block rounded-xl p-5 transition-colors hover:border-emerald-500"
+      style={primary ? { borderColor: 'rgba(31,199,119,0.45)' } : undefined}
+    >
+      <p className="text-sm font-semibold" style={{ color: primary ? 'var(--brand-text)' : 'var(--text-primary)' }}>{title}</p>
+      <p className="mt-2 text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>{description}</p>
+    </Link>
   );
 }
 

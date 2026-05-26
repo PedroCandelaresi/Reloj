@@ -101,14 +101,8 @@ export default async function RecordsPage({ searchParams }: PageProps) {
           </details>
         </div>
 
-        <RecordsSyncControls
-          devices={devices}
-          canSync={user.isSuperAdmin || user.companyRole === 'company_admin'}
-        />
-
         <div className="mb-6 rounded-lg border px-4 py-3 text-sm" style={{ background: 'var(--blue-soft)', borderColor: 'rgba(59,130,246,0.25)', color: 'var(--blue-text)' }}>
-          Estas son las marcaciones recibidas directamente desde el reloj. Para ver tardanzas, ausencias y horas trabajadas, usá los reportes calculados.
-          <span className="mt-1 block">Método de marcación indica cómo el reloj identificó a la persona, por ejemplo huella, tarjeta, rostro o código personal.</span>
+          Usá esta vista para controlar marcaciones crudas. Para ausencias, tardanzas y horas trabajadas, abrí los reportes calculados.
         </div>
 
         {/* Filtros */}
@@ -146,8 +140,24 @@ export default async function RecordsPage({ searchParams }: PageProps) {
           </Link>
         </form>
 
+        <details className="mb-6">
+          <summary className="cursor-pointer text-sm font-medium" style={{ color: 'var(--brand-text)' }}>
+            Sincronización y estado del reloj
+          </summary>
+          <div className="mt-4">
+            <RecordsSyncControls
+              devices={devices}
+              canSync={user.isSuperAdmin || user.companyRole === 'company_admin'}
+            />
+          </div>
+        </details>
+
         {/* Tabla */}
         <div className="card rounded-xl">
+          <div className="px-6 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
+            <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Fichadas recibidas</h2>
+            <p className="mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>Quién fichó, cuándo y con qué método.</p>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>

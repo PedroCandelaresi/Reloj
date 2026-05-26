@@ -241,6 +241,13 @@ export function AttendanceRequestsManager({
     const appliesTo = requestTypeToAppliesTo(form.type);
     return type.appliesTo === appliesTo || type.appliesTo === 'general';
   });
+  const sortedRequests = [...requests].sort((a, b) => {
+    if (a.status === b.status) return b.createdAt.localeCompare(a.createdAt);
+    if (a.status === 'pending') return -1;
+    if (b.status === 'pending') return 1;
+    return b.createdAt.localeCompare(a.createdAt);
+  });
+  const pendingCount = requests.filter((request) => request.status === 'pending').length;
 
   const review = (id: string, action: 'approve' | 'reject' | 'cancel') => {
     setMessage(null);
@@ -297,12 +304,12 @@ export function AttendanceRequestsManager({
       )}
 
       {writable && (
-        <section className="card rounded-xl">
-          <div className="px-6 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
-            <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Nueva solicitud</h2>
-            <p className="mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>{TYPE_HELP[form.type]}</p>
-          </div>
-          <form onSubmit={submit} className="grid grid-cols-1 gap-4 p-6 lg:grid-cols-4">
+        <details open={fromReport} className="card rounded-xl">
+          <summary className="cursor-pointer px-6 py-4 font-semibold" style={{ color: 'var(--text-primary)', borderBottom: '1px solid var(--border)' }}>
+            Crear nueva solicitud
+          </summary>
+          <p className="px-6 pt-4 text-sm" style={{ color: 'var(--text-muted)' }}>{TYPE_HELP[form.type]}</p>
+          <form onSubmit={submit} className="grid grid-cols-1 gap-4 p-6 pt-4 lg:grid-cols-4">
             <Field label="Empleado">
               <select name="employeeId" value={form.employeeId} onChange={handleChange} required className="input-field w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
                 <option value="">Seleccionar</option>
@@ -384,12 +391,18 @@ export function AttendanceRequestsManager({
               </button>
             </div>
           </form>
-        </section>
+        </details>
       )}
 
       <section className="card rounded-xl">
-        <div className="px-6 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
-          <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Solicitudes</h2>
+        <div className="px-6 py-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between" style={{ borderBottom: '1px solid var(--border)' }}>
+          <div>
+            <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Solicitudes para revisar</h2>
+            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Las pendientes aparecen primero.</p>
+          </div>
+          <span className="rounded-full px-3 py-1 text-xs font-medium" style={{ background: pendingCount > 0 ? 'var(--amber-soft)' : 'var(--brand-soft)', color: pendingCount > 0 ? 'var(--amber-text)' : 'var(--brand-text)' }}>
+            {pendingCount} pendiente(s)
+          </span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -410,7 +423,7 @@ export function AttendanceRequestsManager({
                     No hay solicitudes en este momento. Las correcciones y justificaciones aparecerán acá.
                   </td>
                 </tr>
-              ) : requests.map((request) => (
+              ) : sortedRequests.map((request) => (
                 <tr key={request.id} className="table-row align-top">
                   <td className="px-6 py-4">
                     <div className="font-medium" style={{ color: 'var(--text-primary)' }}>
@@ -420,7 +433,7 @@ export function AttendanceRequestsManager({
                   </td>
                   <td className="px-6 py-4" style={{ color: 'var(--text-secondary)' }}>{request.date}</td>
                   <td className="px-6 py-4" style={{ color: 'var(--text-secondary)' }}>{TYPE_LABELS[request.type]}</td>
-                  <td className="px-6 py-4" style={{ color: 'var(--text-secondary)' }}>{STATUS_LABELS[request.status]}</td>
+                  <td className="px-6 py-4"><RequestStatusPill status={request.status} /></td>
                   <td className="px-6 py-4" style={{ color: 'var(--text-secondary)' }}>
                     <p>{request.reason}</p>
                     {request.justificationType && <p className="mt-1 text-xs">Tipo: {request.justificationType.name}</p>}
@@ -441,16 +454,16 @@ export function AttendanceRequestsManager({
                         <div className="flex flex-wrap gap-2">
                           {reviewer && (
                             <>
-                              <button type="button" onClick={() => review(request.id, 'approve')} disabled={isPending} className="font-medium" style={{ color: 'var(--brand-text)' }}>
+                              <button type="button" onClick={() => review(request.id, 'approve')} disabled={isPending} className="rounded-lg px-3 py-1.5 text-xs font-medium disabled:opacity-60" style={{ background: 'var(--brand-soft)', color: 'var(--brand-text)' }}>
                                 Aprobar
                               </button>
-                              <button type="button" onClick={() => review(request.id, 'reject')} disabled={isPending} className="font-medium" style={{ color: 'var(--danger-text)' }}>
+                              <button type="button" onClick={() => review(request.id, 'reject')} disabled={isPending} className="rounded-lg px-3 py-1.5 text-xs font-medium disabled:opacity-60" style={{ background: 'var(--danger-soft)', color: 'var(--danger-text)' }}>
                                 Rechazar
                               </button>
                             </>
                           )}
                           {(reviewer || request.requestedByUserId === user.id) && (
-                            <button type="button" onClick={() => review(request.id, 'cancel')} disabled={isPending} className="font-medium" style={{ color: 'var(--text-muted)' }}>
+                            <button type="button" onClick={() => review(request.id, 'cancel')} disabled={isPending} className="rounded-lg px-3 py-1.5 text-xs font-medium disabled:opacity-60" style={{ border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
                               Cancelar
                             </button>
                           )}
@@ -523,6 +536,23 @@ function Field({ label, children, help }: { label: string; children: ReactNode; 
       <div className="mt-1">{children}</div>
       {help && <span className="mt-1 block text-xs" style={{ color: 'var(--text-muted)' }}>{help}</span>}
     </label>
+  );
+}
+
+function RequestStatusPill({ status }: { status: AttendanceRequest['status'] }) {
+  const style =
+    status === 'pending'
+      ? { background: 'var(--amber-soft)', color: 'var(--amber-text)' }
+      : status === 'approved'
+        ? { background: 'var(--brand-soft)', color: 'var(--brand-text)' }
+        : status === 'rejected'
+          ? { background: 'var(--danger-soft)', color: 'var(--danger-text)' }
+          : { background: 'rgba(148,163,184,0.16)', color: 'var(--text-muted)' };
+
+  return (
+    <span className="inline-flex rounded-full px-3 py-1 text-xs font-medium" style={style}>
+      {STATUS_LABELS[status]}
+    </span>
   );
 }
 

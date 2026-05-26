@@ -1,13 +1,16 @@
 export function ExportButtons({ excelHref }: { excelHref: string }) {
   return (
-    <div className="flex flex-wrap gap-2">
+    <details className="shrink-0 text-right">
+      <summary className="cursor-pointer rounded-lg px-4 py-2 text-sm font-medium transition-colors" style={{ border: '1px solid var(--border)', color: 'var(--brand-text)' }}>
+        Exportar
+      </summary>
       <a
         href={excelHref}
-        className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700"
+        className="mt-3 inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700"
       >
         <ExcelIcon /> Exportar Excel
       </a>
-    </div>
+    </details>
   );
 }
 
