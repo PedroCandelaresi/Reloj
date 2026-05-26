@@ -1,325 +1,418 @@
 # Informe de fallas funcionales
 
-## 1. Resumen ejecutivo
+Auditoría enfocada únicamente en bugs de uso, acciones sin resolución clara, filtros defectuosos, exportaciones frágiles, endpoints desconectados y mensajes que pueden inducir a error. No incluye roadmap general, stack ni arquitectura.
 
-El sistema tiene una base funcional amplia, pero el riesgo funcional general es **alto** para una prueba piloto real sin estabilización previa. La mayor concentración de fallas está en cuatro zonas: exportaciones/rutas de producción, reportes calculados que dependen de resúmenes diarios, filtros multiempresa para super admin y flujos de solicitudes/adjuntos.
+## Hallazgos concretos
 
-Hay hallazgos **confirmados por código** que pueden producir acciones aparentemente disponibles pero sin resultado real para el usuario: exportar reportes desde producción, descargar adjuntos, enviar consultas comerciales, limpiar filtros de empresa, aprobar justificaciones sin resumen diario calculado y consultar reportes con empleados de otra empresa en el selector.
-
-La aplicación no debe considerarse lista para operar datos críticos de asistencia/RRHH sin corregir primero estos puntos. Para una demo controlada puede funcionar, siempre que se use un entorno conocido, con resúmenes recalculados, una sola empresa activa por usuario y sin depender de exportaciones detrás del Nginx actual.
-
-## 2. Hallazgos críticos
-
-### Hallazgo 1: Exportaciones de reportes rotas en producción por choque entre Next route handlers y Nginx
+### 1. Exportar Excel desde reportes puede no ejecutar ninguna ruta válida en producción
 
 - Estado: **confirmado**
-- Módulo afectado: Reportes, fichadas, exportaciones Excel/PDF
-- Archivo/ruta probable:
-  - `infra/nginx/el77.nqn.net.ar.conf:53-62`
-  - `zkdashboard/frontend/src/app/api/reports/export/route.ts:57-98`
-  - `zkdashboard/frontend/src/app/api/export/route.ts:6-47`
+- Módulo afectado: Reportes / exportaciones Excel
+- Archivo o ruta exacta:
+  - `zkdashboard/frontend/src/components/reports/ExportButtons.tsx:1-9`
   - `zkdashboard/frontend/src/lib/api.ts:1541-1694`
-  - `zkdashboard/frontend/src/app/(protected)/records/page.tsx:80-94`
-- Qué intenta hacer el usuario: exportar Excel/PDF desde reportes o desde la pantalla de fichadas.
-- Qué puede fallar: el navegador solicita `/api/reports/export` o `/api/export`, pero Nginx enruta todo `/api/` al backend NestJS y no al frontend Next. Los route handlers de Next no se ejecutan.
-- Por qué falla: las rutas Next son necesarias para leer la cookie `token` y reenviar la petición al backend con `Authorization: Bearer ...`. Nginx hace strip de `/api/` y manda la solicitud directo a NestJS. El backend no tiene `reports/export` ni `export` como rutas equivalentes, y además el JWT backend solo se extrae desde header Bearer.
-- Impacto real: las exportaciones pueden devolver 404/401 en producción aunque la UI muestre botones disponibles. Es una falla crítica porque afecta salida operativa y auditoría.
-- Cómo reproducirlo: en entorno con `infra/nginx/el77.nqn.net.ar.conf`, ingresar autenticado y pulsar `Exportar Excel` en cualquier reporte o `Exportar PDF/Excel` en `/records`.
-- Recomendación de solución: decidir una estrategia única: o bien excluir rutas Next específicas de `/api/` en Nginx y enviarlas al frontend, o eliminar route handlers Next y apuntar la UI a endpoints backend reales que acepten autenticación correctamente. Validar todos los href de exportación bajo el mismo proxy productivo.
+  - `zkdashboard/frontend/src/app/api/reports/export/route.ts:57-98`
+  - `infra/nginx/el77.nqn.net.ar.conf:53-62`
+- Acción del usuario: pulsar “Exportar Excel” en cualquier reporte.
+- Qué falla: el link apunta a `/api/reports/export`, pero en producción Nginx envía `/api/*` al backend NestJS, no al frontend Next.
+- Por qué falla: el route handler de Next es quien lee la cookie y agrega `Authorization: Bearer`. Si Nginx lo saltea, el backend recibe una ruta que no corresponde al controlador real de reportes.
+- Impacto real: el usuario ve botón de exportación, pero puede obtener 404/401 o una respuesta vacía/error en producción.
+- Cómo reproducirlo: desplegar con el Nginx actual y pulsar exportar en `/reports/late-arrivals?companyId=...` o cualquier reporte.
+- Solución recomendada: sacar estas rutas Next de la regla `/api/` o mover la exportación a endpoints backend reales consumidos directamente con autenticación consistente.
 - Prioridad: **crítica**
 
-### Hallazgo 2: Descarga/listado de adjuntos puede fallar detrás de Nginx por bypass del proxy Next con cookie
+### 2. Exportar PDF/Excel desde Fichadas usa otra ruta `/api` igualmente frágil
 
 - Estado: **confirmado**
-- Módulo afectado: Solicitudes de asistencia, adjuntos
-- Archivo/ruta probable:
+- Módulo afectado: Fichadas / exportaciones de asistencia y horas
+- Archivo o ruta exacta:
+  - `zkdashboard/frontend/src/app/(protected)/records/page.tsx:80-94`
+  - `zkdashboard/frontend/src/app/api/export/route.ts:6-47`
+  - `zkdashboard/backend/src/attendance/attendance.controller.ts:112-149`
   - `infra/nginx/el77.nqn.net.ar.conf:53-62`
+- Acción del usuario: pulsar “Exportar Excel”, “Exportar PDF”, “Horas Excel” o “Horas PDF” en `/records`.
+- Qué falla: los botones llaman `/api/export`, pero producción lo redirige al backend como `/export`, ruta inexistente.
+- Por qué falla: el frontend tiene un proxy Next que debería traducir cookie a Bearer y llamar `/attendance/export`; Nginx lo evita.
+- Impacto real: las exportaciones principales de fichadas pueden no funcionar en el entorno real aunque funcionen localmente.
+- Cómo reproducirlo: abrir `/records` en producción con Nginx y probar cualquiera de los cuatro botones.
+- Solución recomendada: unificar exportaciones en backend o ajustar Nginx para que `/api/export` llegue a Next.
+- Prioridad: **crítica**
+
+### 3. “Descargar plantilla CSV” para importar empleados puede romperse en producción
+
+- Estado: **confirmado**
+- Módulo afectado: Empleados / importación
+- Archivo o ruta exacta:
+  - `zkdashboard/frontend/src/components/EmployeesManager.tsx:971-977`
+  - `zkdashboard/frontend/src/app/api/employees/import/template/route.ts:3-15`
+  - `infra/nginx/el77.nqn.net.ar.conf:53-62`
+- Acción del usuario: abrir “Importar empleados” y pulsar “Descargar plantilla CSV”.
+- Qué falla: el link apunta a `/api/employees/import/template`. Con Nginx productivo se envía al backend como `/employees/import/template`, pero no existe un `GET` backend para esa plantilla.
+- Por qué falla: la plantilla vive solo como route handler de Next bajo `/api`.
+- Impacto real: el usuario no puede bajar el archivo modelo para importar empleados.
+- Cómo reproducirlo: probar el link de plantilla en el despliegue con Nginx actual.
+- Solución recomendada: servir la plantilla desde backend, moverla fuera de `/api`, o excluir esa ruta de la regla Nginx hacia backend.
+- Prioridad: **alta**
+
+### 4. Formulario de contacto comercial puede fallar por Nginx y, si funciona, no deja registro real
+
+- Estado: **confirmado**
+- Módulo afectado: Marketing / contacto
+- Archivo o ruta exacta:
+  - `zkdashboard/frontend/src/components/marketing/MarketingContactForm.tsx:78-104`
+  - `zkdashboard/frontend/src/app/api/contact/route.ts:29-50`
+  - `infra/nginx/el77.nqn.net.ar.conf:53-62`
+- Acción del usuario: enviar el formulario comercial.
+- Qué falla: en producción `/api/contact` puede terminar en backend como `/contact`, ruta inexistente. Si Next sí lo atiende, responde éxito pero solo hace `console.info`.
+- Por qué falla: no hay persistencia, email, webhook, CRM ni notificación real; además la ruta queda bajo el prefijo que Nginx manda al backend.
+- Impacto real: consultas comerciales pueden perderse o mostrar éxito sin que nadie las reciba.
+- Cómo reproducirlo: enviar el formulario en producción; revisar que no exista mail, DB, webhook ni endpoint backend `/contact`.
+- Solución recomendada: implementar canal real de envío/registro y resolver la ruta fuera del choque `/api`.
+- Prioridad: **alta**
+
+### 5. “Ver adjuntos” y descarga de adjuntos pueden no funcionar detrás del proxy
+
+- Estado: **confirmado**
+- Módulo afectado: Solicitudes de asistencia / adjuntos
+- Archivo o ruta exacta:
+  - `zkdashboard/frontend/src/components/AttendanceRequestsManager.tsx:193-198`
+  - `zkdashboard/frontend/src/components/AttendanceRequestsManager.tsx:537-543`
   - `zkdashboard/frontend/src/app/api/attendance/requests/[id]/attachments/route.ts:6-21`
   - `zkdashboard/frontend/src/app/api/attendance/requests/[id]/attachments/[attachmentId]/download/route.ts:6-33`
   - `zkdashboard/backend/src/auth/jwt.strategy.ts:13-17`
-  - `zkdashboard/backend/src/attendance/attendance-requests.controller.ts:71-100`
-- Qué intenta hacer el usuario: ver o descargar adjuntos de una solicitud.
-- Qué puede fallar: las URLs `/api/attendance/requests/.../attachments` pueden llegar directo al backend por Nginx sin que Next agregue el header Bearer.
-- Por qué falla: el backend usa `ExtractJwt.fromAuthHeaderAsBearerToken()` y no lee la cookie del frontend. Los route handlers Next sí leen cookie y reenvían Bearer, pero producción los evita por la regla `/api/`.
-- Impacto real: adjuntos subidos correctamente pueden quedar inaccesibles desde la UI en producción. Esto afecta revisión de justificaciones y cumplimiento documental.
-- Cómo reproducirlo: subir una solicitud con adjunto, desplegar con el Nginx actual, abrir la solicitud y descargar el archivo.
-- Recomendación de solución: aplicar la misma corrección de enrutamiento que en exportaciones. Además, probar explícitamente listado, descarga, subida y eliminación de adjuntos detrás del proxy real.
+- Acción del usuario: pulsar “Ver adjuntos” o abrir el nombre de un adjunto.
+- Qué falla: la UI usa rutas `/api/attendance/...`; en producción Nginx las manda directo a NestJS sin que Next agregue Bearer.
+- Por qué falla: el backend solo autentica por `Authorization: Bearer`; el navegador envía cookie al frontend, no Bearer directo al backend.
+- Impacto real: un adjunto cargado puede no verse ni descargarse.
+- Cómo reproducirlo: crear solicitud con adjunto y probar “Ver adjuntos”/descarga en producción.
+- Solución recomendada: corregir el enrutamiento o exponer endpoints backend consumidos por server actions/route handlers que no choquen con Nginx.
 - Prioridad: **crítica**
 
-### Hallazgo 3: Adjuntos no tienen persistencia garantizada en compose productivo
+### 6. Adjuntos subidos pueden perderse al recrear el backend productivo
 
 - Estado: **confirmado**
-- Módulo afectado: Solicitudes de asistencia, almacenamiento de adjuntos
-- Archivo/ruta probable:
+- Módulo afectado: Solicitudes de asistencia / adjuntos
+- Archivo o ruta exacta:
+  - `zkdashboard/backend/src/attendance/attendance-requests.service.ts:341-362`
   - `infra/docker/docker-compose.yml:46-65`
   - `zkdashboard/docker-compose.yml:31-40`
-  - `zkdashboard/backend/src/attendance/attendance-requests.service.ts:341-362`
-- Qué intenta hacer el usuario: adjuntar documentación a una solicitud y recuperarla más tarde.
-- Qué puede fallar: el registro queda en base de datos, pero el archivo físico puede perderse al recrear el contenedor backend productivo.
-- Por qué falla: el compose raíz de producción solo monta `/home/reloj/log`. No define `ATTENDANCE_ATTACHMENTS_DIR` ni volumen para `/home/reloj/attachments`. El compose interno sí lo hacía, pero no el de `infra/docker`.
-- Impacto real: links de adjuntos pueden romperse con 404/error de archivo inexistente, dejando solicitudes aprobadas o pendientes sin evidencia.
-- Cómo reproducirlo: levantar con `infra/docker`, subir adjunto, recrear backend sin preservar filesystem interno y descargar el adjunto.
-- Recomendación de solución: declarar volumen persistente para adjuntos y setear `ATTENDANCE_ATTACHMENTS_DIR` en el compose productivo. Migrar/copiar archivos existentes antes de redeploy si ya hay operación real.
+- Acción del usuario: subir certificado o comprobante a una solicitud.
+- Qué falla: la base conserva metadata, pero el archivo físico queda en filesystem interno si se usa `infra/docker`.
+- Por qué falla: el compose productivo no define `ATTENDANCE_ATTACHMENTS_DIR` ni volumen para `/home/reloj/attachments`.
+- Impacto real: solicitudes pueden quedar con adjuntos “fantasma”: figuran en DB pero el archivo ya no existe.
+- Cómo reproducirlo: subir adjunto, recrear contenedor backend con `infra/docker`, intentar descargarlo.
+- Solución recomendada: declarar volumen persistente y variable `ATTENDANCE_ATTACHMENTS_DIR` en el compose productivo.
 - Prioridad: **crítica**
 
-### Hallazgo 4: Tardanzas, ausencias, salidas tempranas y horas trabajadas pueden mostrarse vacías aunque existan fichadas
+### 7. Reportes de tardanzas, ausencias, salidas tempranas y horas trabajadas devuelven vacío si no se recalculó
 
 - Estado: **confirmado**
-- Módulo afectado: Reportes calculados fase 2
-- Archivo/ruta probable:
+- Módulo afectado: Reportes calculados
+- Archivo o ruta exacta:
   - `zkdashboard/backend/src/reports/services/phase2-reports.service.ts:47-72`
   - `zkdashboard/backend/src/reports/services/phase2-reports.service.ts:80-110`
-  - `zkdashboard/frontend/src/app/(protected)/reports/day-summaries/page.tsx:84-115`
-- Qué intenta hacer el usuario: consultar tardanzas, ausencias, salidas tempranas u horas trabajadas.
-- Qué puede fallar: el reporte devuelve cero filas aunque existan fichadas crudas del reloj.
-- Por qué falla: estos reportes consultan exclusivamente `attendance_day_summaries`. Si no se recalculó el período, no hay fallback a fichadas crudas.
-- Impacto real: el usuario puede interpretar “no hay tardanzas/ausencias” como resultado operativo, cuando en realidad faltan resúmenes calculados.
-- Cómo reproducirlo: cargar fichadas para un empleado, no recalcular resúmenes diarios y abrir `/reports/late-arrivals` o `/reports/absences`.
-- Recomendación de solución: bloquear o advertir de forma explícita cuando no hay cobertura de resúmenes para el rango. Idealmente mostrar cobertura calculada y CTA de recálculo.
+  - `zkdashboard/frontend/src/app/(protected)/reports/late-arrivals/page.tsx:55`
+- Acción del usuario: abrir reportes de tardanzas, ausencias, salidas tempranas u horas trabajadas.
+- Qué falla: pueden aparecer vacíos aunque existan fichadas crudas.
+- Por qué falla: estos reportes leen solo `attendance_day_summaries`; no consultan fichadas directas si faltan resúmenes.
+- Impacto real: el usuario puede creer que no hubo ausencias/tardanzas cuando en realidad falta cálculo.
+- Cómo reproducirlo: cargar fichadas, no recalcular, abrir `/reports/absences` o `/reports/late-arrivals`.
+- Solución recomendada: bloquear/advertir con cobertura de resúmenes y acceso directo a recálculo antes de mostrar “no hay datos”.
 - Prioridad: **alta**
 
-### Hallazgo 5: Resumen mensual usa resúmenes parciales y deja días faltantes como vacíos, ignorando fichadas crudas existentes
+### 8. Resumen mensual mezcla una fuente parcial con días vacíos
 
 - Estado: **confirmado**
-- Módulo afectado: Reporte resumen mensual
-- Archivo/ruta probable:
+- Módulo afectado: Reporte mensual
+- Archivo o ruta exacta:
   - `zkdashboard/backend/src/reports/services/monthly-summary.service.ts:52-56`
-  - `zkdashboard/backend/src/reports/services/monthly-summary.service.ts:151-172`
-  - `zkdashboard/frontend/src/app/(protected)/reports/monthly-summary/page.tsx:87-104`
-- Qué intenta hacer el usuario: obtener resumen mensual para RRHH.
-- Qué puede fallar: si existe al menos un resumen diario del mes, el backend usa fuente `summaries` para todo el mes. Los días sin resumen se generan como `no_records` con cero minutos, aunque existan fichadas crudas.
-- Por qué falla: el fallback a fichadas directas solo ocurre cuando `summaries.length === 0`. Con cobertura parcial no mezcla fuentes ni consulta crudas para días faltantes.
-- Impacto real: totales mensuales, presentismo, ausencias y horas pueden quedar incorrectos. La UI advierte cobertura parcial, pero el Excel se puede descargar igual y los números ya salen contaminados por faltantes.
-- Cómo reproducirlo: recalcular solo un día de un mes con fichadas en varios días, abrir resumen mensual y exportar.
-- Recomendación de solución: exigir cobertura completa para reportes de RRHH o calcular fallback por día faltante. Si se permite exportar parcial, marcar el Excel con cobertura y advertencias visibles.
+  - `zkdashboard/backend/src/reports/services/monthly-summary.service.ts:168-172`
+  - `zkdashboard/frontend/src/app/(protected)/reports/monthly-summary/page.tsx:92-104`
+- Acción del usuario: consultar o exportar resumen mensual.
+- Qué falla: si existe aunque sea un resumen diario, usa `summaries` para todo el mes y rellena los días faltantes como `no_records`.
+- Por qué falla: el fallback a fichadas crudas solo se usa cuando no existe ningún resumen diario.
+- Impacto real: totales de horas, ausencias y presentismo pueden quedar incorrectos.
+- Cómo reproducirlo: recalcular un solo día del mes, dejar otros días con fichadas sin resumen y abrir resumen mensual.
+- Solución recomendada: exigir cobertura completa para exportar o calcular los días faltantes desde fichadas crudas.
 - Prioridad: **alta**
 
-### Hallazgo 6: Cierre mensual puede exportarse vacío o incompleto si no hay resúmenes calculados
+### 9. Cierre mensual puede entregar documento vacío o incompleto
 
 - Estado: **confirmado**
 - Módulo afectado: Cierre mensual
-- Archivo/ruta probable:
+- Archivo o ruta exacta:
   - `zkdashboard/backend/src/reports/services/monthly-closing.service.ts:144-168`
   - `zkdashboard/backend/src/reports/services/monthly-closing.service.ts:195-210`
   - `zkdashboard/backend/src/reports/exporters/reports-excel.exporter.ts:363-420`
-- Qué intenta hacer el usuario: generar cierre mensual para liquidación/control.
-- Qué puede fallar: el cierre devuelve `rows: []` cuando no hay resúmenes, o filas con observaciones de período incompleto cuando faltan días. Aun así puede exportarse.
-- Por qué falla: el cierre depende de `attendance_day_summaries` y no calcula desde fichadas crudas.
-- Impacto real: riesgo de entregar cierre mensual vacío/incompleto como documento válido.
-- Cómo reproducirlo: abrir cierre mensual para una empresa con empleados y fichadas, pero sin recálculo del mes.
-- Recomendación de solución: impedir exportación si `coverage.isComplete` es falso, o exigir confirmación/leyenda fuerte en pantalla y Excel.
+- Acción del usuario: abrir/exportar cierre mensual.
+- Qué falla: si no hay resúmenes, devuelve `rows: []`; si hay resúmenes parciales, exporta con datos incompletos.
+- Por qué falla: el cierre mensual depende exclusivamente de `attendance_day_summaries`.
+- Impacto real: riesgo de usar un cierre inválido para revisión de sueldos o RRHH.
+- Cómo reproducirlo: empresa con empleados/fichadas, sin recálculo mensual, abrir `/reports/monthly-closing`.
+- Solución recomendada: impedir exportación si `coverage.isComplete` es falso o generar aviso visible dentro del Excel.
 - Prioridad: **alta**
 
-### Hallazgo 7: Selector de empleados no respeta `companyId` para super admin
+### 10. Selector de empleados muestra empleados de otras empresas para super admin
 
 - Estado: **confirmado**
-- Módulo afectado: Filtros de reportes, solicitudes, fichadas
-- Archivo/ruta probable:
+- Módulo afectado: Filtros de reportes, solicitudes y fichadas
+- Archivo o ruta exacta:
   - `zkdashboard/frontend/src/lib/api.ts:1366-1368`
   - `zkdashboard/backend/src/attendance/attendance.controller.ts:50-52`
   - `zkdashboard/backend/src/attendance/attendance.service.ts:233-263`
-  - `zkdashboard/frontend/src/app/(protected)/reports/late-arrivals/page.tsx:29-33`
   - `zkdashboard/frontend/src/app/(protected)/attendance/requests/page.tsx:49-53`
-- Qué intenta hacer el usuario: como super admin, seleccionar empresa y luego filtrar por empleado.
-- Qué puede fallar: el selector de empleados puede listar empleados/fichadores de todas las empresas. Si se elige un empleado de otra empresa, el reporte de la empresa seleccionada queda vacío o inconsistente.
-- Por qué falla: `getDistinctUsers()` no acepta ni envía `companyId`; backend aplica scope solo por JWT. Para super admin, `getCompanyScope` devuelve `null`, por lo tanto devuelve usuarios globales.
-- Impacto real: filtros engañosos, reportes vacíos falsos y dificultad operativa para administrar varias empresas.
-- Cómo reproducirlo: con super admin y dos empresas con fichadas, abrir reporte con `companyId=A`; revisar el selector de empleados y elegir un empleado de empresa B.
-- Recomendación de solución: agregar `companyId` a `/attendance/users` para super admin y pasar el parámetro desde todas las pantallas filtradas por empresa.
+- Acción del usuario: como super admin, seleccionar empresa y filtrar por empleado.
+- Qué falla: el selector puede listar empleados/fichadores globales, no solo de la empresa seleccionada.
+- Por qué falla: `/attendance/users` no recibe `companyId`; para super admin el scope backend queda global.
+- Impacto real: filtros que devuelven vacío o datos engañosos cuando se selecciona empleado de otra empresa.
+- Cómo reproducirlo: con dos empresas, abrir reporte con `companyId=A` y elegir un empleado de B en el selector.
+- Solución recomendada: aceptar `companyId` en `/attendance/users` y pasarlo desde todas las pantallas multiempresa.
 - Prioridad: **alta**
 
-### Hallazgo 8: Botón “Limpiar” elimina `companyId` y expulsa al super admin del contexto del reporte
+### 11. Botón “Limpiar” pierde la empresa seleccionada
 
 - Estado: **confirmado**
-- Módulo afectado: Reportes multiempresa
-- Archivo/ruta probable:
+- Módulo afectado: Filtros de reportes
+- Archivo o ruta exacta:
   - `zkdashboard/frontend/src/components/reports/ReportFilters.tsx:47-49`
   - `zkdashboard/frontend/src/components/reports/ReportFilters.tsx:194-200`
   - `zkdashboard/frontend/src/app/(protected)/reports/employees-without-schedule/page.tsx:61-80`
-- Qué intenta hacer el usuario: limpiar filtros de fecha/empleado manteniendo la empresa seleccionada.
-- Qué puede fallar: al limpiar, se pierde `companyId` y el super admin ve la pantalla de “seleccioná una empresa”.
-- Por qué falla: el formulario preserva `companyId` como hidden input al filtrar, pero el link `Limpiar` navega a `href={action}` sin query params.
-- Impacto real: navegación frustrante y pérdida de contexto. En uso multiempresa es una falla cotidiana.
-- Cómo reproducirlo: abrir `/reports/late-arrivals?companyId=...`, pulsar `Limpiar`.
-- Recomendación de solución: construir el href de limpieza preservando `companyId` cuando exista.
+- Acción del usuario: como super admin, limpiar filtros de un reporte.
+- Qué falla: se pierde `companyId` y la pantalla vuelve a pedir selección de empresa.
+- Por qué falla: el formulario preserva `companyId` con hidden input, pero el link “Limpiar” usa `href={action}` sin query.
+- Impacto real: el usuario sale del contexto de empresa y debe volver a navegar.
+- Cómo reproducirlo: abrir `/reports/late-arrivals?companyId=...` y pulsar “Limpiar”.
+- Solución recomendada: construir el href de limpiar preservando `companyId`.
 - Prioridad: **media**
 
-### Hallazgo 9: Solicitudes de justificación pueden crearse pero no impactar el resumen si el día no fue recalculado
+### 12. Links “Volver a Reportes” pierden `companyId`
 
 - Estado: **confirmado**
-- Módulo afectado: Solicitudes, justificaciones, reportes calculados
-- Archivo/ruta probable:
+- Módulo afectado: Navegación de reportes para super admin
+- Archivo o ruta exacta:
+  - `zkdashboard/frontend/src/components/AdminCompanyDetailPanel.tsx:217`
+  - `zkdashboard/frontend/src/app/(protected)/reports/page.tsx:16-17`
+  - `zkdashboard/frontend/src/app/(protected)/reports/late-arrivals/page.tsx:65`
+  - patrón repetido en páginas de reportes con `href="/reports"`
+- Acción del usuario: entrar a reportes desde una empresa y luego pulsar “← Reportes”.
+- Qué falla: vuelve a `/reports` sin `companyId`; para super admin eso muestra “seleccioná una empresa”.
+- Por qué falla: las páginas hijas no preservan el query de empresa en el link de regreso.
+- Impacto real: navegación rota o confusa en uso multiempresa.
+- Cómo reproducirlo: desde `/admin/companies`, entrar a reportes de una empresa, abrir “Tardanzas”, pulsar “← Reportes”.
+- Solución recomendada: construir backHref con `companyId` cuando venga en search params.
+- Prioridad: **media**
+
+### 13. Justificación puede crearse pero fallar recién al aprobar
+
+- Estado: **confirmado**
+- Módulo afectado: Solicitudes / justificaciones
+- Archivo o ruta exacta:
   - `zkdashboard/backend/src/attendance/attendance-requests.service.ts:116-175`
   - `zkdashboard/backend/src/attendance/attendance-requests.service.ts:537-555`
-- Qué intenta hacer el usuario: crear y aprobar una justificación de ausencia o tardanza.
-- Qué puede fallar: la solicitud queda pendiente, pero el resumen diario no queda marcado como pendiente si no existe. Al aprobar, el backend falla con “No existe resumen diario para justificar. Recalculá el período primero.”
-- Por qué falla: `markSummaryJustification` retorna sin error cuando no hay resumen y el estado no es `approved`; solo lanza error al aprobar.
-- Impacto real: el usuario cree que inició un trámite válido, pero el flujo se bloquea recién al aprobar. Los reportes no reflejan estado pendiente.
-- Cómo reproducirlo: crear una justificación para un día sin `attendance_day_summary` calculado y luego intentar aprobarla.
-- Recomendación de solución: validar existencia de resumen al crear justificación, crear/recalcular el resumen automáticamente, o informar claramente que debe recalcularse antes de permitir el trámite.
+- Acción del usuario: crear justificación de ausencia/tardanza y luego aprobarla.
+- Qué falla: la solicitud queda creada, pero si no existe resumen diario, no marca el día como pendiente. Al aprobar falla con “No existe resumen diario para justificar”.
+- Por qué falla: al crear, `markSummaryJustification` retorna silenciosamente si no hay summary y status no es `approved`.
+- Impacto real: flujo con apariencia de éxito que se bloquea al final.
+- Cómo reproducirlo: crear justificación para fecha sin resumen calculado y aprobarla.
+- Solución recomendada: validar o crear/recalcular resumen al crear la solicitud; no esperar a la aprobación.
 - Prioridad: **alta**
 
-### Hallazgo 10: Auditoría de cambios de empleado no registra cambios reales de estado, sector, puesto o perfil horario
+### 14. Fichada manual permite fecha sin hora y puede guardar un horario incorrecto
 
 - Estado: **confirmado**
-- Módulo afectado: Empleados, auditoría administrativa
-- Archivo/ruta probable:
-  - `zkdashboard/backend/src/employees/employees.service.ts:199-235`
-  - `zkdashboard/backend/src/employees/employees.service.ts:262-320`
-- Qué intenta hacer el usuario: modificar empleado y conservar trazabilidad del cambio.
-- Qué puede fallar: no se generan logs de auditoría para cambios que sí ocurrieron.
-- Por qué falla: el objeto `before` se arma después de mutar `employee.scheduleProfileId`, `departmentId`, `positionId` e `isActive`. Luego `before` y `after` quedan iguales.
-- Impacto real: auditoría incompleta en cambios sensibles que afectan cálculo y permisos operativos.
-- Cómo reproducirlo: cambiar el perfil horario o inactivar un empleado; revisar tabla/log de auditoría administrativa.
-- Recomendación de solución: capturar snapshot `before` inmediatamente después de `findOne` y antes de mutar el empleado.
+- Módulo afectado: Solicitudes / fichada manual
+- Archivo o ruta exacta:
+  - `zkdashboard/frontend/src/components/MaskedDateInput.tsx:69-106`
+  - `zkdashboard/frontend/src/lib/input-masks.ts:45-51`
+  - `zkdashboard/frontend/src/components/AttendanceRequestsManager.tsx:311-313`
+  - `zkdashboard/backend/src/attendance/attendance-requests.service.ts:898-910`
+- Acción del usuario: crear fichada manual y completar solo la fecha en “Hora fichada”.
+- Qué falla: el input visible `required` queda satisfecho con una fecha, `displayDateTimeToIso` devuelve solo `YYYY-MM-DD`, y backend lo parsea como fecha válida.
+- Por qué falla: no se exige hora completa `HH:MM` en el frontend ni en el DTO.
+- Impacto real: puede guardarse una fichada en medianoche UTC, que en Argentina cae el día anterior a las 21:00.
+- Cómo reproducirlo: en nueva solicitud manual, escribir `26/05/2026` en “Hora fichada” sin hora y enviar.
+- Solución recomendada: validar formato completo `YYYY-MM-DDTHH:mm` para `punchTime` y `newPunchTime`.
 - Prioridad: **alta**
 
-### Hallazgo 11: Filtros de fecha en fichadas/exportación usan `new Date('YYYY-MM-DD')` y pueden tener corrimiento horario
+### 15. Rechazar solicitud permite avanzar sin nota y falla después del confirm
 
 - Estado: **confirmado**
-- Módulo afectado: Fichadas, exportaciones antiguas de asistencia/horas, dashboard
-- Archivo/ruta probable:
-  - `zkdashboard/backend/src/attendance/attendance.service.ts:127-159`
-  - `zkdashboard/backend/src/attendance/attendance.service.ts:217-224`
-  - `zkdashboard/backend/src/attendance/export.service.ts:56-63`
-  - `zkdashboard/backend/src/attendance/export.service.ts:90-96`
-- Qué intenta hacer el usuario: filtrar fichadas por día o exportar por rango.
-- Qué puede fallar: el rango puede incluir/excluir registros cercanos al inicio/fin del día en Argentina. Los labels `Desde/Hasta` pueden mostrarse un día anterior si se formatea un date-only parseado como UTC.
-- Por qué falla: `new Date('YYYY-MM-DD')` se interpreta en UTC. Otros reportes usan utilidades explícitas de Argentina (`parseArgentinaDateStart/End`), pero fichadas/export viejo no.
-- Impacto real: diferencias entre reportes calculados y lista/exportación de fichadas. Puede afectar conciliación diaria.
-- Cómo reproducirlo: crear fichadas cerca de medianoche Argentina y filtrar/exportar por fecha exacta en `/records`.
-- Recomendación de solución: reemplazar parsing de fichadas/export por `parseArgentinaDateStart` y `parseArgentinaDateEnd`. Unificar todas las fechas operativas en la misma utilidad.
-- Prioridad: **alta**
-
-### Hallazgo 12: Formulario comercial devuelve éxito pero no registra ni notifica realmente
-
-- Estado: **confirmado**
-- Módulo afectado: Marketing/contacto
-- Archivo/ruta probable:
-  - `zkdashboard/frontend/src/app/api/contact/route.ts:29-50`
-- Qué intenta hacer el usuario: enviar una consulta comercial.
-- Qué puede fallar: la pantalla informa “Consulta enviada correctamente”, pero solo se escribe `console.info`. No hay persistencia, email, CRM, webhook ni alerta.
-- Por qué falla: el endpoint actúa como placeholder operativo.
-- Impacto real: pérdida silenciosa de leads o consultas. El usuario recibe una respuesta engañosa.
-- Cómo reproducirlo: enviar el formulario de contacto y revisar que no exista registro persistente ni integración de salida.
-- Recomendación de solución: integrar un canal real o cambiar el texto para indicar que la continuidad debe hacerse por WhatsApp. Registrar en base de datos si se necesita trazabilidad.
-- Prioridad: **media**
-
-### Hallazgo 13: Usuarios con múltiples empresas quedan atados a la primera membresía sin selector de empresa activa
-
-- Estado: **confirmado**
-- Módulo afectado: Autenticación, permisos, scope de empresa
-- Archivo/ruta probable:
-  - `zkdashboard/backend/src/users/users.service.ts:69-116`
-  - `zkdashboard/backend/src/auth/auth.service.ts:27-40`
-  - `zkdashboard/frontend/src/components/NavbarClient.tsx:53-63`
-- Qué intenta hacer el usuario: operar en más de una empresa con el mismo usuario no super admin.
-- Qué puede fallar: solo se usa la primera membresía ordenada por `createdAt`, salvo que el usuario tenga empleado asociado. No hay selector de empresa activa.
-- Por qué falla: `buildAuthenticatedUser` resuelve una única `companyId` y `companyRole`; el JWT queda fijo hasta nuevo login y no hay cambio de contexto.
-- Impacto real: un admin/operador multiempresa puede ver o modificar la empresa equivocada o quedar sin forma de operar otra empresa asignada.
-- Cómo reproducirlo: crear usuario con dos membresías no super admin e iniciar sesión; intentar cambiar empresa activa.
-- Recomendación de solución: incorporar selector de empresa activa o impedir múltiples membresías no super admin si el producto no las soporta.
-- Prioridad: **media**
-
-### Hallazgo 14: Importación desde reloj y sincronización al reloj informan éxito de encolado, pero la conciliación se recarga antes de que el reloj responda
-
-- Estado: **confirmado**
-- Módulo afectado: Empleados, sincronización con dispositivos
-- Archivo/ruta probable:
-  - `zkdashboard/frontend/src/components/EmployeesManager.tsx:315-347`
-  - `zkdashboard/frontend/src/app/(protected)/employees/actions.ts:171-223`
-- Qué intenta hacer el usuario: consultar usuarios del reloj o enviar empleado al reloj y ver el resultado.
-- Qué puede fallar: la UI muestra éxito y recarga conciliación inmediatamente, pero la operación real depende de que el reloj tome/comunique el comando después. La conciliación puede seguir vacía/vieja.
-- Por qué falla: la acción encola comando; no hay confirmación end-to-end de ejecución por el dispositivo antes de mostrar el nuevo estado.
-- Impacto real: el usuario puede creer que el empleado ya quedó sincronizado cuando solo se encoló la orden.
-- Cómo reproducirlo: usar “consultar usuarios” o “enviar empleado” con un reloj que no haga heartbeat inmediatamente.
-- Recomendación de solución: diferenciar “comando encolado” de “confirmado por reloj”, mostrar estado pendiente y refresco posterior.
-- Prioridad: **media**
-
-### Hallazgo 15: Importación de empleados puede terminar con éxito operacional ambiguo cuando todo fue omitido
-
-- Estado: **confirmado**
-- Módulo afectado: Importación de empleados
-- Archivo/ruta probable:
-  - `zkdashboard/frontend/src/app/(protected)/employees/actions.ts:249-262`
-  - `zkdashboard/backend/src/employees/employees.service.ts:543-552`
-- Qué intenta hacer el usuario: importar empleados desde CSV/Excel.
-- Qué puede fallar: si todos los documentos ya existen, el backend incrementa `skippedCount`, pero el mensaje principal dice “La importación creó 0 empleado(s).”
-- Por qué falla: el mensaje de éxito no distingue importación sin cambios de importación efectiva.
-- Impacto real: acción con efecto nulo presentada como operación completada correctamente.
-- Cómo reproducirlo: importar un archivo con empleados ya existentes.
-- Recomendación de solución: mostrar creado/omitido/error de forma explícita y marcar como advertencia si `createdCount === 0`.
+- Módulo afectado: Solicitudes / revisión
+- Archivo o ruta exacta:
+  - `zkdashboard/frontend/src/components/AttendanceRequestsManager.tsx:220-247`
+  - `zkdashboard/backend/src/attendance/attendance-requests.service.ts:231-235`
+- Acción del usuario: pulsar “Rechazar” sin escribir notas.
+- Qué falla: la UI muestra confirmación y recién después backend responde error.
+- Por qué falla: backend exige `reviewNotes`, pero frontend no valida antes de confirmar.
+- Impacto real: experiencia trabada y mensaje tardío para una regla que podía validarse en pantalla.
+- Cómo reproducirlo: solicitud pendiente, dejar “Notas de revisión” vacío y pulsar Rechazar.
+- Solución recomendada: deshabilitar “Rechazar” o mostrar validación local si notas está vacío.
 - Prioridad: **baja**
 
-## 3. Reportes y exportaciones
+### 16. Auditoría de cambios de empleado no registra cambios reales
 
-- **Exportaciones por `/api/reports/export`**: confirmadas como riesgosas en producción por Nginx. Afecta presencia diaria, fichadas incompletas, resumen mensual, cierre mensual, tardanzas, salidas tempranas, ausencias, horas trabajadas, fichadas manuales, fichadas corregidas, empleados sin horario y empleados sin fichadas.
-- **Exportaciones por `/api/export` desde `/records`**: confirmadas como riesgosas en producción por Nginx y por parsing de fechas UTC.
-- **Tardanzas / Ausencias / Salidas tempranas / Horas trabajadas**: confirmados como dependientes de `attendance_day_summaries`; pueden devolver vacío si no hubo recálculo.
-- **Resumen mensual**: confirmado que con cobertura parcial usa `summaries` y genera días vacíos para faltantes. Puede producir totales incorrectos aunque advierta parcialidad.
-- **Cierre mensual**: confirmado que no usa fallback a fichadas crudas. Puede exportarse vacío o incompleto si faltan resúmenes.
-- **Empleados sin fichadas**: confirmado que usa rango Argentina correcto, pero depende de `companyId` para super admin. El selector global de empleados puede inducir filtros vacíos.
-- **Pantalla vs Excel**: requiere verificación funcional completa. El Excel exporta desde backend y la pantalla consume el mismo endpoint para reportes nuevos, pero el canal de exportación tiene una ruta distinta en frontend/proxy. La diferencia principal confirmada no es de columnas, sino de enrutamiento/autenticación y cobertura parcial.
+- Estado: **confirmado**
+- Módulo afectado: Empleados / auditoría
+- Archivo o ruta exacta:
+  - `zkdashboard/backend/src/employees/employees.service.ts:199-235`
+  - `zkdashboard/backend/src/employees/employees.service.ts:262-320`
+- Acción del usuario: cambiar perfil horario, sector, puesto o estado de empleado.
+- Qué falla: el cambio se guarda, pero puede no generarse log de auditoría.
+- Por qué falla: el snapshot `before` se arma después de mutar el objeto `employee`.
+- Impacto real: acciones sensibles quedan sin trazabilidad aunque la pantalla muestre éxito.
+- Cómo reproducirlo: editar un empleado, cambiar perfil o inactivarlo y revisar auditoría administrativa.
+- Solución recomendada: capturar `before` antes de cualquier mutación.
+- Prioridad: **alta**
 
-## 4. Acciones sin efecto real
+### 17. Filtros de fecha en Fichadas pueden filtrar otro rango horario
 
-- **Formulario de contacto comercial**: confirmado. Devuelve éxito y solo escribe en consola.
-- **Exportar Excel/PDF en producción**: confirmado. Botones visibles, route handler Next no ejecutado por Nginx.
-- **Descargar/ver adjuntos en producción**: confirmado como falla probable por bypass de route handler Next y ausencia de Bearer.
-- **Limpiar filtros como super admin**: confirmado. Pierde `companyId` y no limpia dentro del contexto esperado.
-- **Crear justificación sin resumen diario**: confirmado. Crea solicitud, pero no impacta reportes hasta recalcular; aprobar falla.
-- **Importar usuarios del reloj / enviar empleado al reloj**: confirmado como acción asincrónica no confirmada end-to-end. No es falsa en sí misma, pero puede parecer resuelta antes de que el reloj confirme.
-- **Importación de empleados con todos omitidos**: confirmado. Puede mostrar éxito con cero creados.
-- **Sincronización masiva a reloj**: confirmado endpoint backend deshabilitado en `employees.controller.ts:104-109`. No se detectó botón directo en UI actual, por lo que no se marca como falla visible; mantener como limitación explícita si aparece en futuras pantallas.
+- Estado: **confirmado**
+- Módulo afectado: Fichadas / exportación clásica
+- Archivo o ruta exacta:
+  - `zkdashboard/backend/src/attendance/attendance.service.ts:217-224`
+  - `zkdashboard/backend/src/attendance/export.service.ts:90-96`
+  - `zkdashboard/backend/src/attendance/export.service.ts:56-63`
+- Acción del usuario: filtrar o exportar fichadas por día.
+- Qué falla: `new Date('YYYY-MM-DD')` se interpreta en UTC, no como inicio de día Argentina.
+- Por qué falla: estos endpoints no usan `parseArgentinaDateStart/End`, a diferencia de reportes nuevos.
+- Impacto real: registros cerca de medianoche pueden aparecer en el día incorrecto o quedar fuera.
+- Cómo reproducirlo: crear fichadas entre 21:00 y 00:00 Argentina y filtrar por día exacto.
+- Solución recomendada: usar utilidades de fecha Argentina en `attendance.service` y `export.service`.
+- Prioridad: **alta**
 
-## 5. Inconsistencias frontend/backend
+### 18. Botones “Actualizar desde reloj” y “Pedir fichadas” solo encolan, pero el mensaje puede sentirse como resolución
 
-- **`/api/*` en frontend vs Nginx productivo**: confirmado. Frontend define route handlers bajo `/api`, pero Nginx manda `/api/` al backend.
-- **Cookie frontend vs Bearer backend**: confirmado. Backend JWT solo lee `Authorization: Bearer`; route handlers Next traducen cookie a Bearer, pero producción los puede saltar.
-- **`getDistinctUsers()` sin `companyId`**: confirmado. La UI de reportes envía `companyId` a reportes, departamentos y puestos, pero no al selector de empleados.
-- **Fichadas/exportación usan fechas de forma distinta a reportes calculados**: confirmado. Parte del backend usa utilidades Argentina y parte usa `new Date(dateOnly)`.
-- **Solicitudes de justificación aceptan creación sin resumen existente, pero aprobación exige resumen**: confirmado. Validación tardía y experiencia inconsistente.
-- **Super admin puede acceder directo a `/records`**: requiere verificación de intención de producto. El navbar no muestra “Fichadas” a super admin, pero la página no bloquea y backend devuelve registros globales sin `companyId`.
-- **Middleware no lista `/reports` ni `/attendance/requests` como protected paths**: requiere verificación de impacto. Las páginas llaman `requireCurrentSession`, por lo que hay protección server-side, pero el middleware no redirige anticipadamente como en `/records`, `/employees`, etc.
+- Estado: **confirmado**
+- Módulo afectado: Fichadas / sincronización de reloj
+- Archivo o ruta exacta:
+  - `zkdashboard/frontend/src/components/RecordsSyncControls.tsx:45-65`
+  - `zkdashboard/frontend/src/components/DeviceStatusPanel.tsx:37-45`
+  - `zkdashboard/backend/src/devices/devices.controller.ts:137-153`
+- Acción del usuario: pedir fichadas al reloj.
+- Qué falla: la acción no trae fichadas inmediatamente; solo encola `DATA QUERY ATTLOG` para el próximo heartbeat.
+- Por qué falla: es un flujo asincrónico, pero la pantalla no muestra seguimiento claro hasta confirmación del dispositivo.
+- Impacto real: el usuario puede creer que ya actualizó datos y abrir reportes que siguen vacíos.
+- Cómo reproducirlo: pulsar “Actualizar desde reloj” con reloj offline o sin heartbeat inmediato.
+- Solución recomendada: mostrar estado “pendiente de retiro por reloj”, fecha de confirmación y recomendación de esperar/reintentar.
+- Prioridad: **media**
 
-## 6. Problemas de permisos/roles
+### 19. Sincronización de usuarios del reloj recarga conciliación antes de tener respuesta del reloj
 
-- **Read-only ve navegación a “Solicitudes”**: confirmado en navbar común. Backend impide crear solicitudes a read_only, pero la pantalla se ofrece como módulo operativo. Puede ser aceptable para consulta; requiere validar UX esperada.
-- **Operador puede crear solicitudes pero no recalcular resúmenes**: confirmado. Si crea justificación para un día sin resumen, dependerá de company_admin/super_admin para recalcular/aprobar.
-- **Super admin en reportes requiere `companyId`, pero filtros auxiliares no siempre lo preservan**: confirmado.
-- **Usuarios multiempresa no super admin sin selector de empresa activa**: confirmado. Es un problema de scope funcional más que de autorización puntual.
-- **Acceso directo de super admin a fichadas globales**: requiere verificación. Puede ser deseado por auditoría global, pero contradice el patrón de pedir empresa en reportes.
-- **Recalcular resúmenes**: backend sí valida company_admin/super_admin (`attendance-calculation.service.ts:92-113`). No se observó exposición indebida a operator/read_only.
+- Estado: **confirmado**
+- Módulo afectado: Empleados / sincronización con dispositivos
+- Archivo o ruta exacta:
+  - `zkdashboard/frontend/src/components/EmployeesManager.tsx:315-347`
+  - `zkdashboard/backend/src/devices/devices.controller.ts:43-64`
+  - `zkdashboard/backend/src/devices/devices.controller.ts:67-87`
+- Acción del usuario: consultar usuarios del reloj o enviar un empleado al reloj.
+- Qué falla: la UI muestra éxito y llama `loadReconciliation` inmediatamente, aunque el reloj responderá en un heartbeat posterior.
+- Por qué falla: se recarga un dato dependiente de una operación asincrónica todavía no confirmada.
+- Impacto real: la conciliación puede seguir igual, dando sensación de que la acción no hizo nada o de que falló silenciosamente.
+- Cómo reproducirlo: pulsar “Actualizar usuarios del reloj” y observar que la conciliación no cambia hasta que el reloj responda.
+- Solución recomendada: mostrar comando pendiente y refrescar conciliación solo tras confirmación o polling explícito.
+- Prioridad: **media**
 
-## 7. Casos borde no resueltos
+### 20. Endpoints de sincronización de empleados existen pero no se usan desde la UI actual
 
-- **Empresa sin empleados**: confirmado parcialmente. Recalcular devuelve cero procesados; cierre mensual produce cobertura con `hasEmployees: false` y filas vacías. Falta mensaje operativo consistente en todos los reportes.
-- **Empleado sin horario**: confirmado que existe reporte y advertencia, pero reportes calculados quedan limitados porque no hay expected minutes/tardanza/ausencia confiable hasta asignar perfil.
-- **Dispositivo sin empresa**: confirmado en backend que varias acciones lanzan `BadRequestException('El reloj debe estar asignado a una empresa.')`. Requiere validación UX para que el usuario no vea acciones imposibles.
-- **Fichada sin empleado asociado**: confirmado que `saveRecords` crea empleados mínimos con nombre/apellido vacío. Puede generar selectores y reportes con usuarios sin datos personales.
-- **Solicitud sin adjunto**: confirmado que el backend solo exige adjunto al aprobar si el tipo lo requiere. Si la UI no lo deja claro antes, el bloqueo aparece tarde.
-- **Reporte sin rango de fechas**: confirmado que varios reportes normalizan a hoy. Puede ser correcto, pero con inputs incompletos puede filtrar hoy silenciosamente.
-- **Feriados globales vs empresa**: requiere verificación. La carga soporta feriados globales/empresa según servicios, pero el impacto en recálculo debe probarse con una empresa con feriados propios y globales superpuestos.
-- **Usuario con múltiples empresas**: confirmado sin selector de empresa activa.
-- **Super admin vs company admin**: confirmado que el super admin necesita `companyId` en reportes, pero selectores y limpiar filtros rompen el contexto.
-- **Corrección de fichada ya aprobada**: confirmado que solicitudes revisadas no pueden reaprobarse, pero requiere verificación de posibilidad de crear una nueva corrección sobre una fichada ya corregida.
-- **Recalcular resumen sin fichadas**: confirmado que genera resúmenes de ausencias/fin de semana/feriados para empleados con horario. Si no hay empleados, no genera nada.
+- Estado: **confirmado**
+- Módulo afectado: Empleados / endpoints desconectados
+- Archivo o ruta exacta:
+  - `zkdashboard/backend/src/employees/employees.controller.ts:95-120`
+  - `zkdashboard/frontend/src/app/(protected)/employees/actions.ts:142-153`
+  - `zkdashboard/frontend/src/app/(protected)/employees/actions.ts:185-204`
+  - `zkdashboard/frontend/src/components/EmployeesManager.tsx:315-347`
+- Acción del usuario: importar desde reloj o enviar empleado al reloj desde la pantalla de empleados.
+- Qué falla: la UI usa `/devices/:id/query-users` y `/devices/:id/employees/:employeeId/sync-user`; los actions `importEmployeesFromDeviceAction` y `exportEmployeeToDeviceAction` quedan sin uso.
+- Por qué falla: quedaron dos caminos de API para una funcionalidad similar, pero uno no está conectado.
+- Impacto real: mantenimiento confuso y riesgo de corregir/probar el endpoint equivocado. Además, `POST /employees/device-sync/:deviceId/export` masivo existe pero siempre devuelve error “deshabilitada”.
+- Cómo reproducirlo: buscar referencias a `importEmployeesFromDeviceAction` o `exportEmployeeToDeviceAction`; solo están definidos.
+- Solución recomendada: eliminar/deprecar endpoints y actions no usados o conectar explícitamente una única ruta funcional.
+- Prioridad: **baja**
 
-## 8. Priorización
+### 21. Importación de empleados puede informar éxito aunque no haya creado nada
 
-1. Corregir estrategia de rutas `/api` en producción: exportaciones y adjuntos no pueden quedar en un estado incierto.
-2. Asegurar persistencia de adjuntos en `infra/docker/docker-compose.yml`.
-3. Unificar parsing de fechas de fichadas/exportaciones con utilidades de Argentina.
-4. Corregir reportes basados en resúmenes: cobertura obligatoria, bloqueo de exportación incompleta o fallback real.
-5. Pasar `companyId` a `/attendance/users` y preservar `companyId` al limpiar filtros.
-6. Corregir flujo de justificaciones cuando no existe resumen diario.
-7. Arreglar auditoría de cambios de empleado capturando `before` antes de mutar.
-8. Definir producto para usuarios multiempresa no super admin.
-9. Mejorar estados de acciones asincrónicas de reloj: encolado vs confirmado.
-10. Ajustar mensajes de acciones con efecto nulo, especialmente importación de empleados y contacto comercial.
+- Estado: **confirmado**
+- Módulo afectado: Empleados / importación CSV-Excel
+- Archivo o ruta exacta:
+  - `zkdashboard/frontend/src/app/(protected)/employees/actions.ts:249-262`
+  - `zkdashboard/backend/src/employees/employees.service.ts:543-552`
+- Acción del usuario: confirmar importación con empleados ya existentes.
+- Qué falla: backend omite duplicados, pero el mensaje principal puede ser “La importación creó 0 empleado(s).”
+- Por qué falla: el flujo trata `createdCount=0` como éxito sin advertencia destacada.
+- Impacto real: acción sin efecto presentada como satisfactoria.
+- Cómo reproducirlo: importar un CSV cuyos documentos ya existan.
+- Solución recomendada: mostrar creado/omitido/error y usar advertencia si no se creó ningún registro.
+- Prioridad: **baja**
 
-## 9. Conclusión
+### 22. Pantallas de reportes muestran empleados sin datos personales como si fueran opciones normales
 
-El sistema **no está listo todavía para una prueba piloto real con datos críticos** sin una etapa previa de estabilización funcional. Tiene módulos importantes implementados, pero hay fallas confirmadas que pueden entregar información vacía o incorrecta, bloquear exportaciones en producción, perder adjuntos o mostrar acciones como exitosas sin resolución real.
+- Estado: **confirmado**
+- Módulo afectado: Filtros / empleados generados por fichadas
+- Archivo o ruta exacta:
+  - `zkdashboard/backend/src/attendance/attendance.service.ts:69-90`
+  - `zkdashboard/backend/src/attendance/attendance.service.ts:233-263`
+  - `zkdashboard/frontend/src/components/reports/ReportFilters.tsx:90-104`
+- Acción del usuario: abrir selector “Empleado”.
+- Qué falla: pueden aparecer usuarios creados automáticamente con nombre/apellido vacío.
+- Por qué falla: al recibir fichadas de un userId desconocido, backend crea `Employee` mínimo con nombre y apellido vacíos.
+- Impacto real: el usuario ve opciones poco claras y puede filtrar por personas no identificadas.
+- Cómo reproducirlo: recibir fichada de un DNI/PIN no cargado como empleado y abrir cualquier filtro de empleados.
+- Solución recomendada: marcar estos registros como “Empleado no identificado” y ofrecer flujo de completar datos/asignar empresa.
+- Prioridad: **media**
 
-La recomendación técnica honesta es congelar features nuevas y ejecutar una fase corta de hardening enfocada en rutas productivas, persistencia de adjuntos, fechas, cobertura de reportes y consistencia multiempresa. Después de corregir esos puntos y probar flujos end-to-end con Nginx real, sí puede pasar a piloto controlado.
+### 23. Checklist “Período recalculado” lleva al resumen mensual, no al recálculo
+
+- Estado: **confirmado**
+- Módulo afectado: Dashboard / guía operativa
+- Archivo o ruta exacta:
+  - `zkdashboard/frontend/src/app/(protected)/dashboard/page.tsx:96-104`
+- Acción del usuario: en el dashboard, pulsar “Período recalculado”.
+- Qué falla: el link va a `/reports/monthly-summary`, que consulta resultados; no va a `/reports/day-summaries`, donde está el botón “Recalcular período”.
+- Por qué falla: el CTA apunta a una pantalla de lectura, no a la acción necesaria.
+- Impacto real: usuario nuevo puede no encontrar cómo recalcular y luego ver reportes vacíos.
+- Cómo reproducirlo: abrir dashboard de empresa y pulsar “Período recalculado”.
+- Solución recomendada: apuntar al reporte de resúmenes diarios o cambiar el texto del checklist.
+- Prioridad: **media**
+
+### 24. `GET /attendance/devices` existe pero el frontend usa `/devices`
+
+- Estado: **confirmado**
+- Módulo afectado: API / endpoints no usados
+- Archivo o ruta exacta:
+  - `zkdashboard/backend/src/attendance/attendance.controller.ts:55-58`
+  - `zkdashboard/frontend/src/lib/api.ts:1180-1182`
+- Acción del usuario: ninguna directa; es endpoint expuesto sin consumidor visible.
+- Qué falla: hay dos rutas potenciales para obtener dispositivos, pero la UI usa `/devices`.
+- Por qué falla: endpoint duplicado o legado quedó en el controller de asistencia.
+- Impacto real: bajo para usuario final, pero aumenta superficie API y confusión al mantener permisos/contratos.
+- Cómo reproducirlo: buscar `/attendance/devices` en frontend; no hay llamadas.
+- Solución recomendada: documentar como público interno o retirarlo si es legado.
+- Prioridad: **baja**
+
+### 25. Acceso directo de super admin a `/records` muestra fichadas globales sin selector de empresa
+
+- Estado: **requiere verificación**
+- Módulo afectado: Fichadas / permisos multiempresa
+- Archivo o ruta exacta:
+  - `zkdashboard/frontend/src/app/(protected)/records/page.tsx:43-55`
+  - `zkdashboard/backend/src/attendance/attendance.service.ts:199-230`
+  - `zkdashboard/backend/src/auth/company-scope.util.ts:4-7`
+- Acción del usuario: super admin entra manualmente a `/records`.
+- Qué falla: no hay selector/guard de empresa; backend no aplica `companyId` para super admin.
+- Por qué falla: `getCompanyScope` devuelve `null` para super admin, y la página no exige `companyId`.
+- Impacto real: puede mostrar fichadas de todas las empresas juntas, lo que contradice otros reportes que obligan a seleccionar empresa.
+- Cómo reproducirlo: iniciar sesión como super admin y navegar directo a `/records`.
+- Solución recomendada: confirmar intención de producto; si no es vista global deseada, exigir `companyId`.
+- Prioridad: **media**
+
+## Priorización funcional inmediata
+
+1. Resolver todas las rutas `/api/*` usadas por botones reales: exportaciones, adjuntos, contacto y plantilla CSV.
+2. Proteger persistencia de adjuntos.
+3. Evitar reportes vacíos/incorrectos por falta de recálculo o cobertura parcial.
+4. Corregir filtros multiempresa: selector de empleados, limpiar filtros y volver a reportes.
+5. Validar fichadas manuales con fecha y hora completas.
+6. Corregir flujo de justificaciones sin resumen diario.
+7. Separar visualmente acciones “encoladas” de acciones “confirmadas”.
+8. Limpiar endpoints/actions no usados para no mantener flujos muertos.
+
