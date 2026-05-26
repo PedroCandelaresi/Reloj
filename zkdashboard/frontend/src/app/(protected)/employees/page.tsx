@@ -27,13 +27,13 @@ export default async function EmployeesPage() {
     <>
       <main className="max-w-7xl mx-auto px-4 py-8 pt-32">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Empleados</h1>
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Personal</h1>
           <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
             {user.isSuperAdmin
               ? 'Vista global de empleados. La edición queda reservada a la administración de cada empresa.'
               : canManage
-                ? 'Gestioná la lista de empleados de tu empresa.'
-                : 'Consultá la lista de empleados de tu empresa.'}
+                ? 'Gestioná empleados, horarios y sincronización con relojes.'
+                : 'Consultá empleados, horarios y datos operativos de tu empresa.'}
           </p>
         </div>
 

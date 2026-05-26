@@ -37,10 +37,16 @@ export default async function AttendanceRequestsPage({ searchParams }: PageProps
   if (user.isSuperAdmin && !companyId) {
     return <CompanyRequiredMessage reportName="Solicitudes de asistencia" />;
   }
+  const canReviewRequests = user.isSuperAdmin || user.companyRole === 'company_admin';
+  const requestedType = sp.type || undefined;
+  const type =
+    !canReviewRequests && (requestedType === 'manual_punch' || requestedType === 'punch_correction')
+      ? undefined
+      : requestedType;
   const today = todayArgentinaDateKey();
   const params = {
     status: sp.status || undefined,
-    type: sp.type || undefined,
+    type,
     employeeId: sp.employeeId || undefined,
     dateFrom: sp.dateFrom || today,
     dateTo: sp.dateTo || today,
@@ -65,10 +71,10 @@ export default async function AttendanceRequestsPage({ searchParams }: PageProps
       <main className="mx-auto max-w-7xl px-4 py-8 pt-32">
         <div className="mb-6">
           <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
-            Solicitudes de asistencia
+            Solicitudes y justificaciones
           </h1>
           <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
-            Fichadas manuales, correcciones y justificaciones con auditoría.
+            Revisá ausencias, tardanzas y correcciones. La fichada manual queda para casos excepcionales.
           </p>
         </div>
 
@@ -103,10 +109,10 @@ export default async function AttendanceRequestsPage({ searchParams }: PageProps
             <span className="mb-1 block font-medium" style={{ color: 'var(--text-secondary)' }}>Tipo</span>
             <select name="type" defaultValue={params.type ?? ''} className="input-field w-full rounded-lg px-3 py-2 text-sm">
               <option value="">Todos</option>
-              <option value="manual_punch">Fichada manual</option>
-              <option value="punch_correction">Corrección</option>
               <option value="absence_justification">Ausencia</option>
               <option value="late_justification">Tardanza</option>
+              {canReviewRequests && <option value="punch_correction">Corrección</option>}
+              {canReviewRequests && <option value="manual_punch">Fichada manual</option>}
             </select>
           </label>
           <label className="text-sm">
@@ -122,7 +128,7 @@ export default async function AttendanceRequestsPage({ searchParams }: PageProps
           </label>
           <div className="md:col-span-5 flex justify-end">
             <button type="submit" className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
-              Filtrar
+              Ver solicitudes
             </button>
           </div>
         </form>
@@ -135,7 +141,7 @@ export default async function AttendanceRequestsPage({ searchParams }: PageProps
           user={user}
           initialForm={{
             employeeId: sp.employeeId ?? '',
-            type: sp.type ?? 'manual_punch',
+            type: type ?? 'absence_justification',
             date: sp.date ?? sp.dateFrom ?? '',
             punchTime: sp.punchTime ?? '',
             punchType: sp.punchType === 'in' || sp.punchType === 'out' || sp.punchType === 'unknown' ? sp.punchType : 'unknown',

@@ -28,6 +28,7 @@ export default async function ManualPunchesPage({ searchParams }: PageProps) {
         title="Fichadas manuales"
         subtitle={`Marcaciones cargadas por RRHH cuando el reloj no registró la entrada o salida. ${rows.length} registro(s).`}
         excelHref={exportManualPunchesReport(params)}
+        reportsHref={`/reports${companyId ? `?companyId=${companyId}` : ''}`}
       />
       <ReportFilters action="/reports/manual-punches" userOptions={userOptions} dateFrom={dateFrom} dateTo={dateTo} employeeId={employeeId} companyId={companyId} />
       <ManualPunchesTable rows={rows} />
@@ -85,11 +86,11 @@ function ManualPunchesTable({ rows }: { rows: ManualPunchReportRow[] }) {
   );
 }
 
-function ReportHeader({ title, subtitle, excelHref }: { title: string; subtitle: string; excelHref: string }) {
+function ReportHeader({ title, subtitle, excelHref, reportsHref }: { title: string; subtitle: string; excelHref: string; reportsHref: string }) {
   return (
     <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
       <div>
-        <Link href="/reports" className="mb-2 block text-sm font-medium" style={{ color: 'var(--brand-text)' }}>← Reportes</Link>
+        <Link href={reportsHref} className="mb-2 block text-sm font-medium" style={{ color: 'var(--brand-text)' }}>← Reportes</Link>
         <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{title}</h1>
         <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>{subtitle}</p>
       </div>

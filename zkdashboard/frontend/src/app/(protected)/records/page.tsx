@@ -67,33 +67,38 @@ export default async function RecordsPage({ searchParams }: PageProps) {
     <>
       <main className="max-w-7xl mx-auto px-4 py-8 pt-32">
 
-        <div className="flex items-start justify-between mb-6">
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Fichadas</h1>
+            <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Asistencia</h1>
             <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
-              Son las marcaciones recibidas directamente desde el reloj. Todavía no tienen aplicadas reglas de horario, tolerancias ni feriados.
+              Revisá las marcaciones recibidas desde el reloj por huella, rostro, tarjeta o código.
             </p>
             <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>{result.total} fichadas encontradas</p>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            <a href={`/api/export?format=excel${exportFilter}`}
-              className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-              <ExcelIcon /> Exportar Excel
-            </a>
-            <a href={`/api/export?format=pdf${exportFilter}`}
-              className="inline-flex items-center gap-2 bg-teal-700 hover:bg-teal-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-              <PdfIcon /> Exportar PDF
-            </a>
-            <a href={`/api/export?format=excel&report=hours${exportFilter}`}
-              className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-              <ExcelIcon /> Horas Excel
-            </a>
-            <a href={`/api/export?format=pdf&report=hours${exportFilter}`}
-              className="inline-flex items-center gap-2 bg-slate-600 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-              <PdfIcon /> Horas PDF
-            </a>
-          </div>
+          <details className="shrink-0 sm:text-right">
+            <summary className="cursor-pointer rounded-lg px-4 py-2 text-sm font-medium transition-colors" style={{ border: '1px solid var(--border)', color: 'var(--brand-text)' }}>
+              Exportar
+            </summary>
+            <div className="mt-3 flex flex-col gap-2 rounded-lg border p-3 text-left" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+              <a href={`/api/export?format=excel${exportFilter}`}
+                className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700">
+                <ExcelIcon /> Fichadas Excel
+              </a>
+              <a href={`/api/export?format=pdf${exportFilter}`}
+                className="inline-flex items-center gap-2 rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-800">
+                <PdfIcon /> Fichadas PDF
+              </a>
+              <a href={`/api/export?format=excel&report=hours${exportFilter}`}
+                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700">
+                <ExcelIcon /> Horas Excel
+              </a>
+              <a href={`/api/export?format=pdf&report=hours${exportFilter}`}
+                className="inline-flex items-center gap-2 rounded-lg bg-slate-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-slate-700">
+                <PdfIcon /> Horas PDF
+              </a>
+            </div>
+          </details>
         </div>
 
         <RecordsSyncControls
@@ -131,7 +136,7 @@ export default async function RecordsPage({ searchParams }: PageProps) {
             <MaskedDateInput name="dateTo" defaultValue={dateTo} />
           </div>
           <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">
-            Filtrar
+            Ver fichadas
           </button>
           <Link href="/records"
             className="px-4 py-2 rounded-lg text-sm transition-colors"

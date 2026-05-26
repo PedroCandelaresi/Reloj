@@ -28,6 +28,7 @@ export default async function CorrectedPunchesPage({ searchParams }: PageProps) 
         title="Fichadas corregidas"
         subtitle={`Cambios realizados sobre fichadas existentes, con auditoría. ${rows.length} registro(s).`}
         excelHref={exportCorrectedPunchesReport(params)}
+        reportsHref={`/reports${companyId ? `?companyId=${companyId}` : ''}`}
       />
       <ReportFilters action="/reports/corrected-punches" userOptions={userOptions} dateFrom={dateFrom} dateTo={dateTo} employeeId={employeeId} companyId={companyId} />
       <CorrectedPunchesTable rows={rows} />
@@ -87,11 +88,11 @@ function CorrectedPunchesTable({ rows }: { rows: CorrectedPunchReportRow[] }) {
   );
 }
 
-function ReportHeader({ title, subtitle, excelHref }: { title: string; subtitle: string; excelHref: string }) {
+function ReportHeader({ title, subtitle, excelHref, reportsHref }: { title: string; subtitle: string; excelHref: string; reportsHref: string }) {
   return (
     <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
       <div>
-        <Link href="/reports" className="mb-2 block text-sm font-medium" style={{ color: 'var(--brand-text)' }}>← Reportes</Link>
+        <Link href={reportsHref} className="mb-2 block text-sm font-medium" style={{ color: 'var(--brand-text)' }}>← Reportes</Link>
         <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{title}</h1>
         <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>{subtitle}</p>
       </div>

@@ -21,7 +21,7 @@ export default async function SettingsPage() {
     <>
       <main className="max-w-7xl mx-auto px-4 py-8 pt-32">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Perfiles de horario</h1>
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Configuración</h1>
           <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
             Los horarios se configuran mediante perfiles. Asigná un perfil a cada empleado para que el sistema pueda calcular tardanzas, ausencias, horas trabajadas y cierre mensual.
           </p>
@@ -39,6 +39,15 @@ export default async function SettingsPage() {
             <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Estructura de empresa</h2>
             <p className="mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>
               Administrá sectores/departamentos y puestos/cargos para organizar empleados y filtrar reportes.
+            </p>
+          </Link>
+          <Link
+            href="/settings/holidays"
+            className="card block rounded-xl p-5 transition-colors hover:border-emerald-500"
+          >
+            <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Calendario laboral</h2>
+            <p className="mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>
+              Revisá feriados y días no laborables que afectan los cálculos de asistencia.
             </p>
           </Link>
         </div>

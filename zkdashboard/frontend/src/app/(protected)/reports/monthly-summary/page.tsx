@@ -56,7 +56,7 @@ export default async function MonthlySummaryPage({ searchParams }: PageProps) {
       <main className="mx-auto max-w-7xl px-4 py-8 pt-32">
         <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
           <div>
-            <Link href="/reports" className="mb-2 block text-sm font-medium" style={{ color: 'var(--brand-text)' }}>← Reportes</Link>
+            <Link href={`/reports${companyId ? `?companyId=${companyId}` : ''}`} className="mb-2 block text-sm font-medium" style={{ color: 'var(--brand-text)' }}>← Reportes</Link>
             <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Resumen mensual</h1>
             <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
               {rows.length} empleado(s) en el período {String(month).padStart(2, '0')}/{year}

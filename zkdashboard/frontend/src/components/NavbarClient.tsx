@@ -64,26 +64,26 @@ function getActiveCompanyName(user?: CurrentUserProfile | null) {
 
 function getNavigationItems(user?: CurrentUserProfile | null) {
   const commonItems = [
-    { href: '/dashboard', label: 'Panel' },
-    { href: '/records', label: 'Fichadas' },
-    { href: '/reports', label: 'Reportes' },
+    { href: '/dashboard', label: 'Inicio' },
+    { href: '/records', label: 'Asistencia' },
+    { href: '/employees', label: 'Personal' },
     { href: '/attendance/requests', label: 'Solicitudes' },
-    { href: '/employees', label: 'Empleados' },
+    { href: '/reports', label: 'Reportes' },
   ];
 
   if (!user?.isSuperAdmin) {
     return user?.companyRole === 'company_admin'
-      ? [...commonItems, { href: '/users', label: 'Usuarios' }, { href: '/settings/holidays', label: 'Feriados' }, { href: '/settings', label: 'Configuración' }]
-      : [...commonItems, { href: '/settings/holidays', label: 'Feriados' }];
+      ? [...commonItems, { href: '/settings', label: 'Configuración' }, { href: '/users', label: 'Usuarios' }, { href: '/settings/holidays', label: 'Calendario' }]
+      : [...commonItems, { href: '/settings/holidays', label: 'Calendario' }];
   }
 
   return [
-    { href: '/admin/dashboard', label: 'Panel global' },
+    { href: '/admin/dashboard', label: 'Inicio' },
     { href: '/admin/companies', label: 'Empresas' },
-    { href: '/admin/devices', label: 'Dispositivos' },
+    { href: '/admin/devices', label: 'Relojes' },
     { href: '/reports', label: 'Reportes' },
     { href: '/attendance/requests', label: 'Solicitudes' },
-    { href: '/settings/holidays', label: 'Feriados' },
+    { href: '/settings/holidays', label: 'Calendario' },
   ];
 }
 

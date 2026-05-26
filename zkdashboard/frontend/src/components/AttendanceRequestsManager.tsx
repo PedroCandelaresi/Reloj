@@ -42,7 +42,7 @@ type FormValues = {
 
 const EMPTY_FORM: FormValues = {
   employeeId: '',
-  type: 'manual_punch',
+  type: 'absence_justification',
   date: '',
   punchTime: '',
   punchType: 'unknown',
@@ -54,10 +54,10 @@ const EMPTY_FORM: FormValues = {
 };
 
 const TYPE_LABELS: Record<AttendanceRequestType, string> = {
-  manual_punch: 'Fichada manual',
-  punch_correction: 'Corrección de fichada',
   absence_justification: 'Justificación de ausencia',
   late_justification: 'Justificación de tardanza',
+  punch_correction: 'Corrección de fichada',
+  manual_punch: 'Fichada manual',
 };
 
 const STATUS_LABELS: Record<AttendanceRequest['status'], string> = {
