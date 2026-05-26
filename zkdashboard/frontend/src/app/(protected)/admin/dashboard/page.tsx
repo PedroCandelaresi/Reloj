@@ -140,7 +140,7 @@ export default async function AdminDashboardPage() {
                 Empresas
               </Link>
               <Link href="/admin/devices" className="text-sm font-medium transition-colors" style={{ color: 'var(--brand-text)' }}>
-                Dispositivos
+                Relojes
               </Link>
             </div>
           </Panel>

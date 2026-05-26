@@ -216,8 +216,8 @@ export function AdminCompanyDetailPanel({
           <div className="flex flex-wrap gap-2">
             <AdminCompanyLink href={`/reports?companyId=${company.id}`}>Reportes</AdminCompanyLink>
             <AdminCompanyLink href={`/attendance/requests?companyId=${company.id}`}>Solicitudes</AdminCompanyLink>
-            <AdminCompanyLink href={`/settings/holidays?companyId=${company.id}`}>Feriados</AdminCompanyLink>
-            <AdminCompanyLink href={`/settings/org-structure?companyId=${company.id}`}>Estructura</AdminCompanyLink>
+            <AdminCompanyLink href={`/settings/holidays?companyId=${company.id}`}>Calendario</AdminCompanyLink>
+            <AdminCompanyLink href={`/settings/org-structure?companyId=${company.id}`}>Configuración</AdminCompanyLink>
           </div>
         </div>
       </div>
@@ -245,7 +245,7 @@ export function AdminCompanyDetailPanel({
               : { borderColor: 'transparent', color: 'var(--text-muted)' }
             }
           >
-            {t === 'employees' ? `Empleados (${employees.length})` : `Usuarios (${users.length})`}
+            {t === 'employees' ? `Personal (${employees.length})` : `Usuarios (${users.length})`}
           </button>
         ))}
       </div>
