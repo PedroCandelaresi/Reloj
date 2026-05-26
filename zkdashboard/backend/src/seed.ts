@@ -156,19 +156,20 @@ async function seed() {
 
   const records: Partial<AttendanceRecord>[] = [];
 
-  for (let daysAgo = 30; daysAgo >= 0; daysAgo--) {
+  // Generar fichadas para los últimos 90 días hábiles
+  let daysCount = 0;
+  let daysAgo = 0;
+  while (daysCount < 90) {
     const day = new Date(today);
     day.setDate(today.getDate() - daysAgo);
     day.setHours(0, 0, 0, 0);
-
+    daysAgo++;
     if (!isWeekday(day)) continue;
-
+    daysCount++;
     for (const emp of EMPLOYEES) {
       // ~88 % de asistencia por día
       if (Math.random() < 0.12) continue;
-
       const verifyType = VERIFY_PREFERENCE[emp.id] ?? 1;
-
       // Entrada
       const entryTs = entryTime(day);
       records.push({
@@ -179,7 +180,6 @@ async function seed() {
         verifyType,
         workCode: null,
       });
-
       // Salida (~95 % la registra)
       if (Math.random() < 0.95) {
         records.push({
@@ -191,7 +191,6 @@ async function seed() {
           workCode: null,
         });
       }
-
       // Algunos empleados hacen descanso (~20 %)
       if (Math.random() < 0.2) {
         const breakOutH = rand(12, 13);
