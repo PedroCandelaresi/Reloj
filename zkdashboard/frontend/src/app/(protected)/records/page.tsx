@@ -18,6 +18,7 @@ interface PageProps {
     userId?: string;
     dateFrom?: string;
     dateTo?: string;
+    companyId?: string;
   }>;
 }
 
@@ -47,20 +48,22 @@ export default async function RecordsPage({ searchParams }: PageProps) {
   const userId   = sp.userId   ?? '';
   const dateFrom = sp.dateFrom ?? '';
   const dateTo   = sp.dateTo   ?? '';
+  const companyId = sp.companyId ?? '';
 
   const [result, userOptions, devices] = await Promise.all([
-    getRecords({ page, userId, dateFrom, dateTo }),
-    getDistinctUsers(),
+    getRecords({ page, userId, dateFrom, dateTo, companyId }),
+    getDistinctUsers(companyId ? { companyId } : {}),
     getDevices(),
   ]);
   const canCreateRequests = user.isSuperAdmin || user.companyRole === 'company_admin';
 
-  const filterBase = { userId, dateFrom, dateTo };
+  const filterBase = { userId, dateFrom, dateTo, companyId };
 
   const exportQs = new URLSearchParams();
   if (userId)   exportQs.set('userId',   userId);
   if (dateFrom) exportQs.set('dateFrom', dateFrom);
   if (dateTo)   exportQs.set('dateTo',   dateTo);
+  if (companyId) exportQs.set('companyId', companyId);
   const exportFilter = exportQs.toString() ? `&${exportQs.toString()}` : '';
 
   return (
@@ -107,6 +110,7 @@ export default async function RecordsPage({ searchParams }: PageProps) {
 
         {/* Filtros */}
         <form method="get" className="card rounded-xl p-4 mb-6 flex flex-wrap gap-4 items-end">
+          {companyId && <input type="hidden" name="companyId" value={companyId} />}
           <div>
             <label className="block text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Empleado</label>
             <select name="userId" defaultValue={userId}
@@ -132,7 +136,7 @@ export default async function RecordsPage({ searchParams }: PageProps) {
           <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">
             Ver fichadas
           </button>
-          <Link href="/records"
+          <Link href={companyId ? `/records?companyId=${encodeURIComponent(companyId)}` : '/records'}
             className="px-4 py-2 rounded-lg text-sm transition-colors"
             style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
           >
@@ -190,7 +194,7 @@ export default async function RecordsPage({ searchParams }: PageProps) {
                       <td className="px-6 py-4 text-xs" style={{ color: 'var(--text-muted)' }}>Reloj de asistencia</td>
                       {canCreateRequests && (
                         <td className="px-6 py-4">
-                          <Link href={correctionHref(r.id, r.userId, r.timestamp)} className="font-medium" style={{ color: 'var(--brand-text)' }}>
+                          <Link href={correctionHref(r.id, r.userId, r.timestamp, companyId)} className="font-medium" style={{ color: 'var(--brand-text)' }}>
                             Corregir fichada
                           </Link>
                         </td>
@@ -234,7 +238,7 @@ export default async function RecordsPage({ searchParams }: PageProps) {
   );
 }
 
-function correctionHref(recordId: number, employeeId: string, timestamp: string) {
+function correctionHref(recordId: number, employeeId: string, timestamp: string, companyId: string) {
   const date = argentinaDateKey(timestamp);
   const qs = new URLSearchParams({
     type: 'punch_correction',
@@ -245,6 +249,7 @@ function correctionHref(recordId: number, employeeId: string, timestamp: string)
     targetAttendanceRecordId: String(recordId),
     fromReport: '1',
   });
+  if (companyId) qs.set('companyId', companyId);
   return `/attendance/requests?${qs.toString()}`;
 }
 

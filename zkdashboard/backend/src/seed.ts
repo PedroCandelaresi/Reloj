@@ -15,6 +15,9 @@ dotenv.config();
 import { DataSource } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { AttendanceRecord } from './attendance/attendance.entity';
+import { CompanyMembership } from './companies/company-membership.entity';
+import { CompanyRole } from './companies/company-role.enum';
+import { Company } from './companies/company.entity';
 import { Device } from './devices/device.entity';
 import { AdminUser } from './users/admin-user.entity';
 import { Employee } from './employees/employee.entity';
@@ -55,6 +58,7 @@ const VERIFY_PREFERENCE: Record<string, number> = {
 
 const DEVICE_SN = 'MB360-001';
 const DEVICE_IP = '192.168.1.141';
+const DEMO_COMPANY_CUIT = '30712345678';
 
 // ─── Utilidades ───────────────────────────────────────────────────────────
 
@@ -102,29 +106,71 @@ async function seed() {
   const userRepo   = ds.getRepository(AdminUser);
   const attRepo    = ds.getRepository(AttendanceRecord);
   const employeeRepo = ds.getRepository(Employee);
+  const companyRepo = ds.getRepository(Company);
+  const membershipRepo = ds.getRepository(CompanyMembership);
 
-  // 1. Dispositivo
-  const existingDevice = await deviceRepo.findOneBy({ serialNumber: DEVICE_SN });
-  if (!existingDevice) {
-    await deviceRepo.save({ serialNumber: DEVICE_SN, ipAddress: DEVICE_IP });
+  // 1. Empresa demo
+  let company = await companyRepo.findOneBy({ cuit: DEMO_COMPANY_CUIT });
+  if (!company) {
+    company = await companyRepo.save({
+      cuit: DEMO_COMPANY_CUIT,
+      razonSocial: 'Empresa Demo S.A.',
+      nombreFantasia: 'Empresa Demo',
+      isActive: true,
+      defaultEntryTime: '08:00',
+      defaultExitTime: '17:00',
+      defaultWorkDays: ['mon', 'tue', 'wed', 'thu', 'fri'],
+      email: 'demo@empresa.local',
+      phone: null,
+    });
+    console.log(`✓ Empresa demo creada: ${company.nombreFantasia}`);
+  } else {
+    console.log(`  Empresa demo ya existe: ${company.nombreFantasia || company.razonSocial}`);
+  }
+
+  // 2. Dispositivo
+  let device = await deviceRepo.findOneBy({ serialNumber: DEVICE_SN });
+  if (!device) {
+    device = await deviceRepo.save({ serialNumber: DEVICE_SN, ipAddress: DEVICE_IP, companyId: company.id });
     console.log(`✓ Dispositivo creado: ${DEVICE_SN}`);
   } else {
+    if (device.companyId !== company.id || device.ipAddress !== DEVICE_IP) {
+      device.companyId = company.id;
+      device.ipAddress = DEVICE_IP;
+      device = await deviceRepo.save(device);
+      console.log(`✓ Dispositivo asociado a ${company.nombreFantasia || company.razonSocial}: ${DEVICE_SN}`);
+    }
     console.log(`  Dispositivo ya existe: ${DEVICE_SN}`);
   }
 
-  // 2. Admin inicial
-  if ((await userRepo.count()) === 0) {
+  // 3. Admin inicial
+  let admin = await userRepo.findOne({ where: { username: process.env.ADMIN_USERNAME || 'admin' } });
+  if (!admin) {
     const hash = await bcrypt.hash(process.env.ADMIN_PASSWORD || 'admin1234', 10);
-    await userRepo.save({
+    admin = await userRepo.save({
       username: process.env.ADMIN_USERNAME || 'admin',
       passwordHash: hash,
       isSuperAdmin: true,
       employeeId: null,
     });
     console.log('✓ Admin creado: usuario=admin, contraseña=admin1234');
+  } else if (admin) {
+    console.log(`  Admin ya existe: usuario=${admin.username}`);
   }
 
-  // 3. Maestra de empleados
+  if (admin) {
+    const existingMembership = await membershipRepo.findOneBy({ companyId: company.id, adminUserId: admin.id });
+    if (!existingMembership) {
+      await membershipRepo.save({
+        companyId: company.id,
+        adminUserId: admin.id,
+        role: CompanyRole.COMPANY_ADMIN,
+      });
+      console.log(`✓ Admin asociado a ${company.nombreFantasia || company.razonSocial}`);
+    }
+  }
+
+  // 4. Maestra de empleados
   if ((await employeeRepo.count()) === 0) {
     await employeeRepo.save(
       EMPLOYEES.map((emp) => {
@@ -135,18 +181,30 @@ async function seed() {
           apellido,
           telefono: null,
           email: null,
+          companyId: company.id,
         };
       }),
     );
     console.log(`✓ ${EMPLOYEES.length} empleados creados`);
   } else {
+    for (const emp of EMPLOYEES) {
+      await employeeRepo.update({ id: emp.id }, { companyId: company.id });
+    }
     console.log(`  Ya existen ${(await employeeRepo.count())} empleados`);
+    console.log(`✓ Empleados demo asociados a ${company.nombreFantasia || company.razonSocial}`);
   }
 
-  // 4. Registros de asistencia
+  // 5. Registros de asistencia
   const existing = await attRepo.count();
   if (existing > 0) {
+    await attRepo
+      .createQueryBuilder()
+      .update(AttendanceRecord)
+      .set({ companyId: company.id, deviceId: device.id })
+      .where('device_sn = :deviceSn', { deviceSn: DEVICE_SN })
+      .execute();
     console.log(`  Ya existen ${existing} registros. Para regenerar, borrá los datos primero.`);
+    console.log(`✓ Registros existentes del reloj demo asociados a ${company.nombreFantasia || company.razonSocial}`);
     await ds.destroy();
     return;
   }
@@ -175,6 +233,8 @@ async function seed() {
       records.push({
         deviceSn: DEVICE_SN,
         userId:   emp.id,
+        deviceId: device.id,
+        companyId: company.id,
         timestamp: entryTs,
         status:   0,
         verifyType,
@@ -185,6 +245,8 @@ async function seed() {
         records.push({
           deviceSn: DEVICE_SN,
           userId:   emp.id,
+          deviceId: device.id,
+          companyId: company.id,
           timestamp: exitTime(day),
           status:   1,
           verifyType,
@@ -198,6 +260,8 @@ async function seed() {
         records.push({
           deviceSn: DEVICE_SN,
           userId:   emp.id,
+          deviceId: device.id,
+          companyId: company.id,
           timestamp: setTime(day, breakOutH, rand(0, 30), rand(0, 59)),
           status:   2,
           verifyType,
@@ -206,6 +270,8 @@ async function seed() {
         records.push({
           deviceSn: DEVICE_SN,
           userId:   emp.id,
+          deviceId: device.id,
+          companyId: company.id,
           timestamp: setTime(day, breakInH, rand(31, 59), rand(0, 59)),
           status:   3,
           verifyType,

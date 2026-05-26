@@ -98,6 +98,7 @@ export class EmployeesService {
       includeInactive?: string;
       departmentId?: string;
       positionId?: string;
+      companyId?: string;
     } = {},
   ): Promise<Employee[]> {
     const companyId = getCompanyScope(user);
@@ -107,7 +108,9 @@ export class EmployeesService {
       .leftJoinAndSelect('employee.department', 'department')
       .leftJoinAndSelect('employee.position', 'position');
 
-    if (companyId) {
+    if (user.isSuperAdmin && filters.companyId) {
+      qb.where('employee.company_id = :companyId', { companyId: filters.companyId });
+    } else if (companyId) {
       qb.where('employee.company_id = :companyId', { companyId });
     } else {
       qb.where('1 = 1');

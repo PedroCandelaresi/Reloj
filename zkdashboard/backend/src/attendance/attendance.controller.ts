@@ -119,10 +119,11 @@ export class AttendanceController {
     @Query('userId') userId: string | undefined,
     @Query('dateFrom') dateFrom: string | undefined,
     @Query('dateTo') dateTo: string | undefined,
+    @Query('companyId') companyId: string | undefined,
     @CurrentUser() user: AuthenticatedUser,
     @Res() res: Response,
   ) {
-    const opts = { userId, dateFrom, dateTo };
+    const opts = { userId, dateFrom, dateTo, companyId };
     const filename = report === 'hours' ? 'horas-trabajadas' : 'asistencia';
 
     if (format === 'pdf') {
@@ -158,8 +159,9 @@ export class AttendanceController {
     @Query('userId') userId: string | undefined,
     @Query('dateFrom') dateFrom: string | undefined,
     @Query('dateTo') dateTo: string | undefined,
+    @Query('companyId') companyId: string | undefined,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.attendance.findAll({ user, page, limit, userId, dateFrom, dateTo });
+    return this.attendance.findAll({ user, page, limit, userId, dateFrom, dateTo, companyId });
   }
 }

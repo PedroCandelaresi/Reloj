@@ -1371,6 +1371,7 @@ export function getEmployees(params: {
   includeInactive?: boolean | string;
   departmentId?: string;
   positionId?: string;
+  companyId?: string;
 } = {}) {
   return apiFetch<Employee[]>(`/employees${buildReportQuery(params)}`);
 }
@@ -1512,6 +1513,7 @@ export function getRecords(params: {
   userId?: string;
   dateFrom?: string;
   dateTo?: string;
+  companyId?: string;
 }) {
   const qs = new URLSearchParams();
   if (params.page) qs.set('page', String(params.page));
@@ -1519,6 +1521,7 @@ export function getRecords(params: {
   if (params.userId) qs.set('userId', params.userId);
   if (params.dateFrom) qs.set('dateFrom', params.dateFrom);
   if (params.dateTo) qs.set('dateTo', params.dateTo);
+  if (params.companyId) qs.set('companyId', params.companyId);
   const search = qs.toString();
   return apiFetch<PaginatedResult>(`/attendance${search ? `?${search}` : ''}`);
 }

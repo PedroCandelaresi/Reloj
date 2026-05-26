@@ -34,8 +34,9 @@ export class EmployeesController {
     @Query('includeInactive') includeInactive?: string,
     @Query('departmentId') departmentId?: string,
     @Query('positionId') positionId?: string,
+    @Query('companyId') companyId?: string,
   ) {
-    return this.employees.findAll(user, { includeInactive, departmentId, positionId });
+    return this.employees.findAll(user, { includeInactive, departmentId, positionId, companyId });
   }
 
   // Accesible a todos los roles autenticados (incluye read_only) porque el banco de horas

@@ -214,6 +214,8 @@ export function AdminCompanyDetailPanel({
             <span className="ml-2 text-sm font-normal" style={{ color: 'var(--text-muted)' }}>{company.cuit}</span>
           </h3>
           <div className="flex flex-wrap gap-2">
+            <AdminCompanyLink href={`/records?companyId=${company.id}`}>Asistencia</AdminCompanyLink>
+            <AdminCompanyLink href={`/employees?companyId=${company.id}`}>Personal</AdminCompanyLink>
             <AdminCompanyLink href={`/reports?companyId=${company.id}`}>Reportes</AdminCompanyLink>
             <AdminCompanyLink href={`/attendance/requests?companyId=${company.id}`}>Solicitudes</AdminCompanyLink>
             <AdminCompanyLink href={`/settings/holidays?companyId=${company.id}`}>Calendario</AdminCompanyLink>

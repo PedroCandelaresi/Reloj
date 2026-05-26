@@ -75,13 +75,16 @@ export class ExportService {
     userId?: string;
     dateFrom?: string;
     dateTo?: string;
+    companyId?: string;
   }, user: AuthenticatedUser): Promise<AttendanceRecord[]> {
     const qb = this.repo
       .createQueryBuilder('r')
       .leftJoinAndMapOne('r.employee', Employee, 'e', 'e.id = r.user_id');
 
     const companyId = getCompanyScope(user);
-    if (companyId) {
+    if (user.isSuperAdmin && opts.companyId) {
+      qb.andWhere('r.company_id = :companyId', { companyId: opts.companyId });
+    } else if (companyId) {
       qb.andWhere('r.company_id = :companyId', { companyId });
     }
 
@@ -102,6 +105,7 @@ export class ExportService {
       userId?: string;
       dateFrom?: string;
       dateTo?: string;
+      companyId?: string;
     },
     generatedAt: Date,
     totalRecords: number,
@@ -224,6 +228,7 @@ export class ExportService {
       userId?: string;
       dateFrom?: string;
       dateTo?: string;
+      companyId?: string;
     },
     user: AuthenticatedUser,
   ) {
@@ -306,6 +311,7 @@ export class ExportService {
     userId?: string;
     dateFrom?: string;
     dateTo?: string;
+    companyId?: string;
   }, user: AuthenticatedUser): Promise<Buffer> {
     const records = await this.getFiltered(opts, user);
     this.assertRecordsForExport(records);
@@ -406,6 +412,7 @@ export class ExportService {
     userId?: string;
     dateFrom?: string;
     dateTo?: string;
+    companyId?: string;
   }, user: AuthenticatedUser): Promise<Buffer> {
     const records = await this.getFiltered(opts, user);
     this.assertRecordsForExport(records);
@@ -453,6 +460,7 @@ export class ExportService {
     userId?: string;
     dateFrom?: string;
     dateTo?: string;
+    companyId?: string;
   }, user: AuthenticatedUser): Promise<Buffer> {
     const rows = await this.buildHoursRows(opts, user);
     this.assertRecordsForExport(rows);
@@ -525,6 +533,7 @@ export class ExportService {
     userId?: string;
     dateFrom?: string;
     dateTo?: string;
+    companyId?: string;
   }, user: AuthenticatedUser): Promise<Buffer> {
     const rows = await this.buildHoursRows(opts, user);
     this.assertRecordsForExport(rows);

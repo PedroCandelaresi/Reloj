@@ -1,5 +1,6 @@
 import { CompanyRequiredMessage } from '@/components/reports/CompanyRequiredMessage';
 import { ReportCard } from '@/components/reports/ReportCard';
+import { getAdminCompanies } from '@/lib/api';
 import { requireCurrentSession } from '@/lib/session';
 
 export default async function ReportsHubPage({
@@ -11,7 +12,30 @@ export default async function ReportsHubPage({
   const sp = await searchParams;
   const companyId = sp.companyId || '';
   if (user.isSuperAdmin && !companyId) {
-    return <CompanyRequiredMessage reportName="Reportes" />;
+    const companies = await getAdminCompanies();
+    return (
+      <CompanyRequiredMessage reportName="Reportes">
+        {companies.length === 0 ? (
+          <p className="mt-4 text-sm" style={{ color: 'var(--text-muted)' }}>
+            No hay empresas cargadas. Ejecutá el seed o cargá una empresa antes de consultar reportes.
+          </p>
+        ) : (
+          <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2">
+            {companies.map((company) => (
+              <a
+                key={company.id}
+                href={`/reports?companyId=${company.id}`}
+                className="rounded-lg border px-4 py-3 text-sm transition-colors hover:border-emerald-500"
+                style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+              >
+                <span className="block font-medium">{company.nombreFantasia || company.razonSocial}</span>
+                <span className="mt-1 block text-xs" style={{ color: 'var(--text-muted)' }}>{company.cuit}</span>
+              </a>
+            ))}
+          </div>
+        )}
+      </CompanyRequiredMessage>
+    );
   }
   const suffix = companyId ? `?companyId=${companyId}` : '';
   const requestSuffix = companyId ? `&companyId=${companyId}` : '';

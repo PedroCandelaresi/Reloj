@@ -204,13 +204,18 @@ export class AttendanceService {
     userId?: string;
     dateFrom?: string;
     dateTo?: string;
+    companyId?: string;
   }) {
-    const { page, limit, user, userId, dateFrom, dateTo } = opts;
+    const { page, limit, user, userId, dateFrom, dateTo, companyId } = opts;
     const qb = this.repo
       .createQueryBuilder('r')
       .leftJoinAndMapOne('r.employee', Employee, 'e', 'e.id = r.user_id');
 
-    this.applyCompanyScope(qb, user);
+    if (user.isSuperAdmin && companyId) {
+      qb.andWhere('r.company_id = :companyId', { companyId });
+    } else {
+      this.applyCompanyScope(qb, user);
+    }
 
     if (userId) {
       qb.andWhere('r.user_id = :userId', { userId });
