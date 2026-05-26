@@ -3,6 +3,17 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const API = process.env.API_URL || 'http://localhost:4370';
 
+function extractUpstreamMessage(body: string) {
+  if (!body) return 'No se pudo descargar el adjunto.';
+  try {
+    const payload = JSON.parse(body) as { message?: string | string[]; error?: string };
+    if (Array.isArray(payload.message)) return payload.message.join(', ');
+    return payload.message || payload.error || body;
+  } catch {
+    return body;
+  }
+}
+
 export async function GET(
   _req: NextRequest,
   { params }: { params: { id: string; attachmentId: string } },
@@ -19,8 +30,11 @@ export async function GET(
   });
 
   if (!upstream.ok) {
-    const message = await upstream.text();
-    return NextResponse.json({ error: message || 'No se pudo descargar el adjunto.' }, { status: upstream.status });
+    const message = extractUpstreamMessage(await upstream.text());
+    return new NextResponse(message, {
+      status: upstream.status,
+      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+    });
   }
 
   const buffer = await upstream.arrayBuffer();

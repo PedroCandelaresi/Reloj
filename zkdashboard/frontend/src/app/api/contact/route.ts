@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     if (payload.company) {
       return NextResponse.json({
         success: true,
-        message: 'Recibimos tu mensaje. Si querés, continuamos por WhatsApp.',
+        message: 'Para confirmar la consulta, continuá por WhatsApp.',
         whatsappUrl,
       });
     }
@@ -46,7 +46,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      message: 'Consulta enviada correctamente. También podés continuar por WhatsApp.',
+      message: 'Consulta preparada. Continuá por WhatsApp para confirmar el envío.',
       whatsappUrl,
     });
   } catch (error) {

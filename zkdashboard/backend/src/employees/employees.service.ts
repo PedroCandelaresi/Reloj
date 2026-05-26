@@ -195,6 +195,12 @@ export class EmployeesService {
         : user.isSuperAdmin
           ? employee.companyId
           : this.resolveWritableCompanyId(undefined, user);
+    const before = {
+      scheduleProfileId: employee.scheduleProfileId,
+      departmentId: employee.departmentId,
+      positionId: employee.positionId,
+      isActive: employee.isActive,
+    };
 
     if (dto.nombre !== undefined) employee.nombre = dto.nombre;
     if (dto.apellido !== undefined) employee.apellido = dto.apellido;
@@ -227,13 +233,6 @@ export class EmployeesService {
     } else if (dto.inactiveReason !== undefined) {
       employee.inactiveReason = dto.inactiveReason;
     }
-    const before = {
-      scheduleProfileId: employee.scheduleProfileId,
-      departmentId: employee.departmentId,
-      positionId: employee.positionId,
-      isActive: employee.isActive,
-    };
-
     if (
       dto.companyId !== undefined ||
       (!user.isSuperAdmin && employee.companyId !== resolvedCompanyId)

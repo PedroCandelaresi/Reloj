@@ -25,7 +25,7 @@ export default async function EmployeesWithoutPunchesPage({ searchParams }: Page
   const params = { dateFrom, dateTo, employeeId, departmentId, positionId, includeInactive, companyId };
   const [rows, userOptions, departments, positions] = await Promise.all([
     getEmployeesWithoutPunchesReport(params),
-    getDistinctUsers(),
+    getDistinctUsers(companyId ? { companyId } : {}),
     getDepartments(companyId ? { companyId } : {}).catch(() => []),
     getPositions(companyId ? { companyId } : {}).catch(() => []),
   ]);

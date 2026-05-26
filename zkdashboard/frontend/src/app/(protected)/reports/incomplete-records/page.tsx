@@ -34,10 +34,10 @@ export default async function IncompleteRecordsPage({ searchParams }: PageProps)
   const employeeId = sp.employeeId || '';
   const deviceId = sp.deviceId || '';
   const params = { dateFrom, dateTo, employeeId, deviceId, companyId };
-  const canCreateRequests = user.isSuperAdmin || user.companyRole === 'company_admin' || user.companyRole === 'operator';
+  const canCreateRequests = user.isSuperAdmin || user.companyRole === 'company_admin';
   const [rows, userOptions, devices] = await Promise.all([
     getIncompleteRecordsReport(params),
-    getDistinctUsers(),
+    getDistinctUsers(companyId ? { companyId } : {}),
     getDevices(),
   ]);
 

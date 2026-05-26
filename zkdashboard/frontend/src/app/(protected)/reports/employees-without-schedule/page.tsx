@@ -19,7 +19,7 @@ export default async function EmployeesWithoutSchedulePage({ searchParams }: Pag
     return <CompanyRequiredMessage reportName="Empleados sin horario" />;
   }
   const params = { employeeId, departmentId, positionId, includeInactive, companyId };
-  const [rows, userOptions] = await Promise.all([getEmployeesWithoutScheduleReport(params), getDistinctUsers()]);
+  const [rows, userOptions] = await Promise.all([getEmployeesWithoutScheduleReport(params), getDistinctUsers(companyId ? { companyId } : {})]);
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 pt-32">
@@ -57,6 +57,8 @@ function EmployeeFilter({
   companyId: string;
   userOptions: Awaited<ReturnType<typeof getDistinctUsers>>;
 }) {
+  const clearHref = companyId ? `${action}?companyId=${encodeURIComponent(companyId)}` : action;
+
   return (
     <form method="get" action={action} className="card mb-6 flex flex-wrap items-end gap-4 rounded-xl p-4">
       {companyId && <input type="hidden" name="companyId" value={companyId} />}
@@ -75,7 +77,7 @@ function EmployeeFilter({
         </select>
       </div>
       <button type="submit" className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white transition-colors hover:bg-blue-700">Filtrar</button>
-      <Link href={action} className="rounded-lg px-4 py-2 text-sm transition-colors" style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
+      <Link href={clearHref} className="rounded-lg px-4 py-2 text-sm transition-colors" style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
         Limpiar
       </Link>
     </form>

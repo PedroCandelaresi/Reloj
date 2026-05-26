@@ -1363,8 +1363,8 @@ export function deleteCompanyUser(userId: number) {
   });
 }
 
-export function getDistinctUsers() {
-  return apiFetch<AttendanceUserOption[]>('/attendance/users');
+export function getDistinctUsers(params: { companyId?: string } = {}) {
+  return apiFetch<AttendanceUserOption[]>(`/attendance/users${buildReportQuery(params)}`);
 }
 
 export function getEmployees(params: {

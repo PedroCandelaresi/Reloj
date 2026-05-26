@@ -24,10 +24,10 @@ export default async function AbsencesPage({ searchParams }: PageProps) {
   const includeInactive = sp.includeInactive || '';
   const justification = sp.justification || 'all';
   const params = { dateFrom, dateTo, employeeId, departmentId, positionId, includeInactive, justification, companyId };
-  const canCreateRequests = user.isSuperAdmin || user.companyRole === 'company_admin' || user.companyRole === 'operator';
+  const canCreateRequests = user.isSuperAdmin || user.companyRole === 'company_admin';
   const [rows, userOptions, departments, positions] = await Promise.all([
     getAbsencesReport(params),
-    getDistinctUsers(),
+    getDistinctUsers(companyId ? { companyId } : {}),
     getDepartments(companyId ? { companyId } : {}).catch(() => []),
     getPositions(companyId ? { companyId } : {}).catch(() => []),
   ]);

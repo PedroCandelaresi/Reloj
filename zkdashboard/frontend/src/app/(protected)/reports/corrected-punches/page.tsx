@@ -20,7 +20,7 @@ export default async function CorrectedPunchesPage({ searchParams }: PageProps) 
     return <CompanyRequiredMessage reportName="Fichadas corregidas" />;
   }
   const params = { dateFrom, dateTo, employeeId, companyId };
-  const [rows, userOptions] = await Promise.all([getCorrectedPunchesReport(params), getDistinctUsers()]);
+  const [rows, userOptions] = await Promise.all([getCorrectedPunchesReport(params), getDistinctUsers(companyId ? { companyId } : {})]);
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 pt-32">

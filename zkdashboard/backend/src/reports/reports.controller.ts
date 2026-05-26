@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Res, UseGuards } from '@nestjs/common';
+import { BadRequestException, Controller, Get, Query, Res, UseGuards } from '@nestjs/common';
 import { Response } from 'express';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/auth.guard';
@@ -34,6 +34,7 @@ export class ReportsController {
   ) {
     const rows = await this.dailyPresence.getReport(filters, user);
     if (filters.format === 'excel') {
+      this.assertRowsForExport(rows);
       this.sendExcel(res, await this.excel.dailyPresence(rows), 'presencia-diaria.xlsx');
       return;
     }
@@ -49,6 +50,7 @@ export class ReportsController {
   ) {
     const rows = await this.incompleteRecords.getReport(filters, user);
     if (filters.format === 'excel') {
+      this.assertRowsForExport(rows);
       this.sendExcel(res, await this.excel.incompleteRecords(rows), 'fichadas-incompletas.xlsx');
       return;
     }
@@ -64,6 +66,12 @@ export class ReportsController {
   ) {
     const report = await this.monthlySummary.getReport(filters, user);
     if (filters.format === 'excel') {
+      this.assertRowsForExport(report.rows);
+      if (report.source === 'summaries' && report.coverage.isPartial) {
+        throw new BadRequestException(
+          'El período tiene resúmenes parciales. Recalculá el mes completo antes de exportar.',
+        );
+      }
       this.sendExcel(res, await this.excel.monthlySummary(report), 'resumen-mensual.xlsx');
       return;
     }
@@ -80,6 +88,12 @@ export class ReportsController {
     res.send(buffer);
   }
 
+  private assertRowsForExport(rows: unknown[]): void {
+    if (rows.length === 0) {
+      throw new BadRequestException('No existen datos suficientes para exportar.');
+    }
+  }
+
   @Get('late-arrivals')
   async getLateArrivals(
     @Query() filters: ReportFiltersDto,
@@ -88,6 +102,7 @@ export class ReportsController {
   ) {
     const rows = await this.phase2.lateArrivals(filters, user);
     if (filters.format === 'excel') {
+      this.assertRowsForExport(rows);
       this.sendExcel(res, await this.excel.phase2Rows('Tardanzas', rows), 'tardanzas.xlsx');
       return;
     }
@@ -102,6 +117,7 @@ export class ReportsController {
   ) {
     const rows = await this.phase2.earlyDepartures(filters, user);
     if (filters.format === 'excel') {
+      this.assertRowsForExport(rows);
       this.sendExcel(res, await this.excel.phase2Rows('Salidas tempranas', rows), 'salidas-tempranas.xlsx');
       return;
     }
@@ -116,6 +132,7 @@ export class ReportsController {
   ) {
     const rows = await this.phase2.absences(filters, user);
     if (filters.format === 'excel') {
+      this.assertRowsForExport(rows);
       this.sendExcel(res, await this.excel.phase2Rows('Ausencias', rows), 'ausencias.xlsx');
       return;
     }
@@ -130,6 +147,7 @@ export class ReportsController {
   ) {
     const rows = await this.phase2.workedHours(filters, user);
     if (filters.format === 'excel') {
+      this.assertRowsForExport(rows);
       this.sendExcel(res, await this.excel.phase2Rows('Horas trabajadas', rows), 'horas-trabajadas-resumen.xlsx');
       return;
     }
@@ -144,6 +162,7 @@ export class ReportsController {
   ) {
     const rows = await this.hrControl.manualPunches(filters, user);
     if (filters.format === 'excel') {
+      this.assertRowsForExport(rows);
       this.sendExcel(res, await this.excel.manualPunches(rows), 'fichadas-manuales.xlsx');
       return;
     }
@@ -158,6 +177,7 @@ export class ReportsController {
   ) {
     const rows = await this.hrControl.correctedPunches(filters, user);
     if (filters.format === 'excel') {
+      this.assertRowsForExport(rows);
       this.sendExcel(res, await this.excel.correctedPunches(rows), 'fichadas-corregidas.xlsx');
       return;
     }
@@ -172,6 +192,7 @@ export class ReportsController {
   ) {
     const rows = await this.hrControl.employeesWithoutSchedule(filters, user);
     if (filters.format === 'excel') {
+      this.assertRowsForExport(rows);
       this.sendExcel(res, await this.excel.employeesWithoutSchedule(rows), 'empleados-sin-horario.xlsx');
       return;
     }
@@ -186,6 +207,7 @@ export class ReportsController {
   ) {
     const rows = await this.hrControl.employeesWithoutPunches(filters, user);
     if (filters.format === 'excel') {
+      this.assertRowsForExport(rows);
       this.sendExcel(res, await this.excel.employeesWithoutPunches(rows), 'empleados-sin-fichadas.xlsx');
       return;
     }
@@ -200,6 +222,12 @@ export class ReportsController {
   ) {
     const report = await this.monthlyClosing.getReport(filters, user);
     if (filters.format === 'excel') {
+      this.assertRowsForExport(report.rows);
+      if (!report.coverage.isComplete) {
+        throw new BadRequestException(
+          'El cierre mensual tiene resúmenes incompletos. Recalculá el mes completo antes de exportar.',
+        );
+      }
       this.sendExcel(res, await this.excel.monthlyClosing(report), 'cierre-mensual.xlsx');
       return;
     }

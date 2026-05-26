@@ -7,6 +7,7 @@ import { AuthenticatedUser } from '../auth/authenticated-user.interface';
 import { getCompanyScope } from '../auth/company-scope.util';
 import { DevicesService } from '../devices/devices.service';
 import { InboundRequest } from '../adms/inbound-request.entity';
+import { parseArgentinaDateEnd, parseArgentinaDateStart } from '../reports/utils/argentina-date.util';
 
 export interface AttendanceUserOption {
   userId: string;
@@ -215,12 +216,10 @@ export class AttendanceService {
       qb.andWhere('r.user_id = :userId', { userId });
     }
     if (dateFrom) {
-      qb.andWhere('r.timestamp >= :dateFrom', { dateFrom: new Date(dateFrom) });
+      qb.andWhere('r.timestamp >= :dateFrom', { dateFrom: parseArgentinaDateStart(dateFrom) });
     }
     if (dateTo) {
-      const to = new Date(dateTo);
-      to.setDate(to.getDate() + 1);
-      qb.andWhere('r.timestamp < :dateTo', { dateTo: to });
+      qb.andWhere('r.timestamp <= :dateTo', { dateTo: parseArgentinaDateEnd(dateTo) });
     }
 
     qb.orderBy('r.timestamp', 'DESC');
@@ -230,7 +229,7 @@ export class AttendanceService {
     return { data, total, page, limit, pages: Math.ceil(total / limit) };
   }
 
-  async getDistinctUsers(user: AuthenticatedUser): Promise<AttendanceUserOption[]> {
+  async getDistinctUsers(user: AuthenticatedUser, requestedCompanyId?: string): Promise<AttendanceUserOption[]> {
     const qb = this.repo
       .createQueryBuilder('r')
       .leftJoin(Employee, 'e', 'e.id = r.user_id')
@@ -246,7 +245,11 @@ export class AttendanceService {
       .addOrderBy('e.nombre', 'ASC', 'NULLS LAST')
       .addOrderBy('r.user_id', 'ASC');
 
-    this.applyCompanyScope(qb, user);
+    if (user.isSuperAdmin && requestedCompanyId) {
+      qb.andWhere('r.company_id = :companyId', { companyId: requestedCompanyId });
+    } else {
+      this.applyCompanyScope(qb, user);
+    }
 
     const rows = await qb.getRawMany();
 

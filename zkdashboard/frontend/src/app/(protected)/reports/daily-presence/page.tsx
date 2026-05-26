@@ -36,7 +36,7 @@ export default async function DailyPresencePage({ searchParams }: PageProps) {
   const params = { dateFrom, dateTo, employeeId, deviceId, companyId };
   const [rows, userOptions, devices] = await Promise.all([
     getDailyPresenceReport(params),
-    getDistinctUsers(),
+    getDistinctUsers(companyId ? { companyId } : {}),
     getDevices(),
   ]);
 

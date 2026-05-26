@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import * as ExcelJS from 'exceljs';
@@ -9,6 +9,7 @@ import { Company } from '../companies/company.entity';
 import { ScheduleProfile } from '../companies/schedule-profile.entity';
 import { AuthenticatedUser } from '../auth/authenticated-user.interface';
 import { getCompanyScope } from '../auth/company-scope.util';
+import { parseArgentinaDateEnd, parseArgentinaDateStart } from '../reports/utils/argentina-date.util';
 
 const STATUS_LABELS: Record<number, string> = {
   0: 'Entrada',
@@ -54,12 +55,9 @@ function fmtDate(date: Date | string): string {
 }
 
 function fmtDateOnly(date: string): string {
-  return new Date(date).toLocaleDateString('es-AR', {
-    timeZone: TZ,
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
+  const [year, month, day] = date.split('-');
+  if (year && month && day) return `${day}/${month}/${year}`;
+  return date;
 }
 
 @Injectable()
@@ -88,13 +86,15 @@ export class ExportService {
     }
 
     if (opts.userId) qb.andWhere('r.user_id = :userId', { userId: opts.userId });
-    if (opts.dateFrom) qb.andWhere('r.timestamp >= :df', { df: new Date(opts.dateFrom) });
-    if (opts.dateTo) {
-      const to = new Date(opts.dateTo);
-      to.setDate(to.getDate() + 1);
-      qb.andWhere('r.timestamp < :dt', { dt: to });
-    }
+    if (opts.dateFrom) qb.andWhere('r.timestamp >= :df', { df: parseArgentinaDateStart(opts.dateFrom) });
+    if (opts.dateTo) qb.andWhere('r.timestamp <= :dt', { dt: parseArgentinaDateEnd(opts.dateTo) });
     return qb.orderBy('r.timestamp', 'ASC').getMany();
+  }
+
+  private assertRecordsForExport(rows: unknown[]): void {
+    if (rows.length === 0) {
+      throw new BadRequestException('No existen datos suficientes para exportar.');
+    }
   }
 
   private buildExportSummary(
@@ -308,6 +308,7 @@ export class ExportService {
     dateTo?: string;
   }, user: AuthenticatedUser): Promise<Buffer> {
     const records = await this.getFiltered(opts, user);
+    this.assertRecordsForExport(records);
     const generatedAt = new Date();
 
     const wb = new ExcelJS.Workbook();
@@ -407,6 +408,7 @@ export class ExportService {
     dateTo?: string;
   }, user: AuthenticatedUser): Promise<Buffer> {
     const records = await this.getFiltered(opts, user);
+    this.assertRecordsForExport(records);
     const generatedAt = new Date();
 
     return new Promise<Buffer>((resolve, reject) => {
@@ -453,6 +455,7 @@ export class ExportService {
     dateTo?: string;
   }, user: AuthenticatedUser): Promise<Buffer> {
     const rows = await this.buildHoursRows(opts, user);
+    this.assertRecordsForExport(rows);
     const generatedAt = new Date();
     const wb = new ExcelJS.Workbook();
     const ws = wb.addWorksheet('Horas trabajadas', {
@@ -524,6 +527,7 @@ export class ExportService {
     dateTo?: string;
   }, user: AuthenticatedUser): Promise<Buffer> {
     const rows = await this.buildHoursRows(opts, user);
+    this.assertRecordsForExport(rows);
     const generatedAt = new Date();
 
     return new Promise<Buffer>((resolve, reject) => {

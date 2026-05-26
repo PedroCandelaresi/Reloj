@@ -49,7 +49,7 @@ export default async function AttendanceRequestsPage({ searchParams }: PageProps
   const [requestsResult, auditLogsResult, userOptionsResult, justificationTypesResult] = await Promise.allSettled([
     getAttendanceRequests(params),
     getAttendanceAuditLog({ dateFrom: params.dateFrom, dateTo: params.dateTo, employeeId: params.employeeId, companyId: params.companyId }),
-    getDistinctUsers(),
+    getDistinctUsers(companyId ? { companyId } : {}),
     getAttendanceJustificationTypes({ companyId: params.companyId }),
   ]);
   const requests = requestsResult.status === 'fulfilled' ? requestsResult.value : [];

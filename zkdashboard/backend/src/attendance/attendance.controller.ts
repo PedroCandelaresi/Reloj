@@ -48,8 +48,11 @@ export class AttendanceController {
   }
 
   @Get('users')
-  getUsers(@CurrentUser() user: AuthenticatedUser) {
-    return this.attendance.getDistinctUsers(user);
+  getUsers(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query('companyId') companyId: string | undefined,
+  ) {
+    return this.attendance.getDistinctUsers(user, companyId);
   }
 
   @Get('devices')

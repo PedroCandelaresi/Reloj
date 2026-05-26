@@ -20,7 +20,7 @@ export default async function EarlyDeparturesPage({ searchParams }: PageProps) {
   const dateTo = sp.dateTo || dateFrom;
   const employeeId = sp.employeeId || '';
   const params = { dateFrom, dateTo, employeeId, companyId };
-  const [rows, userOptions] = await Promise.all([getEarlyDeparturesReport(params), getDistinctUsers()]);
+  const [rows, userOptions] = await Promise.all([getEarlyDeparturesReport(params), getDistinctUsers(companyId ? { companyId } : {})]);
   const exportParams = { dateFrom, dateTo, employeeId, companyId };
 
   return (

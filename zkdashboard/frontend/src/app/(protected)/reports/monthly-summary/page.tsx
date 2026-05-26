@@ -45,7 +45,7 @@ export default async function MonthlySummaryPage({ searchParams }: PageProps) {
   const dateTo = `${year}-${paddedMonth}-${String(new Date(Number(year), Number(month), 0).getDate()).padStart(2, '0')}`;
   const [report, userOptions, departments, positions] = await Promise.all([
     getMonthlySummaryReport(params),
-    getDistinctUsers(),
+    getDistinctUsers(companyId ? { companyId } : {}),
     getDepartments(companyId ? { companyId } : {}).catch(() => []),
     getPositions(companyId ? { companyId } : {}).catch(() => []),
   ]);

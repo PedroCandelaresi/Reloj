@@ -165,6 +165,7 @@ export class AttendanceRequestsService {
     });
 
     if (this.isJustification(saved.type)) {
+      await this.ensureSummaryForJustification(saved);
       await this.markSummaryJustification(saved, 'pending', user.id, false);
     }
 
@@ -384,6 +385,13 @@ export class AttendanceRequestsService {
       throw new NotFoundException('Adjunto no encontrado.');
     }
     this.safeResolve(this.attachmentsBaseDir(), path.relative(this.attachmentsBaseDir(), attachment.storagePath));
+    try {
+      await fs.access(attachment.storagePath);
+    } catch {
+      throw new NotFoundException(
+        'El archivo físico del adjunto no existe. Puede haber sido eliminado o no estar montado en el almacenamiento del servidor.',
+      );
+    }
     return attachment;
   }
 
@@ -583,9 +591,27 @@ export class AttendanceRequestsService {
     }
   }
 
+  private async ensureSummaryForJustification(request: AttendanceRequest): Promise<void> {
+    const summary = await this.summariesRepo.findOneBy({
+      companyId: request.companyId,
+      employeeId: request.employeeId,
+      date: request.date,
+    });
+    if (summary) return;
+
+    await this.calculations.calculateEmployeeDay(
+      request.companyId,
+      request.employeeId,
+      request.date,
+    );
+  }
+
   private validateCreatePayload(dto: CreateAttendanceRequestDto): void {
     if (dto.type === 'manual_punch' && !dto.punchTime) {
       throw new BadRequestException('punchTime es requerido para fichada manual.');
+    }
+    if (dto.type === 'manual_punch' && dto.punchTime && !this.isCompleteLocalDateTime(dto.punchTime)) {
+      throw new BadRequestException('La fichada manual requiere fecha y hora completas.');
     }
     if (dto.type === 'punch_correction') {
       if (!dto.targetAttendanceRecordId) {
@@ -594,7 +620,14 @@ export class AttendanceRequestsService {
       if (!dto.newPunchTime) {
         throw new BadRequestException('newPunchTime es requerido para corrección.');
       }
+      if (!this.isCompleteLocalDateTime(dto.newPunchTime)) {
+        throw new BadRequestException('La corrección requiere fecha y hora completas.');
+      }
     }
+  }
+
+  private isCompleteLocalDateTime(value: string): boolean {
+    return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/.test(value);
   }
 
   private resolveReadableScope(

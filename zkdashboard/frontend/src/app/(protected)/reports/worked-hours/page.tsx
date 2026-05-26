@@ -25,7 +25,7 @@ export default async function WorkedHoursPage({ searchParams }: PageProps) {
   const params = { dateFrom, dateTo, employeeId, departmentId, positionId, includeInactive, companyId };
   const [rows, userOptions, departments, positions] = await Promise.all([
     getWorkedHoursReport(params),
-    getDistinctUsers(),
+    getDistinctUsers(companyId ? { companyId } : {}),
     getDepartments(companyId ? { companyId } : {}).catch(() => []),
     getPositions(companyId ? { companyId } : {}).catch(() => []),
   ]);

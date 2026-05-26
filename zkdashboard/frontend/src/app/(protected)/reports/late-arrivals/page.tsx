@@ -25,10 +25,10 @@ export default async function LateArrivalsPage({ searchParams }: PageProps) {
   const justification = sp.justification || 'all';
   const minLateMinutes = sp.minLateMinutes || '';
   const params = { dateFrom, dateTo, employeeId, departmentId, positionId, includeInactive, minLateMinutes, justification, companyId };
-  const canCreateRequests = user.isSuperAdmin || user.companyRole === 'company_admin' || user.companyRole === 'operator';
+  const canCreateRequests = user.isSuperAdmin || user.companyRole === 'company_admin';
   const [rows, userOptions, departments, positions] = await Promise.all([
     getLateArrivalsReport(params),
-    getDistinctUsers(),
+    getDistinctUsers(companyId ? { companyId } : {}),
     getDepartments(companyId ? { companyId } : {}).catch(() => []),
     getPositions(companyId ? { companyId } : {}).catch(() => []),
   ]);

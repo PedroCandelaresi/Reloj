@@ -53,7 +53,7 @@ export default async function RecordsPage({ searchParams }: PageProps) {
     getDistinctUsers(),
     getDevices(),
   ]);
-  const canCreateRequests = user.isSuperAdmin || user.companyRole === 'company_admin' || user.companyRole === 'operator';
+  const canCreateRequests = user.isSuperAdmin || user.companyRole === 'company_admin';
 
   const filterBase = { userId, dateFrom, dateTo };
 
@@ -98,7 +98,7 @@ export default async function RecordsPage({ searchParams }: PageProps) {
 
         <RecordsSyncControls
           devices={devices}
-          canSync={user.isSuperAdmin || user.companyRole === 'company_admin' || user.companyRole === 'operator'}
+          canSync={user.isSuperAdmin || user.companyRole === 'company_admin'}
         />
 
         <div className="mb-6 rounded-lg border px-4 py-3 text-sm" style={{ background: 'var(--blue-soft)', borderColor: 'rgba(59,130,246,0.25)', color: 'var(--blue-text)' }}>

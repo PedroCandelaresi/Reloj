@@ -38,10 +38,10 @@ export default async function DaySummariesPage({ searchParams }: PageProps) {
   }
   const params = { dateFrom, dateTo, employeeId, companyId };
   const canRecalculate = user.companyRole === 'company_admin' || (user.isSuperAdmin && Boolean(companyId));
-  const canCreateRequests = user.isSuperAdmin || user.companyRole === 'company_admin' || user.companyRole === 'operator';
+  const canCreateRequests = user.isSuperAdmin || user.companyRole === 'company_admin';
   const [rows, userOptions] = await Promise.all([
     getAttendanceDaySummaries(params),
-    getDistinctUsers(),
+    getDistinctUsers(companyId ? { companyId } : {}),
   ]);
 
   async function recalculateAction(formData: FormData) {

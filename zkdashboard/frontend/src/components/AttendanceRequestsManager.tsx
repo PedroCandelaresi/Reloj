@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import type { ChangeEvent, FormEvent, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import {
@@ -108,6 +108,15 @@ export function AttendanceRequestsManager({
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const writable = canCreate(user);
   const reviewer = canReview(user);
+  const visibleRequestTypes = Object.entries(TYPE_LABELS).filter(
+    ([value]) => reviewer || (value !== 'manual_punch' && value !== 'punch_correction'),
+  );
+
+  useEffect(() => {
+    if (!reviewer && (form.type === 'manual_punch' || form.type === 'punch_correction')) {
+      setForm((current) => ({ ...current, type: 'absence_justification' }));
+    }
+  }, [form.type, reviewer]);
 
   const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = event.target;
@@ -134,6 +143,14 @@ export function AttendanceRequestsManager({
     }
     if (form.type === 'punch_correction') {
       if (!window.confirm('Vas a corregir una fichada existente. El cambio quedará registrado en la auditoría. ¿Continuás?')) return;
+    }
+    if (form.type === 'manual_punch' && !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(form.punchTime)) {
+      setMessage({ type: 'error', text: 'Completá fecha y hora de la fichada manual.' });
+      return;
+    }
+    if (form.type === 'punch_correction' && !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(form.newPunchTime)) {
+      setMessage({ type: 'error', text: 'Completá la nueva fecha y hora de la corrección.' });
+      return;
     }
 
     const payload: AttendanceRequestInput = {
@@ -192,9 +209,16 @@ export function AttendanceRequestsManager({
 
   const loadAttachments = (requestId: string) => {
     fetch(`/api/attendance/requests/${requestId}/attachments`)
-      .then((res) => res.ok ? res.json() : Promise.reject())
+      .then(async (res) => {
+        if (res.ok) return res.json();
+        const text = await res.text().catch(() => '');
+        throw new Error(text || 'No se pudieron cargar los adjuntos.');
+      })
       .then((data: AttendanceRequestAttachment[]) => setAttachmentsByRequest((current) => ({ ...current, [requestId]: data })))
-      .catch(() => setMessage({ type: 'error', text: 'No se pudieron cargar los adjuntos.' }));
+      .catch((error) => setMessage({
+        type: 'error',
+        text: humanizeActionError(error instanceof Error ? error.message : 'No se pudieron cargar los adjuntos.'),
+      }));
   };
 
   const deleteAttachment = (requestId: string, attachmentId: string) => {
@@ -207,6 +231,7 @@ export function AttendanceRequestsManager({
             return;
           }
           loadAttachments(requestId);
+          setMessage({ type: 'success', text: 'Adjunto eliminado.' });
           router.refresh();
         });
     });
@@ -290,7 +315,7 @@ export function AttendanceRequestsManager({
             </Field>
             <Field label="Tipo">
               <select name="type" value={form.type} onChange={handleChange} className="input-field w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                {Object.entries(TYPE_LABELS).map(([value, label]) => (
+                {visibleRequestTypes.map(([value, label]) => (
                   <option key={value} value={value}>{label}</option>
                 ))}
               </select>

@@ -54,6 +54,17 @@ const REPORTS: Record<string, { path: string; filename: string }> = {
   },
 };
 
+function extractUpstreamMessage(body: string) {
+  if (!body) return 'Error al exportar.';
+  try {
+    const payload = JSON.parse(body) as { message?: string | string[]; error?: string };
+    if (Array.isArray(payload.message)) return payload.message.join(', ');
+    return payload.message || payload.error || body;
+  } catch {
+    return body;
+  }
+}
+
 export async function GET(req: NextRequest) {
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
@@ -81,11 +92,11 @@ export async function GET(req: NextRequest) {
   });
 
   if (!upstream.ok) {
-    const message = await upstream.text();
-    return NextResponse.json(
-      { error: message || 'Error al exportar' },
-      { status: upstream.status },
-    );
+    const message = extractUpstreamMessage(await upstream.text());
+    return new NextResponse(message, {
+      status: upstream.status,
+      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+    });
   }
 
   const buffer = await upstream.arrayBuffer();

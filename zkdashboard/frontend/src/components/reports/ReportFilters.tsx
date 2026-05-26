@@ -41,8 +41,10 @@ export function ReportFilters({
   showJustificationFilter?: boolean;
   month?: string;
   year?: string;
-  mode?: 'range' | 'month';
+	mode?: 'range' | 'month';
 }) {
+  const clearHref = companyId ? `${action}?companyId=${encodeURIComponent(companyId)}` : action;
+
   return (
     <form method="get" action={action} className="card mb-6 flex flex-wrap items-end gap-4 rounded-xl p-4">
       {companyId && <input type="hidden" name="companyId" value={companyId} />}
@@ -192,7 +194,7 @@ export function ReportFilters({
         Filtrar
       </button>
       <Link
-        href={action}
+        href={clearHref}
         className="rounded-lg px-4 py-2 text-sm transition-colors"
         style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
       >
