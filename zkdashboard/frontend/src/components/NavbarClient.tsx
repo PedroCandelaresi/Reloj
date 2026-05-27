@@ -30,21 +30,6 @@ function CloseIcon() {
   );
 }
 
-function CollapseIcon({ collapsed }: { collapsed: boolean }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
-      <path
-        d={collapsed ? 'm10 7 5 5-5 5' : 'm14 7-5 5 5 5'}
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path d="M5 4v16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-    </svg>
-  );
-}
-
 function UserIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
@@ -276,16 +261,12 @@ export function NavbarClient({ user }: { user?: CurrentUserProfile | null }) {
         <button
           type="button"
           onClick={() => setIsCollapsed((value) => !value)}
-          className="absolute -right-3 top-8 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-emerald-300/25 bg-[#07140c] text-emerald-200 shadow-lg transition-colors hover:border-emerald-300/50 hover:bg-emerald-400/12"
-          aria-label={isCollapsed ? 'Expandir barra lateral' : 'Colapsar barra lateral'}
-          title={isCollapsed ? 'Expandir' : 'Colapsar'}
+          className="mb-7 flex justify-center rounded-2xl outline-none transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-emerald-400/70"
+          aria-label={isCollapsed ? 'Expandir menú' : 'Contraer menú'}
+          title={isCollapsed ? 'Expandir menú' : 'Contraer menú'}
         >
-          <CollapseIcon collapsed={isCollapsed} />
-        </button>
-
-        <Link href={logoHref} className="mb-7 flex justify-center rounded-2xl" title="Inicio">
           <SidebarLogo />
-        </Link>
+        </button>
 
         <nav className="flex flex-1 flex-col gap-1.5">
           {navigationItems.map((item) => (
