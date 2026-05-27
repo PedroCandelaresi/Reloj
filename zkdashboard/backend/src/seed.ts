@@ -59,6 +59,8 @@ const VERIFY_PREFERENCE: Record<string, number> = {
 const DEVICE_SN = 'MB360-001';
 const DEVICE_IP = '192.168.1.141';
 const DEMO_COMPANY_CUIT = '30712345678';
+const DEMO_OPERATOR_USERNAME = 'operador@demo.com';
+const DEMO_OPERATOR_PASSWORD = 'operador123';
 
 // ─── Utilidades ───────────────────────────────────────────────────────────
 
@@ -170,7 +172,46 @@ async function seed() {
     }
   }
 
-  // 4. Maestra de empleados
+  // 4. Usuario operativo demo
+  const operatorHash = await bcrypt.hash(DEMO_OPERATOR_PASSWORD, 10);
+  let operator = await userRepo.findOne({ where: { username: DEMO_OPERATOR_USERNAME } });
+  if (!operator) {
+    operator = await userRepo.save({
+      username: DEMO_OPERATOR_USERNAME,
+      email: DEMO_OPERATOR_USERNAME,
+      nombre: 'Operador',
+      apellido: 'Demo',
+      passwordHash: operatorHash,
+      isSuperAdmin: false,
+      employeeId: null,
+    });
+    console.log(`✓ Operador demo creado: usuario=${DEMO_OPERATOR_USERNAME}, contraseña=${DEMO_OPERATOR_PASSWORD}`);
+  } else {
+    operator.email = operator.email || DEMO_OPERATOR_USERNAME;
+    operator.nombre = operator.nombre || 'Operador';
+    operator.apellido = operator.apellido || 'Demo';
+    operator.passwordHash = operatorHash;
+    operator.isSuperAdmin = false;
+    operator.employeeId = null;
+    operator = await userRepo.save(operator);
+    console.log(`✓ Operador demo actualizado: usuario=${DEMO_OPERATOR_USERNAME}, contraseña=${DEMO_OPERATOR_PASSWORD}`);
+  }
+
+  const existingOperatorMembership = await membershipRepo.findOneBy({ companyId: company.id, adminUserId: operator.id });
+  if (!existingOperatorMembership) {
+    await membershipRepo.save({
+      companyId: company.id,
+      adminUserId: operator.id,
+      role: CompanyRole.OPERATOR,
+    });
+    console.log(`✓ Operador demo asociado a ${company.nombreFantasia || company.razonSocial}`);
+  } else if (existingOperatorMembership.role !== CompanyRole.OPERATOR) {
+    existingOperatorMembership.role = CompanyRole.OPERATOR;
+    await membershipRepo.save(existingOperatorMembership);
+    console.log(`✓ Operador demo reasignado con rol operator en ${company.nombreFantasia || company.razonSocial}`);
+  }
+
+  // 5. Maestra de empleados
   if ((await employeeRepo.count()) === 0) {
     await employeeRepo.save(
       EMPLOYEES.map((emp) => {
@@ -194,7 +235,7 @@ async function seed() {
     console.log(`✓ Empleados demo asociados a ${company.nombreFantasia || company.razonSocial}`);
   }
 
-  // 5. Registros de asistencia
+  // 6. Registros de asistencia
   const existing = await attRepo.count();
   if (existing > 0) {
     await attRepo
