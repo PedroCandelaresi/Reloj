@@ -10,11 +10,13 @@ export function Phase2ReportTable({
   emptyMessage,
   mode,
   canCreateRequests = false,
+  companyId = '',
 }: {
   rows: Phase2ReportRow[];
   emptyMessage: string;
   mode: 'late' | 'early' | 'absences' | 'worked';
   canCreateRequests?: boolean;
+  companyId?: string;
 }) {
   return (
     <div className="card rounded-xl">
@@ -89,11 +91,11 @@ export function Phase2ReportTable({
                   {canCreateRequests && (
                     <td className="px-6 py-4">
                       {mode === 'absences' ? (
-                        <ActionLink href={requestHref('absence_justification', row.employeeId, row.date)}>
+                        <ActionLink href={requestHref('absence_justification', row.employeeId, row.date, companyId)}>
                           Justificar ausencia
                         </ActionLink>
                       ) : mode === 'late' && row.lateMinutes > 0 ? (
-                        <ActionLink href={requestHref('late_justification', row.employeeId, row.date)}>
+                        <ActionLink href={requestHref('late_justification', row.employeeId, row.date, companyId)}>
                           Justificar tardanza
                         </ActionLink>
                       ) : (
@@ -128,7 +130,7 @@ function phase2StatusLabel(status: string) {
   }
 }
 
-function requestHref(type: string, employeeId: string, date: string) {
+function requestHref(type: string, employeeId: string, date: string, companyId?: string) {
   const qs = new URLSearchParams({
     type,
     employeeId,
@@ -137,6 +139,7 @@ function requestHref(type: string, employeeId: string, date: string) {
     dateTo: date,
     fromReport: '1',
   });
+  if (companyId) qs.set('companyId', companyId);
   return `/attendance/requests?${qs.toString()}`;
 }
 

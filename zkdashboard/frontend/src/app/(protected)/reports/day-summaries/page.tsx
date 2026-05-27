@@ -112,7 +112,7 @@ export default async function DaySummariesPage({ searchParams }: PageProps) {
           companyId={companyId}
         />
 
-        <DaySummariesTable rows={rows} canCreateRequests={canCreateRequests} />
+        <DaySummariesTable rows={rows} canCreateRequests={canCreateRequests} companyId={companyId} />
       </main>
     </>
   );
@@ -121,9 +121,11 @@ export default async function DaySummariesPage({ searchParams }: PageProps) {
 function DaySummariesTable({
   rows,
   canCreateRequests,
+  companyId,
 }: {
   rows: AttendanceDaySummary[];
   canCreateRequests: boolean;
+  companyId: string;
 }) {
   return (
     <div className="card rounded-xl">
@@ -205,7 +207,7 @@ function DaySummariesTable({
                   </td>
                   {canCreateRequests && (
                     <td className="px-6 py-4">
-                      <SummaryAction row={row} />
+                      <SummaryAction row={row} companyId={companyId} />
                     </td>
                   )}
                 </tr>
@@ -218,15 +220,15 @@ function DaySummariesTable({
   );
 }
 
-function SummaryAction({ row }: { row: AttendanceDaySummary }) {
+function SummaryAction({ row, companyId }: { row: AttendanceDaySummary; companyId: string }) {
   if (row.isAbsent || row.status === 'absent') {
-    return <ActionLink href={requestHref('absence_justification', row.employeeId, row.date)}>Justificar ausencia</ActionLink>;
+    return <ActionLink href={requestHref('absence_justification', row.employeeId, row.date, { companyId })}>Justificar ausencia</ActionLink>;
   }
   if (row.lateMinutes > 0) {
-    return <ActionLink href={requestHref('late_justification', row.employeeId, row.date)}>Justificar tardanza</ActionLink>;
+    return <ActionLink href={requestHref('late_justification', row.employeeId, row.date, { companyId })}>Justificar tardanza</ActionLink>;
   }
   if (row.hasIncompleteRecord || row.status === 'incomplete') {
-    return <ActionLink href={requestHref('manual_punch', row.employeeId, row.date, { punchType: 'out' })}>Cargar fichada</ActionLink>;
+    return <ActionLink href={requestHref('manual_punch', row.employeeId, row.date, { punchType: 'out', companyId })}>Cargar fichada</ActionLink>;
   }
   return <span className="text-xs" style={{ color: 'var(--text-muted)' }}>-</span>;
 }
@@ -241,6 +243,7 @@ function requestHref(type: string, employeeId: string, date: string, extra?: Rec
     fromReport: '1',
     ...(extra ?? {}),
   });
+  if (!qs.get('companyId')) qs.delete('companyId');
   return `/attendance/requests?${qs.toString()}`;
 }
 

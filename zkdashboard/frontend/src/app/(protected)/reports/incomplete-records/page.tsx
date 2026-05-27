@@ -64,7 +64,7 @@ export default async function IncompleteRecordsPage({ searchParams }: PageProps)
           deviceId={deviceId}
           companyId={companyId}
         />
-        <IncompleteRecordsTable rows={rows} canCreateRequests={canCreateRequests} />
+        <IncompleteRecordsTable rows={rows} canCreateRequests={canCreateRequests} companyId={companyId} />
       </main>
     </>
   );

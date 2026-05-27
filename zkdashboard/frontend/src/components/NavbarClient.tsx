@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { logout } from '@/lib/actions';
 import type { CurrentUserProfile } from '@/lib/api';
 import type { CompanyRole } from '@/lib/auth-token';
@@ -62,7 +62,13 @@ function getActiveCompanyName(user?: CurrentUserProfile | null) {
   );
 }
 
-function getNavigationItems(user?: CurrentUserProfile | null) {
+function withCompanyId(href: string, companyId?: string | null) {
+  if (!companyId) return href;
+  const separator = href.includes('?') ? '&' : '?';
+  return `${href}${separator}companyId=${encodeURIComponent(companyId)}`;
+}
+
+function getNavigationItems(user?: CurrentUserProfile | null, activeCompanyId?: string | null) {
   const commonItems = [
     { href: '/dashboard', label: 'Inicio' },
     { href: '/records', label: 'Asistencia' },
@@ -77,13 +83,26 @@ function getNavigationItems(user?: CurrentUserProfile | null) {
       : [...commonItems, { href: '/settings/holidays', label: 'Calendario' }];
   }
 
+  const adminItems = [
+    { href: withCompanyId('/admin/dashboard', activeCompanyId), label: 'Inicio' },
+    { href: activeCompanyId ? `/admin/companies?company=${encodeURIComponent(activeCompanyId)}` : '/admin/companies', label: 'Empresas' },
+    { href: withCompanyId('/admin/devices', activeCompanyId), label: 'Relojes' },
+  ];
+
+  const scopedItems = activeCompanyId
+    ? [
+        { href: withCompanyId('/records', activeCompanyId), label: 'Asistencia' },
+        { href: withCompanyId('/employees', activeCompanyId), label: 'Personal' },
+      ]
+    : [];
+
   return [
-    { href: '/admin/dashboard', label: 'Inicio' },
-    { href: '/admin/companies', label: 'Empresas' },
-    { href: '/admin/devices', label: 'Relojes' },
-    { href: '/reports', label: 'Reportes' },
-    { href: '/attendance/requests', label: 'Solicitudes' },
-    { href: '/settings/holidays', label: 'Calendario' },
+    ...adminItems,
+    ...scopedItems,
+    { href: withCompanyId('/reports', activeCompanyId), label: 'Reportes' },
+    { href: withCompanyId('/attendance/requests', activeCompanyId), label: 'Solicitudes' },
+    { href: withCompanyId('/settings/holidays', activeCompanyId), label: 'Calendario' },
+    ...(activeCompanyId ? [{ href: withCompanyId('/settings/org-structure', activeCompanyId), label: 'Configuración' }] : []),
   ];
 }
 
@@ -91,10 +110,17 @@ export function NavbarClient({ user }: { user?: CurrentUserProfile | null }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const activeCompanyId = user?.isSuperAdmin
+    ? searchParams.get('companyId') || searchParams.get('company')
+    : null;
   const displayName = formatUserName(user);
   const roleLabel = formatRoleLabel(user?.companyRole, user?.isSuperAdmin);
   const activeCompanyName = getActiveCompanyName(user);
-  const navigationItems = getNavigationItems(user);
+  const navigationItems = getNavigationItems(user, activeCompanyId);
+  const logoHref = user?.isSuperAdmin
+    ? withCompanyId('/admin/dashboard', activeCompanyId)
+    : '/dashboard';
 
   /* Navbar keeps dark bg in both themes (GNOME Adwaita headerbar style) */
   return (
@@ -111,7 +137,7 @@ export function NavbarClient({ user }: { user?: CurrentUserProfile | null }) {
         >
           {isOpen ? <CloseIcon /> : <MenuIcon />}
         </button>
-        <Link href={user?.isSuperAdmin ? '/admin/dashboard' : '/dashboard'} className="flex items-center gap-2">
+        <Link href={logoHref} className="flex items-center gap-2">
           <BrandLogo
             variant="steel"
             layout="horizontal"
@@ -123,7 +149,7 @@ export function NavbarClient({ user }: { user?: CurrentUserProfile | null }) {
       </div>
 
       {/* Desktop nav links */}
-      <div className="hidden lg:flex items-center gap-6">
+      <div className="hidden lg:flex items-center gap-3">
         {navigationItems.map((item) => {
           const active = isActivePath(pathname, item.href);
           return (
@@ -257,13 +283,15 @@ export function NavbarClient({ user }: { user?: CurrentUserProfile | null }) {
 }
 
 function isActivePath(pathname: string, href: string) {
-  if (pathname === href) {
+  const hrefPath = href.split('?')[0];
+
+  if (pathname === hrefPath) {
     return true;
   }
 
-  if (href === '/dashboard' || href === '/admin/dashboard' || href === '/settings') {
+  if (hrefPath === '/dashboard' || hrefPath === '/admin/dashboard' || hrefPath === '/settings') {
     return false;
   }
 
-  return pathname.startsWith(`${href}/`);
+  return pathname.startsWith(`${hrefPath}/`);
 }

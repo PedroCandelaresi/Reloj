@@ -58,7 +58,7 @@ export default async function AbsencesPage({ searchParams }: PageProps) {
           justification={justification}
           showJustificationFilter
         />
-        <Phase2ReportTable rows={rows} mode="absences" emptyMessage="No hay ausencias para el período seleccionado." canCreateRequests={canCreateRequests} />
+        <Phase2ReportTable rows={rows} mode="absences" emptyMessage="No hay ausencias para el período seleccionado." canCreateRequests={canCreateRequests} companyId={companyId} />
       </main>
     </>
   );

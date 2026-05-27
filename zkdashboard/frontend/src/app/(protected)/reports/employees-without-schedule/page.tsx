@@ -35,7 +35,7 @@ export default async function EmployeesWithoutSchedulePage({ searchParams }: Pag
           <p>
             Estos empleados no tienen perfil horario asignado. El sistema no calculará ausencias, tardanzas, horas esperadas ni cierre mensual hasta que se les asigne uno.
           </p>
-          <Link href="/employees" className="shrink-0 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors" style={{ background: '#b45309' }}>
+          <Link href={companyId ? `/employees?companyId=${encodeURIComponent(companyId)}` : '/employees'} className="shrink-0 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors" style={{ background: '#b45309' }}>
             Asignar perfiles desde Empleados
           </Link>
         </div>

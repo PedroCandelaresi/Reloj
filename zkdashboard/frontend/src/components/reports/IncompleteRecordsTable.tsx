@@ -5,9 +5,11 @@ import { formatReportEmployee, formatTime, reasonLabel } from './report-utils';
 export function IncompleteRecordsTable({
   rows,
   canCreateRequests = false,
+  companyId = '',
 }: {
   rows: IncompleteRecordsReportRow[];
   canCreateRequests?: boolean;
+  companyId?: string;
 }) {
   return (
     <div className="card rounded-xl">
@@ -55,7 +57,7 @@ export function IncompleteRecordsTable({
                   </td>
                   {canCreateRequests && (
                     <td className="px-6 py-4">
-                      <Link href={manualPunchHref(row)} className="font-medium" style={{ color: 'var(--brand-text)' }}>
+                      <Link href={manualPunchHref(row, companyId)} className="font-medium" style={{ color: 'var(--brand-text)' }}>
                         Cargar fichada
                       </Link>
                     </td>
@@ -70,7 +72,7 @@ export function IncompleteRecordsTable({
   );
 }
 
-function manualPunchHref(row: IncompleteRecordsReportRow) {
+function manualPunchHref(row: IncompleteRecordsReportRow, companyId?: string) {
   const qs = new URLSearchParams({
     type: 'manual_punch',
     employeeId: row.userId,
@@ -80,5 +82,6 @@ function manualPunchHref(row: IncompleteRecordsReportRow) {
     punchType: 'out',
     fromReport: '1',
   });
+  if (companyId) qs.set('companyId', companyId);
   return `/attendance/requests?${qs.toString()}`;
 }

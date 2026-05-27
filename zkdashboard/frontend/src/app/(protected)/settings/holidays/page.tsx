@@ -24,7 +24,9 @@ export default async function HolidaysPage({ searchParams }: PageProps) {
   const year = sp.year || fallback.year;
   const month = sp.month || fallback.month;
   const holidays = await getHolidays({ year, month, companyId: companyId || undefined });
-  const backHref = user.companyRole === 'company_admin' && !user.isSuperAdmin ? '/settings' : '/reports';
+  const backHref = user.companyRole === 'company_admin' && !user.isSuperAdmin
+    ? '/settings'
+    : `/reports${companyId ? `?companyId=${companyId}` : ''}`;
 
   return (
     <>

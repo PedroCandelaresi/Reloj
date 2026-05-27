@@ -15,8 +15,16 @@ function formatDate(iso?: string | null) {
   });
 }
 
-export default async function AdminDashboardPage() {
+export default async function AdminDashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ companyId?: string }>;
+}) {
   await requireSuperAdminSession();
+  const sp = await searchParams;
+  const companyId = sp.companyId || '';
+  const companyQuery = companyId ? `?company=${companyId}` : '';
+  const companyIdQuery = companyId ? `?companyId=${companyId}` : '';
   const dashboard = await getAdminDashboard();
   const { summary } = dashboard;
 
@@ -136,10 +144,10 @@ export default async function AdminDashboardPage() {
               ))}
             </div>
             <div className="mt-5 flex gap-3">
-              <Link href="/admin/companies" className="text-sm font-medium transition-colors" style={{ color: 'var(--brand-text)' }}>
+              <Link href={`/admin/companies${companyQuery}`} className="text-sm font-medium transition-colors" style={{ color: 'var(--brand-text)' }}>
                 Empresas
               </Link>
-              <Link href="/admin/devices" className="text-sm font-medium transition-colors" style={{ color: 'var(--brand-text)' }}>
+              <Link href={`/admin/devices${companyIdQuery}`} className="text-sm font-medium transition-colors" style={{ color: 'var(--brand-text)' }}>
                 Relojes
               </Link>
             </div>
