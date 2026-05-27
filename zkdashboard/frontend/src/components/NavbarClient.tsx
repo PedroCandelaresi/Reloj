@@ -55,7 +55,7 @@ function UserIcon() {
 }
 
 function NavIcon({ label }: { label: string }) {
-  const common = 'h-5 w-5';
+  const common = 'h-[22px] w-[22px]';
   switch (label) {
     case 'Inicio':
       return (
@@ -123,6 +123,17 @@ function NavIcon({ label }: { label: string }) {
         </svg>
       );
   }
+}
+
+function SidebarLogo() {
+  return (
+    <span
+      className="flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-300/20 bg-emerald-400/10 shadow-[0_0_22px_rgba(31,199,119,0.16)]"
+      aria-hidden="true"
+    >
+      <img src="/brand/conflunet-isotipo.svg" alt="" className="h-8 w-8 object-contain" />
+    </span>
+  );
 }
 
 function formatUserName(user?: CurrentUserProfile | null) {
@@ -225,7 +236,7 @@ export function NavbarClient({ user }: { user?: CurrentUserProfile | null }) {
     : '/dashboard';
 
   useEffect(() => {
-    document.documentElement.style.setProperty('--sidebar-width', isCollapsed ? '5rem' : '15rem');
+    document.documentElement.style.setProperty('--sidebar-width', isCollapsed ? '5.25rem' : '14.5rem');
   }, [isCollapsed]);
 
   return (
@@ -253,49 +264,30 @@ export function NavbarClient({ user }: { user?: CurrentUserProfile | null }) {
       </header>
 
       <aside
-        className={`fixed inset-y-0 left-0 z-40 hidden flex-col border-r py-4 text-white transition-[width,padding] duration-200 ease-out lg:flex ${isCollapsed ? 'px-3' : 'px-4'}`}
+        className={`fixed inset-y-0 left-0 z-40 hidden flex-col border-r py-5 text-white transition-[width,padding] duration-200 ease-out lg:flex ${isCollapsed ? 'px-3' : 'px-4'}`}
         style={{
-          width: 'var(--sidebar-width, 15rem)',
-          background: 'linear-gradient(180deg, rgba(4,14,9,0.92), rgba(3,18,10,0.88) 52%, rgba(5,8,8,0.92))',
-          borderColor: 'rgba(31,199,119,0.18)',
-          boxShadow: '10px 0 30px rgba(0,0,0,0.18)',
+          width: 'var(--sidebar-width, 14.5rem)',
+          background: 'linear-gradient(180deg, rgba(5,16,10,0.88), rgba(4,18,11,0.84) 52%, rgba(6,9,10,0.9))',
+          borderColor: 'rgba(31,199,119,0.16)',
+          boxShadow: '8px 0 28px rgba(0,0,0,0.16)',
           backdropFilter: 'blur(18px)',
         }}
       >
-        <div className={`mb-5 flex items-center gap-2 ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
-          <Link href={logoHref} className={`flex min-w-0 items-center rounded-2xl ${isCollapsed ? 'justify-center' : ''}`} title="Inicio">
-            <BrandLogo
-              variant="steel"
-              layout={isCollapsed ? 'horizontal' : 'horizontal'}
-              iconClassName={isCollapsed ? 'h-10 w-10' : 'h-10 w-10'}
-              wordmarkClassName={isCollapsed ? 'hidden' : 'h-8 w-32'}
-            />
-          </Link>
-          {!isCollapsed && (
-            <button
-              type="button"
-              onClick={() => setIsCollapsed(true)}
-              className="rounded-lg border border-white/10 p-2 text-slate-400 transition-colors hover:border-emerald-300/25 hover:bg-white/10 hover:text-emerald-200"
-              aria-label="Colapsar barra lateral"
-            >
-              <CollapseIcon collapsed={false} />
-            </button>
-          )}
-        </div>
+        <button
+          type="button"
+          onClick={() => setIsCollapsed((value) => !value)}
+          className="absolute -right-3 top-8 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-emerald-300/25 bg-[#07140c] text-emerald-200 shadow-lg transition-colors hover:border-emerald-300/50 hover:bg-emerald-400/12"
+          aria-label={isCollapsed ? 'Expandir barra lateral' : 'Colapsar barra lateral'}
+          title={isCollapsed ? 'Expandir' : 'Colapsar'}
+        >
+          <CollapseIcon collapsed={isCollapsed} />
+        </button>
 
-        {isCollapsed && (
-          <button
-            type="button"
-            onClick={() => setIsCollapsed(false)}
-            className="mb-4 flex h-9 w-full items-center justify-center rounded-xl border border-white/10 text-slate-400 transition-colors hover:border-emerald-300/25 hover:bg-white/10 hover:text-emerald-200"
-            aria-label="Expandir barra lateral"
-            title="Expandir"
-          >
-            <CollapseIcon collapsed />
-          </button>
-        )}
+        <Link href={logoHref} className="mb-7 flex justify-center rounded-2xl" title="Inicio">
+          <SidebarLogo />
+        </Link>
 
-        <nav className="flex flex-1 flex-col gap-1">
+        <nav className="flex flex-1 flex-col gap-1.5">
           {navigationItems.map((item) => (
             <SidebarLink
               key={item.href}
@@ -307,19 +299,19 @@ export function NavbarClient({ user }: { user?: CurrentUserProfile | null }) {
         </nav>
 
         <div className={`mt-4 border-t border-white/10 pt-3 ${isCollapsed ? 'relative' : ''}`}>
-          <div className={`mb-3 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
+          <div className={`mb-3 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between gap-2 rounded-2xl border border-white/10 bg-white/[0.03] p-2'}`}>
             <div className={`flex min-w-0 items-center ${isCollapsed ? 'justify-center' : 'gap-3'}`}>
               <button
                 type="button"
                 onClick={() => setIsProfileMenuOpen((value) => !value)}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-emerald-300/22 bg-emerald-400/10 text-xs font-semibold text-emerald-100 transition-colors hover:bg-emerald-400/18"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-emerald-300/24 bg-emerald-400/12 text-xs font-semibold text-emerald-100 transition-colors hover:bg-emerald-400/20"
                 aria-label="Abrir menú de perfil"
                 title={displayName}
               >
                 {initials}
               </button>
               {!isCollapsed && <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-slate-100">{displayName}</p>
+                <p className="truncate text-sm font-semibold text-slate-100">{displayName}</p>
                 <p className="truncate text-xs text-emerald-300/70">
                   {roleLabel}{activeCompanyName ? ` · ${activeCompanyName}` : ''}
                 </p>
@@ -398,9 +390,9 @@ function SidebarLink({
       aria-current={active ? 'page' : undefined}
       onClick={onClick}
       title={collapsed ? item.label : undefined}
-      className={`group flex items-center rounded-xl border text-sm font-medium transition-colors ${collapsed ? 'justify-center px-0 py-2.5' : 'gap-3 px-3 py-2.5'} ${
+      className={`group flex items-center rounded-2xl border text-[15px] font-medium transition-colors ${collapsed ? 'justify-center px-0 py-3' : 'gap-3.5 px-3.5 py-3'} ${
         active
-          ? 'border-emerald-300/28 bg-emerald-400/12 text-emerald-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.07)]'
+          ? 'border-emerald-300/30 bg-emerald-400/14 text-emerald-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_0_18px_rgba(31,199,119,0.10)]'
           : 'border-transparent text-slate-300 hover:border-emerald-300/18 hover:bg-white/8 hover:text-white'
       }`}
     >
