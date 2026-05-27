@@ -249,7 +249,7 @@ export function NavbarClient({ user }: { user?: CurrentUserProfile | null }) {
       </header>
 
       <aside
-        className={`fixed inset-y-0 left-0 z-40 hidden flex-col border-r py-5 text-white transition-[width,padding] duration-200 ease-out lg:flex ${isCollapsed ? 'px-3' : 'px-4'}`}
+        className="fixed inset-y-0 left-0 z-40 hidden flex-col border-r px-4 py-5 text-white transition-[width] duration-200 ease-out lg:flex"
         style={{
           width: 'var(--sidebar-width, 14.5rem)',
           background: 'linear-gradient(180deg, rgba(5,16,10,0.88), rgba(4,18,11,0.84) 52%, rgba(6,9,10,0.9))',
@@ -261,7 +261,7 @@ export function NavbarClient({ user }: { user?: CurrentUserProfile | null }) {
         <button
           type="button"
           onClick={() => setIsCollapsed((value) => !value)}
-          className="mb-7 flex justify-center rounded-2xl outline-none transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-emerald-400/70"
+          className="mb-7 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl outline-none transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-emerald-400/70"
           aria-label={isCollapsed ? 'Expandir menú' : 'Contraer menú'}
           title={isCollapsed ? 'Expandir menú' : 'Contraer menú'}
         >
