@@ -7,6 +7,7 @@
   --header-top: 16px;
   --header-control-height: 56px;
   --section-anchor-air: 12px;
+  --sidebar-width: 15rem;
 }
 
 html {
@@ -220,8 +221,9 @@ body {
 @media (min-width: 1024px) {
   .dashboard-shell > main {
     padding-top: 2rem !important;
-    padding-right: max(1.5rem, calc((100vw - 17rem - 80rem) / 2 + 1.5rem)) !important;
-    padding-left: calc(17rem + max(1.5rem, calc((100vw - 17rem - 80rem) / 2 + 1.5rem))) !important;
+    padding-right: max(1.5rem, calc((100vw - var(--sidebar-width, 15rem) - 80rem) / 2 + 1.5rem)) !important;
+    padding-left: calc(var(--sidebar-width, 15rem) + max(1.5rem, calc((100vw - var(--sidebar-width, 15rem) - 80rem) / 2 + 1.5rem))) !important;
+    transition: padding-left 200ms ease-out, padding-right 200ms ease-out;
   }
 }
 

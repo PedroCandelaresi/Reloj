@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { logout } from '@/lib/actions';
@@ -26,6 +26,21 @@ function CloseIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
       <path d="M6 6l12 12M6 18L18 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function CollapseIcon({ collapsed }: { collapsed: boolean }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4">
+      <path
+        d={collapsed ? 'm10 7 5 5-5 5' : 'm14 7-5 5 5 5'}
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d="M5 4v16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
     </svg>
   );
 }
@@ -194,6 +209,7 @@ function getNavigationItems(user?: CurrentUserProfile | null, activeCompanyId?: 
 export function NavbarClient({ user }: { user?: CurrentUserProfile | null }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const activeCompanyId = user?.isSuperAdmin
@@ -207,6 +223,10 @@ export function NavbarClient({ user }: { user?: CurrentUserProfile | null }) {
   const logoHref = user?.isSuperAdmin
     ? withCompanyId('/admin/dashboard', activeCompanyId)
     : '/dashboard';
+
+  useEffect(() => {
+    document.documentElement.style.setProperty('--sidebar-width', isCollapsed ? '5rem' : '15rem');
+  }, [isCollapsed]);
 
   return (
     <>
@@ -233,56 +253,94 @@ export function NavbarClient({ user }: { user?: CurrentUserProfile | null }) {
       </header>
 
       <aside
-        className="fixed inset-y-0 left-0 z-40 hidden flex-col border-r px-4 py-5 text-white lg:flex"
+        className={`fixed inset-y-0 left-0 z-40 hidden flex-col border-r py-4 text-white transition-[width,padding] duration-200 ease-out lg:flex ${isCollapsed ? 'px-3' : 'px-4'}`}
         style={{
-          width: '17rem',
-          background: 'linear-gradient(180deg, rgba(2,11,5,0.96), rgba(3,20,10,0.94) 48%, rgba(5,7,8,0.96))',
-          borderColor: 'rgba(31,199,119,0.22)',
-          boxShadow: '18px 0 40px rgba(0,0,0,0.22)',
+          width: 'var(--sidebar-width, 15rem)',
+          background: 'linear-gradient(180deg, rgba(4,14,9,0.92), rgba(3,18,10,0.88) 52%, rgba(5,8,8,0.92))',
+          borderColor: 'rgba(31,199,119,0.18)',
+          boxShadow: '10px 0 30px rgba(0,0,0,0.18)',
+          backdropFilter: 'blur(18px)',
         }}
       >
-        <Link href={logoHref} className="mb-7 flex items-center rounded-2xl px-1">
-          <BrandLogo
-            variant="steel"
-            layout="horizontal"
-            iconClassName="h-12 w-12"
-            wordmarkClassName="h-10 w-40"
-          />
-        </Link>
+        <div className={`mb-5 flex items-center gap-2 ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
+          <Link href={logoHref} className={`flex min-w-0 items-center rounded-2xl ${isCollapsed ? 'justify-center' : ''}`} title="Inicio">
+            <BrandLogo
+              variant="steel"
+              layout={isCollapsed ? 'horizontal' : 'horizontal'}
+              iconClassName={isCollapsed ? 'h-10 w-10' : 'h-10 w-10'}
+              wordmarkClassName={isCollapsed ? 'hidden' : 'h-8 w-32'}
+            />
+          </Link>
+          {!isCollapsed && (
+            <button
+              type="button"
+              onClick={() => setIsCollapsed(true)}
+              className="rounded-lg border border-white/10 p-2 text-slate-400 transition-colors hover:border-emerald-300/25 hover:bg-white/10 hover:text-emerald-200"
+              aria-label="Colapsar barra lateral"
+            >
+              <CollapseIcon collapsed={false} />
+            </button>
+          )}
+        </div>
 
-        <nav className="flex flex-1 flex-col gap-1.5">
+        {isCollapsed && (
+          <button
+            type="button"
+            onClick={() => setIsCollapsed(false)}
+            className="mb-4 flex h-9 w-full items-center justify-center rounded-xl border border-white/10 text-slate-400 transition-colors hover:border-emerald-300/25 hover:bg-white/10 hover:text-emerald-200"
+            aria-label="Expandir barra lateral"
+            title="Expandir"
+          >
+            <CollapseIcon collapsed />
+          </button>
+        )}
+
+        <nav className="flex flex-1 flex-col gap-1">
           {navigationItems.map((item) => (
             <SidebarLink
               key={item.href}
               item={item}
               active={isActivePath(pathname, item.href)}
+              collapsed={isCollapsed}
             />
           ))}
         </nav>
 
-        <div className="mt-5 border-t border-white/10 pt-4">
-          <div className="mb-3 flex items-center justify-between">
-            <div className="flex min-w-0 items-center gap-3">
+        <div className={`mt-4 border-t border-white/10 pt-3 ${isCollapsed ? 'relative' : ''}`}>
+          <div className={`mb-3 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
+            <div className={`flex min-w-0 items-center ${isCollapsed ? 'justify-center' : 'gap-3'}`}>
               <button
                 type="button"
                 onClick={() => setIsProfileMenuOpen((value) => !value)}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-emerald-300/25 bg-emerald-400/10 text-sm font-semibold text-emerald-100 transition-colors hover:bg-emerald-400/18"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-emerald-300/22 bg-emerald-400/10 text-xs font-semibold text-emerald-100 transition-colors hover:bg-emerald-400/18"
                 aria-label="Abrir menú de perfil"
+                title={displayName}
               >
                 {initials}
               </button>
-              <div className="min-w-0">
+              {!isCollapsed && <div className="min-w-0">
                 <p className="truncate text-sm font-medium text-slate-100">{displayName}</p>
                 <p className="truncate text-xs text-emerald-300/70">
                   {roleLabel}{activeCompanyName ? ` · ${activeCompanyName}` : ''}
                 </p>
-              </div>
+              </div>}
             </div>
-            <ThemeToggle />
+            {!isCollapsed && <ThemeToggle />}
           </div>
 
           {isProfileMenuOpen && (
-            <ProfileMenu user={user} displayName={displayName} roleLabel={roleLabel} activeCompanyName={activeCompanyName} />
+            <ProfileMenu
+              user={user}
+              displayName={displayName}
+              roleLabel={roleLabel}
+              activeCompanyName={activeCompanyName}
+              collapsed={isCollapsed}
+            />
+          )}
+          {isCollapsed && (
+            <div className="mt-2 flex justify-center">
+              <ThemeToggle />
+            </div>
           )}
         </div>
       </aside>
@@ -326,10 +384,12 @@ export function NavbarClient({ user }: { user?: CurrentUserProfile | null }) {
 function SidebarLink({
   item,
   active,
+  collapsed = false,
   onClick,
 }: {
   item: NavItem;
   active: boolean;
+  collapsed?: boolean;
   onClick?: () => void;
 }) {
   return (
@@ -337,16 +397,17 @@ function SidebarLink({
       href={item.href}
       aria-current={active ? 'page' : undefined}
       onClick={onClick}
-      className={`group flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-medium transition-colors ${
+      title={collapsed ? item.label : undefined}
+      className={`group flex items-center rounded-xl border text-sm font-medium transition-colors ${collapsed ? 'justify-center px-0 py-2.5' : 'gap-3 px-3 py-2.5'} ${
         active
-          ? 'border-emerald-300/35 bg-emerald-400/14 text-emerald-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]'
-          : 'border-transparent text-slate-300 hover:border-emerald-300/20 hover:bg-white/10 hover:text-white'
+          ? 'border-emerald-300/28 bg-emerald-400/12 text-emerald-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.07)]'
+          : 'border-transparent text-slate-300 hover:border-emerald-300/18 hover:bg-white/8 hover:text-white'
       }`}
     >
       <span className={active ? 'text-emerald-300' : 'text-slate-400 group-hover:text-emerald-300'}>
         <NavIcon label={item.label} />
       </span>
-      <span className="truncate">{item.label}</span>
+      {!collapsed && <span className="truncate">{item.label}</span>}
     </Link>
   );
 }
@@ -356,14 +417,16 @@ function ProfileMenu({
   displayName,
   roleLabel,
   activeCompanyName,
+  collapsed = false,
 }: {
   user?: CurrentUserProfile | null;
   displayName: string;
   roleLabel: string;
   activeCompanyName: string | null;
+  collapsed?: boolean;
 }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/24 p-3 shadow-xl">
+    <div className={`rounded-2xl border border-white/10 bg-black/25 p-3 shadow-xl ${collapsed ? 'absolute bottom-14 left-full ml-3 w-60' : ''}`}>
       <div className="mb-2 px-1">
         <p className="text-sm font-semibold text-slate-100">{displayName}</p>
         {user?.username && <p className="mt-1 truncate text-xs text-slate-400">@{user.username}</p>}
