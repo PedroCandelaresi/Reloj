@@ -26,7 +26,7 @@ export default async function ManualPunchesPage({ searchParams }: PageProps) {
     <main className="mx-auto max-w-7xl px-4 py-8 pt-32">
       <ReportHeader
         title="Fichadas manuales"
-        subtitle={`Marcaciones cargadas por RRHH cuando el reloj no registró la entrada o salida. ${rows.length} registro(s).`}
+        subtitle={`Uso excepcional. ${rows.length} registro(s).`}
         excelHref={exportManualPunchesReport(params)}
         reportsHref={`/reports${companyId ? `?companyId=${companyId}` : ''}`}
       />

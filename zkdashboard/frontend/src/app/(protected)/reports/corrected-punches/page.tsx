@@ -17,7 +17,7 @@ export default async function CorrectedPunchesPage({ searchParams }: PageProps) 
   const employeeId = sp.employeeId || '';
   const companyId = sp.companyId || '';
   if (user.isSuperAdmin && !companyId) {
-    return <CompanyRequiredMessage reportName="Fichadas corregidas" />;
+    return <CompanyRequiredMessage reportName="Correcciones" />;
   }
   const params = { dateFrom, dateTo, employeeId, companyId };
   const [rows, userOptions] = await Promise.all([getCorrectedPunchesReport(params), getDistinctUsers(companyId ? { companyId } : {})]);
@@ -25,8 +25,8 @@ export default async function CorrectedPunchesPage({ searchParams }: PageProps) 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 pt-32">
       <ReportHeader
-        title="Fichadas corregidas"
-        subtitle={`Cambios realizados sobre fichadas existentes, con auditoría. ${rows.length} registro(s).`}
+        title="Correcciones"
+        subtitle={`Cambios sobre fichadas. ${rows.length} registro(s).`}
         excelHref={exportCorrectedPunchesReport(params)}
         reportsHref={`/reports${companyId ? `?companyId=${companyId}` : ''}`}
       />

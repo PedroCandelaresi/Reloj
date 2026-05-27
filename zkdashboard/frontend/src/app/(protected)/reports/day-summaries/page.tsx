@@ -34,7 +34,7 @@ export default async function DaySummariesPage({ searchParams }: PageProps) {
   const employeeId = sp.employeeId || '';
   const companyId = sp.companyId || '';
   if (user.isSuperAdmin && !companyId) {
-    return <CompanyRequiredMessage reportName="Resumen diario calculado" />;
+    return <CompanyRequiredMessage reportName="Días calculados" />;
   }
   const params = { dateFrom, dateTo, employeeId, companyId };
   const canRecalculate = user.companyRole === 'company_admin' || (user.isSuperAdmin && Boolean(companyId));
@@ -75,7 +75,7 @@ export default async function DaySummariesPage({ searchParams }: PageProps) {
               ← Reportes
             </Link>
             <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
-              Resumen diario calculado
+              Días calculados
             </h1>
             <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
               {rows.length} resumen(es) para el período seleccionado

@@ -20,7 +20,7 @@ export default async function EmployeesWithoutPunchesPage({ searchParams }: Page
   const positionId = sp.positionId || '';
   const includeInactive = sp.includeInactive || '';
   if (user.isSuperAdmin && !companyId) {
-    return <CompanyRequiredMessage reportName="Empleados sin fichadas" />;
+    return <CompanyRequiredMessage reportName="Sin fichadas" />;
   }
   const params = { dateFrom, dateTo, employeeId, departmentId, positionId, includeInactive, companyId };
   const [rows, userOptions, departments, positions] = await Promise.all([
@@ -33,8 +33,8 @@ export default async function EmployeesWithoutPunchesPage({ searchParams }: Page
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 pt-32">
       <ReportHeader
-        title="Empleados sin fichadas"
-        subtitle={`Personas que no tuvieron ninguna marcación en el período seleccionado. ${rows.length} registro(s).`}
+        title="Sin fichadas"
+        subtitle={`Personas sin marcaciones. ${rows.length} registro(s).`}
         excelHref={exportEmployeesWithoutPunchesReport(params)}
         reportsHref={`/reports${companyId ? `?companyId=${companyId}` : ''}`}
       />

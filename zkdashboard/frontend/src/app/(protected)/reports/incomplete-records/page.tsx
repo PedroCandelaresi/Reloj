@@ -27,7 +27,7 @@ export default async function IncompleteRecordsPage({ searchParams }: PageProps)
   const sp = await searchParams;
   const companyId = sp.companyId || '';
   if (user.isSuperAdmin && !companyId) {
-    return <CompanyRequiredMessage reportName="Fichadas incompletas" />;
+    return <CompanyRequiredMessage reportName="Falta entrada o salida" />;
   }
   const dateFrom = sp.dateFrom || todayArgentinaDateKey();
   const dateTo = sp.dateTo || dateFrom;
@@ -47,9 +47,9 @@ export default async function IncompleteRecordsPage({ searchParams }: PageProps)
         <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
           <div>
             <Link href={`/reports${companyId ? `?companyId=${companyId}` : ''}`} className="mb-2 block text-sm font-medium" style={{ color: 'var(--brand-text)' }}>← Reportes</Link>
-            <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Fichadas incompletas</h1>
+            <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Falta entrada o salida</h1>
             <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
-              Días donde falta una entrada o salida. {rows.length} anomalía(s) para revisar.
+              Días con fichada incompleta. {rows.length} caso(s) para revisar.
             </p>
           </div>
           <ExportButtons excelHref={exportIncompleteRecordsReport(params)} />

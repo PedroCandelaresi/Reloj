@@ -16,7 +16,7 @@ export default async function EmployeesWithoutSchedulePage({ searchParams }: Pag
   const positionId = sp.positionId || '';
   const includeInactive = sp.includeInactive || '';
   if (user.isSuperAdmin && !companyId) {
-    return <CompanyRequiredMessage reportName="Empleados sin horario" />;
+    return <CompanyRequiredMessage reportName="Sin horario asignado" />;
   }
   const params = { employeeId, departmentId, positionId, includeInactive, companyId };
   const [rows, userOptions] = await Promise.all([getEmployeesWithoutScheduleReport(params), getDistinctUsers(companyId ? { companyId } : {})]);
@@ -24,8 +24,8 @@ export default async function EmployeesWithoutSchedulePage({ searchParams }: Pag
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 pt-32">
       <ReportHeader
-        title="Empleados sin perfil horario"
-        subtitle={`${rows.length} empleado(s) sin perfil horario asignado.`}
+        title="Sin horario asignado"
+        subtitle={`${rows.length} empleado(s) necesitan horario.`}
         excelHref={exportEmployeesWithoutScheduleReport(params)}
         reportsHref={`/reports${companyId ? `?companyId=${companyId}` : ''}`}
       />

@@ -14,7 +14,7 @@ export default async function LateArrivalsPage({ searchParams }: PageProps) {
   const sp = await searchParams;
   const companyId = sp.companyId || '';
   if (user.isSuperAdmin && !companyId) {
-    return <CompanyRequiredMessage reportName="Tardanzas" />;
+    return <CompanyRequiredMessage reportName="Llegadas tarde" />;
   }
   const dateFrom = sp.dateFrom || todayArgentinaDateKey();
   const dateTo = sp.dateTo || dateFrom;
@@ -37,8 +37,8 @@ export default async function LateArrivalsPage({ searchParams }: PageProps) {
     <>
       <main className="mx-auto max-w-7xl px-4 py-8 pt-32">
         <ReportHeader
-          title="Tardanzas"
-          subtitle={`Llegadas fuera del horario permitido. ${rows.length} registro(s).`}
+          title="Llegadas tarde"
+          subtitle={`Entradas después del horario. ${rows.length} registro(s).`}
           excelHref={exportLateArrivalsReport(params)}
           reportsHref={`/reports${companyId ? `?companyId=${companyId}` : ''}`}
         />
