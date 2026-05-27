@@ -113,10 +113,10 @@ function NavIcon({ label }: { label: string }) {
 function SidebarLogo() {
   return (
     <span
-      className="flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-300/20 bg-emerald-400/10 shadow-[0_0_22px_rgba(31,199,119,0.16)]"
+      className="flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-300/20 bg-emerald-400/10 text-emerald-200 shadow-[0_0_22px_rgba(31,199,119,0.16)]"
       aria-hidden="true"
     >
-      <img src="/brand/conflunet-isotipo.svg" alt="" className="h-8 w-8 object-contain" />
+      <MenuIcon />
     </span>
   );
 }

@@ -151,12 +151,12 @@ function ReportBlock({
       className="rounded-xl border p-5"
       style={{
         background: 'var(--surface)',
-        borderColor: 'rgba(31,199,119,0.45)',
-        boxShadow: '0 10px 24px rgba(0,0,0,0.08)',
+        borderColor: 'rgba(31,199,119,0.30)',
+        boxShadow: '0 8px 20px rgba(0,0,0,0.06)',
       }}
     >
       <div className="mb-4">
-        <h2 className="text-xl font-semibold" style={{ color: 'var(--brand-text)' }}>
+        <h2 className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>
           {title}
         </h2>
         <p className="mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>{subtitle}</p>
