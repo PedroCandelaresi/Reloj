@@ -18,6 +18,7 @@ export default async function EmployeesWithoutSchedulePage({ searchParams }: Pag
   if (user.isSuperAdmin && !companyId) {
     return <CompanyRequiredMessage reportName="Sin horario asignado" />;
   }
+  const canAssignProfiles = !user.isSuperAdmin && user.companyRole === 'company_admin';
   const params = { employeeId, departmentId, positionId, includeInactive, companyId };
   const [rows, userOptions] = await Promise.all([getEmployeesWithoutScheduleReport(params), getDistinctUsers(companyId ? { companyId } : {})]);
 
@@ -33,11 +34,15 @@ export default async function EmployeesWithoutSchedulePage({ searchParams }: Pag
       {rows.length > 0 && (
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border px-4 py-3 text-sm" style={{ background: 'rgba(245,158,11,0.10)', borderColor: 'rgba(245,158,11,0.35)', color: '#92400e' }}>
           <p>
-            Estos empleados no tienen perfil horario asignado. El sistema no calculará ausencias, tardanzas, horas esperadas ni cierre mensual hasta que se les asigne uno.
+            {canAssignProfiles
+              ? 'Estos empleados no tienen perfil horario asignado. Asignales uno para calcular ausencias, tardanzas, horas esperadas y cierre mensual.'
+              : 'Estos empleados no tienen perfil horario asignado. Un administrador de la empresa debe asignarlo para poder calcular asistencia y cierre mensual.'}
           </p>
-          <Link href={companyId ? `/employees?companyId=${encodeURIComponent(companyId)}` : '/employees'} className="shrink-0 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors" style={{ background: '#b45309' }}>
-            Asignar perfiles desde Empleados
-          </Link>
+          {canAssignProfiles && (
+            <Link href={companyId ? `/employees?companyId=${encodeURIComponent(companyId)}` : '/employees'} className="shrink-0 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors" style={{ background: '#b45309' }}>
+              Asignar perfiles desde Personal
+            </Link>
+          )}
         </div>
       )}
 

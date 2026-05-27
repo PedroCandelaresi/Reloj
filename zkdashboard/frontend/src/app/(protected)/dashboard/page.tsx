@@ -49,6 +49,7 @@ export default async function DashboardPage() {
     user.memberships.find((membership) => membership.companyId === user.companyId)?.company;
   const activeCompanyName =
     activeCompany?.nombreFantasia || activeCompany?.razonSocial || 'Tu empresa';
+  const canReviewRequests = user.companyRole === 'company_admin';
 
   return (
     <>
@@ -86,7 +87,11 @@ export default async function DashboardPage() {
           <ActionCard href="/records" title="Revisar asistencia" description="Ver fichadas del día y registros que requieren corrección." primary />
           <ActionCard href="/reports/absences" title="Ver ausencias" description="Detectar quién falta cuando el período ya fue calculado." />
           <ActionCard href="/reports/late-arrivals" title="Ver tardanzas" description="Controlar llegadas fuera de horario." />
-          <ActionCard href="/attendance/requests?status=pending" title="Solicitudes pendientes" description="Aprobar o rechazar justificaciones y correcciones." />
+          <ActionCard
+            href="/attendance/requests?status=pending"
+            title="Solicitudes pendientes"
+            description={canReviewRequests ? 'Aprobar o rechazar justificaciones y correcciones.' : 'Ver justificaciones y correcciones pendientes.'}
+          />
         </section>
 
         {summary.technicalNews.length > 0 && (
@@ -199,7 +204,7 @@ export default async function DashboardPage() {
 
 function StatCard({ label, value, color, hint }: { label: string; value: number; color: string; hint?: string }) {
   return (
-    <div className="card rounded-xl p-6" title={hint}>
+    <div className="card rounded-xl p-6" title={hint} style={{ borderColor: 'rgba(31,199,119,0.35)' }}>
       <p className="text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>{label}</p>
       <p className={`text-3xl font-bold ${color}`}>{value}</p>
     </div>
@@ -221,7 +226,7 @@ function ActionCard({
     <Link
       href={href}
       className="card block rounded-xl p-5 transition-colors hover:border-emerald-500"
-      style={primary ? { borderColor: 'rgba(31,199,119,0.45)' } : undefined}
+      style={{ borderColor: primary ? 'rgba(31,199,119,0.55)' : 'rgba(31,199,119,0.35)' }}
     >
       <p className="text-sm font-semibold" style={{ color: primary ? 'var(--brand-text)' : 'var(--text-primary)' }}>{title}</p>
       <p className="mt-2 text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>{description}</p>
@@ -231,7 +236,7 @@ function ActionCard({
 
 function InfoCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="card rounded-xl p-5">
+    <div className="card rounded-xl p-5" style={{ borderColor: 'rgba(31,199,119,0.35)' }}>
       <p className="text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>{label}</p>
       <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{value}</p>
     </div>

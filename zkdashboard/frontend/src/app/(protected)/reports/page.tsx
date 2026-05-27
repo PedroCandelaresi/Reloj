@@ -81,7 +81,7 @@ export default async function ReportsHubPage({
   const requestPrimary = {
     href: `/attendance/requests?status=pending${requestSuffix}`,
     title: 'Pendientes',
-    description: 'Aprobar o rechazar.',
+    description: canSeeOperationalAudit ? 'Aprobar o rechazar.' : 'Ver qué falta revisar.',
   };
   const requestLinks = [
     { href: `/attendance/requests?status=approved${requestSuffix}`, title: 'Aprobadas', description: 'Ya revisadas.' },
@@ -110,14 +110,12 @@ export default async function ReportsHubPage({
             subtitle="Qué pasó hoy"
             primary={dailyPrimary}
             links={dailyLinks}
-            emphasis
           />
           <ReportBlock
             title="Cierre Mensual"
             subtitle="Control previo a liquidación"
             primary={closingPrimary}
             links={closingLinks}
-            emphasis
           />
           <ReportBlock
             title="Personal"
@@ -130,7 +128,6 @@ export default async function ReportsHubPage({
             subtitle="Intervención humana"
             primary={requestPrimary}
             links={requestLinks}
-            emphasis
           />
         </div>
       </main>
@@ -143,25 +140,23 @@ function ReportBlock({
   subtitle,
   primary,
   links,
-  emphasis = false,
 }: {
   title: string;
   subtitle: string;
   primary: ReportLink;
   links: ReportLink[];
-  emphasis?: boolean;
 }) {
   return (
     <section
       className="rounded-xl border p-5"
       style={{
         background: 'var(--surface)',
-        borderColor: emphasis ? 'rgba(31,199,119,0.45)' : 'var(--border)',
-        boxShadow: emphasis ? '0 10px 24px rgba(0,0,0,0.08)' : 'none',
+        borderColor: 'rgba(31,199,119,0.45)',
+        boxShadow: '0 10px 24px rgba(0,0,0,0.08)',
       }}
     >
       <div className="mb-4">
-        <h2 className="text-xl font-semibold" style={{ color: emphasis ? 'var(--brand-text)' : 'var(--text-primary)' }}>
+        <h2 className="text-xl font-semibold" style={{ color: 'var(--brand-text)' }}>
           {title}
         </h2>
         <p className="mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>{subtitle}</p>
