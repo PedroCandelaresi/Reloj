@@ -74,7 +74,7 @@ export default async function RecordsPage({ searchParams }: PageProps) {
           <div>
             <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Asistencia</h1>
             <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
-              Revisá las marcaciones recibidas desde el reloj por huella, rostro, tarjeta o código.
+              Revisá las marcaciones recibidas desde el reloj por huella o rostro. La carga manual queda para casos excepcionales.
             </p>
             <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>{result.total} fichadas encontradas</p>
           </div>

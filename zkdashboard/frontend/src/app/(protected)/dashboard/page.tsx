@@ -228,7 +228,7 @@ function ActionCard({
       className="card block rounded-xl p-5 transition-colors hover:border-emerald-500"
       style={{ borderColor: primary ? 'rgba(31,199,119,0.55)' : 'rgba(31,199,119,0.35)' }}
     >
-      <p className="text-sm font-semibold" style={{ color: primary ? 'var(--brand-text)' : 'var(--text-primary)' }}>{title}</p>
+      <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{title}</p>
       <p className="mt-2 text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>{description}</p>
     </Link>
   );
