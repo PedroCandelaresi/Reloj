@@ -2,8 +2,8 @@ import { DeviceStatusPanel } from '@/components/DeviceStatusPanel';
 import { StatusBadge } from '@/components/StatusBadge';
 import {
   formatAttendanceUser,
+  formatOperationalVerifyMethod,
   getAttendanceDashboard,
-  VERIFY_LABELS,
 } from '@/lib/api';
 import { requireCurrentSession } from '@/lib/session';
 import { formatLastCommunication, getCompanyDeviceModel, getCompanyDeviceName } from '@/lib/ux-labels';
@@ -181,7 +181,7 @@ export default async function DashboardPage() {
                       <td className="px-6 py-4">
                         <StatusBadge status={r.status} label={r.devicePunchStateLabel} />
                       </td>
-                      <td className="px-6 py-4" style={{ color: 'var(--text-muted)' }}>{VERIFY_LABELS[r.verifyType] ?? r.verifyType}</td>
+                      <td className="px-6 py-4" style={{ color: 'var(--text-muted)' }}>{formatOperationalVerifyMethod(r)}</td>
                       <td className="px-6 py-4 text-xs" style={{ color: 'var(--text-muted)' }}>
                         {r.deviceId ? getCompanyDeviceName(devicesById.get(r.deviceId) ?? null) : 'Reloj sin nombre'}
                       </td>

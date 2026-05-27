@@ -4,10 +4,10 @@ import { MaskedDateInput } from '@/components/MaskedDateInput';
 import {
   formatAttendanceUser,
   formatAttendanceUserOption,
+  formatOperationalVerifyMethod,
   getDevices,
   getDistinctUsers,
   getRecords,
-  VERIFY_LABELS,
 } from '@/lib/api';
 import { requireCurrentSession } from '@/lib/session';
 import Link from 'next/link';
@@ -190,7 +190,7 @@ export default async function RecordsPage({ searchParams }: PageProps) {
                       </td>
                       <td className="px-6 py-4" style={{ color: 'var(--text-secondary)' }}>{formatDate(r.timestamp)}</td>
                       <td className="px-6 py-4"><StatusBadge status={r.status} label={r.devicePunchStateLabel} /></td>
-                      <td className="px-6 py-4" style={{ color: 'var(--text-muted)' }}>{VERIFY_LABELS[r.verifyType] ?? r.verifyType}</td>
+                      <td className="px-6 py-4" style={{ color: 'var(--text-muted)' }}>{formatOperationalVerifyMethod(r)}</td>
                       <td className="px-6 py-4 text-xs" style={{ color: 'var(--text-muted)' }}>Reloj de asistencia</td>
                       {canCreateRequests && (
                         <td className="px-6 py-4">

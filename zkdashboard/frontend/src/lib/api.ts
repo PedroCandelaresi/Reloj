@@ -1159,6 +1159,17 @@ export const VERIFY_LABELS: Record<number, string> = {
   200: 'Otro',
 };
 
+const OPERATIONAL_VERIFY_LABELS: Record<number, string> = {
+  ...VERIFY_LABELS,
+  4: 'Rostro',
+};
+
+export function formatOperationalVerifyMethod(record: Pick<AttendanceRecord, 'verifyType' | 'source'>) {
+  if (record.source === 'manual') return 'Manual (excepcional)';
+  if (record.source === 'correction') return 'Corrección';
+  return OPERATIONAL_VERIFY_LABELS[record.verifyType] ?? String(record.verifyType);
+}
+
 export function getStats() {
   return apiFetch<Stats>('/attendance/stats');
 }

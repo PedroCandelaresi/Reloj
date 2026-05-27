@@ -43,15 +43,15 @@ const EMPLOYEES = [
 // Tipo de verificación preferido por empleado (más realista que aleatorio puro)
 const VERIFY_PREFERENCE: Record<string, number> = {
   '1001': 1,  // huella
-  '1002': 4,  // rostro
+  '1002': 15, // rostro
   '1003': 1,
-  '1004': 15, // tarjeta
-  '1005': 4,
+  '1004': 15,
+  '1005': 15,
   '1006': 1,
   '1007': 15,
-  '1008': 4,
+  '1008': 15,
   '1009': 1,
-  '1010': 4,
+  '1010': 15,
   '1011': 1,
   '1012': 15,
 };
