@@ -9,9 +9,14 @@ import type { CompanyRole } from '@/lib/auth-token';
 import { BrandLogo } from './BrandLogo';
 import { ThemeToggle } from './ThemeToggle';
 
+type NavItem = {
+  href: string;
+  label: string;
+};
+
 function MenuIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6">
+    <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
       <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
     </svg>
   );
@@ -19,7 +24,7 @@ function MenuIcon() {
 
 function CloseIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6">
+    <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5">
       <path d="M6 6l12 12M6 18L18 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
     </svg>
   );
@@ -32,6 +37,77 @@ function UserIcon() {
       <path d="M5 20a7 7 0 0 1 14 0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
     </svg>
   );
+}
+
+function NavIcon({ label }: { label: string }) {
+  const common = 'h-5 w-5';
+  switch (label) {
+    case 'Inicio':
+      return (
+        <svg viewBox="0 0 24 24" fill="none" className={common}>
+          <path d="M4 11.5 12 5l8 6.5V20a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1v-8.5Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+        </svg>
+      );
+    case 'Asistencia':
+      return (
+        <svg viewBox="0 0 24 24" fill="none" className={common}>
+          <path d="M8 3v4M16 3v4M5 9h14M6 5h12a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          <path d="m8 14 2.2 2.2L16 11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      );
+    case 'Personal':
+      return (
+        <svg viewBox="0 0 24 24" fill="none" className={common}>
+          <path d="M16 19a4 4 0 0 0-8 0M12 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM19 18a3 3 0 0 0-2.5-2.95M17 7.4a2.5 2.5 0 0 1 0 4.8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        </svg>
+      );
+    case 'Solicitudes':
+      return (
+        <svg viewBox="0 0 24 24" fill="none" className={common}>
+          <path d="M8 6h10M8 12h10M8 18h6M5 6h.01M5 12h.01M5 18h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      );
+    case 'Reportes':
+      return (
+        <svg viewBox="0 0 24 24" fill="none" className={common}>
+          <path d="M5 19V5M5 19h15M9 16V9M13 16V7M17 16v-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        </svg>
+      );
+    case 'Calendario':
+      return (
+        <svg viewBox="0 0 24 24" fill="none" className={common}>
+          <path d="M8 3v4M16 3v4M5 9h14M6 5h12a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        </svg>
+      );
+    case 'Configuración':
+      return (
+        <svg viewBox="0 0 24 24" fill="none" className={common}>
+          <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" stroke="currentColor" strokeWidth="1.8" />
+          <path d="M19 13.5v-3l-2.1-.5a6.7 6.7 0 0 0-.7-1.7l1.1-1.8-2.1-2.1-1.8 1.1a6.7 6.7 0 0 0-1.7-.7L11.2 2h-3l-.5 2.1a6.7 6.7 0 0 0-1.7.7L4.2 3.7 2.1 5.8 3.2 7.6a6.7 6.7 0 0 0-.7 1.7L.5 9.8v3l2.1.5c.2.6.4 1.2.7 1.7l-1.1 1.8 2.1 2.1 1.8-1.1c.5.3 1.1.5 1.7.7l.5 2.1h3l.5-2.1c.6-.2 1.2-.4 1.7-.7l1.8 1.1 2.1-2.1-1.1-1.8c.3-.5.5-1.1.7-1.7l2-.3Z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" transform="translate(1.8 1.5) scale(.85)" />
+        </svg>
+      );
+    case 'Empresas':
+      return (
+        <svg viewBox="0 0 24 24" fill="none" className={common}>
+          <path d="M4 21V6a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v15M14 9h5a1 1 0 0 1 1 1v11M7 9h4M7 13h4M7 17h4M17 13h1M17 17h1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        </svg>
+      );
+    case 'Relojes':
+      return (
+        <svg viewBox="0 0 24 24" fill="none" className={common}>
+          <path d="M8 3h8l1 3H7l1-3ZM7 18h10l-1 3H8l-1-3ZM7 6h10v12H7V6Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+          <path d="M10 10h4M10 14h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        </svg>
+      );
+    case 'Usuarios':
+      return <UserIcon />;
+    default:
+      return (
+        <svg viewBox="0 0 24 24" fill="none" className={common}>
+          <path d="M5 12h14M12 5v14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        </svg>
+      );
+  }
 }
 
 function formatUserName(user?: CurrentUserProfile | null) {
@@ -48,6 +124,15 @@ function formatRoleLabel(role?: CompanyRole | null, isSuperAdmin?: boolean) {
     case 'read_only':     return 'Solo lectura';
     default:              return 'Usuario';
   }
+}
+
+function getInitials(name: string) {
+  return name
+    .split(/[.\s@_-]+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('') || 'U';
 }
 
 function getActiveCompanyName(user?: CurrentUserProfile | null) {
@@ -68,7 +153,7 @@ function withCompanyId(href: string, companyId?: string | null) {
   return `${href}${separator}companyId=${encodeURIComponent(companyId)}`;
 }
 
-function getNavigationItems(user?: CurrentUserProfile | null, activeCompanyId?: string | null) {
+function getNavigationItems(user?: CurrentUserProfile | null, activeCompanyId?: string | null): NavItem[] {
   const commonItems = [
     { href: '/dashboard', label: 'Inicio' },
     { href: '/records', label: 'Asistencia' },
@@ -79,7 +164,7 @@ function getNavigationItems(user?: CurrentUserProfile | null, activeCompanyId?: 
 
   if (!user?.isSuperAdmin) {
     return user?.companyRole === 'company_admin'
-      ? [...commonItems, { href: '/settings', label: 'Configuración' }, { href: '/users', label: 'Usuarios' }, { href: '/settings/holidays', label: 'Calendario' }]
+      ? [...commonItems, { href: '/settings/holidays', label: 'Calendario' }, { href: '/settings', label: 'Configuración' }, { href: '/users', label: 'Usuarios' }]
       : [...commonItems, { href: '/settings/holidays', label: 'Calendario' }];
   }
 
@@ -115,6 +200,7 @@ export function NavbarClient({ user }: { user?: CurrentUserProfile | null }) {
     ? searchParams.get('companyId') || searchParams.get('company')
     : null;
   const displayName = formatUserName(user);
+  const initials = getInitials(displayName);
   const roleLabel = formatRoleLabel(user?.companyRole, user?.isSuperAdmin);
   const activeCompanyName = getActiveCompanyName(user);
   const navigationItems = getNavigationItems(user, activeCompanyId);
@@ -122,163 +208,191 @@ export function NavbarClient({ user }: { user?: CurrentUserProfile | null }) {
     ? withCompanyId('/admin/dashboard', activeCompanyId)
     : '/dashboard';
 
-  /* Navbar keeps dark bg in both themes (GNOME Adwaita headerbar style) */
   return (
-    <nav
-      className="relative z-50 flex shrink-0 items-center justify-between px-4 py-4 text-white"
-      style={{ background: 'var(--bg-navbar)', borderBottom: '1px solid rgba(255,255,255,0.06)', boxShadow: '0 2px 12px rgba(0,0,0,0.35)' }}
-    >
-      {/* Logo + hamburger */}
-      <div className="flex items-center gap-2">
+    <>
+      <header
+        className="fixed inset-x-0 top-0 z-50 flex h-16 items-center justify-between border-b px-4 text-white lg:hidden"
+        style={{ background: 'rgba(2,11,5,0.92)', borderColor: 'rgba(31,199,119,0.18)', backdropFilter: 'blur(18px)' }}
+      >
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="lg:hidden p-2 hover:bg-white/10 rounded-md transition-colors"
+          className="rounded-lg border border-white/10 p-2 text-slate-200 transition-colors hover:bg-white/10"
           aria-label={isOpen ? 'Cerrar menú' : 'Abrir menú'}
         >
           {isOpen ? <CloseIcon /> : <MenuIcon />}
         </button>
-        <Link href={logoHref} className="flex items-center gap-2">
+        <Link href={logoHref} className="flex min-w-0 items-center">
           <BrandLogo
             variant="steel"
             layout="horizontal"
-            className="min-h-14"
-            iconClassName="h-14 w-14 -my-2"
-            wordmarkClassName="h-11 w-44 sm:w-56"
+            iconClassName="h-9 w-9"
+            wordmarkClassName="h-8 w-36"
           />
         </Link>
-      </div>
-
-      {/* Desktop nav links */}
-      <div className="hidden lg:flex items-center gap-3">
-        {navigationItems.map((item) => {
-          const active = isActivePath(pathname, item.href);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              aria-current={active ? 'page' : undefined}
-              className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
-                active
-                  ? 'border-white/14 bg-white/12 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]'
-                  : 'border-transparent text-slate-300 hover:bg-white/8 hover:text-white'
-              }`}
-            >
-              {item.label}
-            </Link>
-          );
-        })}
-      </div>
-
-      {/* Desktop right: theme toggle + user */}
-      <div className="hidden lg:flex items-center gap-2">
         <ThemeToggle />
+      </header>
 
-        <div className="text-right ml-2">
-          <span className="block text-slate-100/95 text-sm">{displayName}</span>
-          <span className="block text-[11px] text-emerald-300/70">
-            {roleLabel}{activeCompanyName ? ` · ${activeCompanyName}` : ''}
-          </span>
-        </div>
-        <button
-          type="button"
-          onClick={() => setIsProfileMenuOpen((c) => !c)}
-          className="h-10 w-10 rounded-full border border-slate-200/20 bg-white/10 hover:bg-white/15 transition-colors flex items-center justify-center"
-          aria-label="Abrir menú de perfil"
-        >
-          <UserIcon />
-        </button>
+      <aside
+        className="fixed inset-y-0 left-0 z-40 hidden flex-col border-r px-4 py-5 text-white lg:flex"
+        style={{
+          width: '17rem',
+          background: 'linear-gradient(180deg, rgba(2,11,5,0.96), rgba(3,20,10,0.94) 48%, rgba(5,7,8,0.96))',
+          borderColor: 'rgba(31,199,119,0.22)',
+          boxShadow: '18px 0 40px rgba(0,0,0,0.22)',
+        }}
+      >
+        <Link href={logoHref} className="mb-7 flex items-center rounded-2xl px-1">
+          <BrandLogo
+            variant="steel"
+            layout="horizontal"
+            iconClassName="h-12 w-12"
+            wordmarkClassName="h-10 w-40"
+          />
+        </Link>
 
-        {isProfileMenuOpen && (
-          <div className="absolute right-4 top-full mt-2 w-60 rounded-xl border overflow-hidden"
-            style={{ background: 'var(--surface)', borderColor: 'var(--border)', boxShadow: 'var(--shadow-card)' }}
-          >
-            <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--border)' }}>
-              <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{displayName}</p>
-              {user?.username && <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>@{user.username}</p>}
-              <p className="text-xs mt-2 font-medium" style={{ color: 'var(--brand-text)' }}>{roleLabel}</p>
-              {activeCompanyName && <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{activeCompanyName}</p>}
-            </div>
-            <div className="py-1">
-              <Link href="/profile" onClick={() => setIsProfileMenuOpen(false)}
-                className="block px-4 py-2.5 text-sm transition-colors hover:bg-black/5 dark:hover:bg-white/5"
-                style={{ color: 'var(--text-primary)' }}
+        <nav className="flex flex-1 flex-col gap-1.5">
+          {navigationItems.map((item) => (
+            <SidebarLink
+              key={item.href}
+              item={item}
+              active={isActivePath(pathname, item.href)}
+            />
+          ))}
+        </nav>
+
+        <div className="mt-5 border-t border-white/10 pt-4">
+          <div className="mb-3 flex items-center justify-between">
+            <div className="flex min-w-0 items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setIsProfileMenuOpen((value) => !value)}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-emerald-300/25 bg-emerald-400/10 text-sm font-semibold text-emerald-100 transition-colors hover:bg-emerald-400/18"
+                aria-label="Abrir menú de perfil"
               >
-                Mi Perfil
-              </Link>
-              <Link href="/profile/password" onClick={() => setIsProfileMenuOpen(false)}
-                className="block px-4 py-2.5 text-sm transition-colors hover:bg-black/5 dark:hover:bg-white/5"
-                style={{ color: 'var(--text-primary)' }}
-              >
-                Cambiar contraseña
-              </Link>
-              <form action={logout}>
-                <button
-                  type="submit"
-                  className="w-full text-left px-4 py-2.5 text-sm transition-colors hover:bg-red-500/10"
-                  style={{ color: 'var(--danger)' }}
-                >
-                  Cerrar sesión
-                </button>
-              </form>
+                {initials}
+              </button>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium text-slate-100">{displayName}</p>
+                <p className="truncate text-xs text-emerald-300/70">
+                  {roleLabel}{activeCompanyName ? ` · ${activeCompanyName}` : ''}
+                </p>
+              </div>
             </div>
+            <ThemeToggle />
           </div>
-        )}
-      </div>
 
-      {/* Mobile menu */}
+          {isProfileMenuOpen && (
+            <ProfileMenu user={user} displayName={displayName} roleLabel={roleLabel} activeCompanyName={activeCompanyName} />
+          )}
+        </div>
+      </aside>
+
       {isOpen && (
         <div
-          className="absolute top-full left-0 right-0 lg:hidden z-50 border-t"
-          style={{ background: 'var(--bg-navbar)', borderColor: 'rgba(255,255,255,0.08)' }}
+          className="fixed inset-x-0 top-16 z-50 border-b p-4 lg:hidden"
+          style={{ background: 'rgba(2,11,5,0.96)', borderColor: 'rgba(31,199,119,0.18)', backdropFilter: 'blur(18px)' }}
         >
-          <div className="flex flex-col p-4 gap-1">
+          <nav className="flex flex-col gap-1.5">
             {navigationItems.map((item) => (
-              <Link
+              <SidebarLink
                 key={item.href}
-                href={item.href}
-                aria-current={isActivePath(pathname, item.href) ? 'page' : undefined}
-                className={`rounded-md px-2 py-2 text-sm transition-colors ${
-                  isActivePath(pathname, item.href)
-                    ? 'bg-white/12 text-white'
-                    : 'text-slate-300 hover:bg-white/8 hover:text-white'
-                }`}
+                item={item}
+                active={isActivePath(pathname, item.href)}
                 onClick={() => setIsOpen(false)}
-              >
-                {item.label}
-              </Link>
+              />
             ))}
-            <div className="mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  <div className="h-9 w-9 rounded-full border border-slate-200/20 bg-white/10 flex items-center justify-center">
-                    <UserIcon />
-                  </div>
-                  <div>
-                    <p className="text-slate-100 text-sm font-medium">{displayName}</p>
-                    {user?.username && <p className="text-slate-400 text-xs">@{user.username}</p>}
-                    <p className="text-emerald-300/70 text-xs mt-0.5">
-                      {roleLabel}{activeCompanyName ? ` · ${activeCompanyName}` : ''}
-                    </p>
-                  </div>
-                </div>
-                <ThemeToggle />
+          </nav>
+          <div className="mt-4 border-t border-white/10 pt-4">
+            <div className="mb-3 flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-emerald-300/25 bg-emerald-400/10 text-sm font-semibold text-emerald-100">
+                {initials}
               </div>
-              <Link href="/profile" className="text-slate-300 hover:text-white text-sm block py-2 px-2 rounded-md hover:bg-white/8 transition-colors" onClick={() => setIsOpen(false)}>
-                Mi Perfil
-              </Link>
-              <Link href="/profile/password" className="text-slate-300 hover:text-white text-sm block py-2 px-2 rounded-md hover:bg-white/8 transition-colors" onClick={() => setIsOpen(false)}>
-                Cambiar contraseña
-              </Link>
-              <form action={logout}>
-                <button type="submit" className="text-sm py-2 px-2 block transition-colors" style={{ color: 'var(--danger)' }}>
-                  Cerrar sesión
-                </button>
-              </form>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium text-slate-100">{displayName}</p>
+                {user?.username && <p className="truncate text-xs text-slate-400">@{user.username}</p>}
+                <p className="truncate text-xs text-emerald-300/70">
+                  {roleLabel}{activeCompanyName ? ` · ${activeCompanyName}` : ''}
+                </p>
+              </div>
             </div>
+            <ProfileLinks onNavigate={() => setIsOpen(false)} />
           </div>
         </div>
       )}
-    </nav>
+    </>
+  );
+}
+
+function SidebarLink({
+  item,
+  active,
+  onClick,
+}: {
+  item: NavItem;
+  active: boolean;
+  onClick?: () => void;
+}) {
+  return (
+    <Link
+      href={item.href}
+      aria-current={active ? 'page' : undefined}
+      onClick={onClick}
+      className={`group flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-medium transition-colors ${
+        active
+          ? 'border-emerald-300/35 bg-emerald-400/14 text-emerald-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]'
+          : 'border-transparent text-slate-300 hover:border-emerald-300/20 hover:bg-white/10 hover:text-white'
+      }`}
+    >
+      <span className={active ? 'text-emerald-300' : 'text-slate-400 group-hover:text-emerald-300'}>
+        <NavIcon label={item.label} />
+      </span>
+      <span className="truncate">{item.label}</span>
+    </Link>
+  );
+}
+
+function ProfileMenu({
+  user,
+  displayName,
+  roleLabel,
+  activeCompanyName,
+}: {
+  user?: CurrentUserProfile | null;
+  displayName: string;
+  roleLabel: string;
+  activeCompanyName: string | null;
+}) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-black/24 p-3 shadow-xl">
+      <div className="mb-2 px-1">
+        <p className="text-sm font-semibold text-slate-100">{displayName}</p>
+        {user?.username && <p className="mt-1 truncate text-xs text-slate-400">@{user.username}</p>}
+        <p className="mt-2 text-xs font-medium text-emerald-300">{roleLabel}</p>
+        {activeCompanyName && <p className="mt-1 truncate text-xs text-slate-400">{activeCompanyName}</p>}
+      </div>
+      <ProfileLinks />
+    </div>
+  );
+}
+
+function ProfileLinks({ onNavigate }: { onNavigate?: () => void }) {
+  return (
+    <div className="space-y-1">
+      <Link href="/profile" onClick={onNavigate} className="block rounded-lg px-3 py-2 text-sm text-slate-300 transition-colors hover:bg-white/8 hover:text-white">
+        Mi Perfil
+      </Link>
+      <Link href="/profile/password" onClick={onNavigate} className="block rounded-lg px-3 py-2 text-sm text-slate-300 transition-colors hover:bg-white/8 hover:text-white">
+        Cambiar contraseña
+      </Link>
+      <form action={logout}>
+        <button
+          type="submit"
+          className="block w-full rounded-lg px-3 py-2 text-left text-sm text-red-300 transition-colors hover:bg-red-500/10"
+        >
+          Cerrar sesión
+        </button>
+      </form>
+    </div>
   );
 }
 

@@ -211,10 +211,18 @@ body {
   margin-left: 0 !important;
   margin-right: 0 !important;
   overflow-y: auto;
-  padding-top: 2rem !important;
+  padding-top: 5.5rem !important;
   padding-right: max(1rem, calc((100vw - 80rem) / 2 + 1rem)) !important;
   padding-bottom: 2rem !important;
   padding-left: max(1rem, calc((100vw - 80rem) / 2 + 1rem)) !important;
+}
+
+@media (min-width: 1024px) {
+  .dashboard-shell > main {
+    padding-top: 2rem !important;
+    padding-right: max(1.5rem, calc((100vw - 17rem - 80rem) / 2 + 1.5rem)) !important;
+    padding-left: calc(17rem + max(1.5rem, calc((100vw - 17rem - 80rem) / 2 + 1.5rem))) !important;
+  }
 }
 
 ::selection {
