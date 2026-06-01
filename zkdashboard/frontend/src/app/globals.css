@@ -218,12 +218,66 @@ body {
   padding-left: max(1rem, calc((100vw - 80rem) / 2 + 1rem)) !important;
 }
 
+.dashboard-sidebar-nav {
+  scrollbar-color: rgba(52, 211, 153, 0.4) transparent;
+  scrollbar-width: thin;
+}
+
+.dashboard-sidebar-nav::-webkit-scrollbar {
+  width: 5px;
+}
+
+.dashboard-sidebar-nav::-webkit-scrollbar-thumb {
+  background: rgba(52, 211, 153, 0.4);
+  border-radius: 999px;
+}
+
 @media (min-width: 1024px) {
   .dashboard-shell > main {
     padding-top: 2rem !important;
     padding-right: max(1.5rem, calc((100vw - var(--sidebar-width, 14.5rem) - 80rem) / 2 + 1.5rem)) !important;
     padding-left: calc(var(--sidebar-width, 14.5rem) + max(1.5rem, calc((100vw - var(--sidebar-width, 14.5rem) - 80rem) / 2 + 1.5rem))) !important;
     transition: padding-left 200ms ease-out, padding-right 200ms ease-out;
+  }
+}
+
+@media (min-width: 1024px) and (max-height: 820px) {
+  .dashboard-shell > main {
+    padding-top: 1.5rem !important;
+    padding-bottom: 1.5rem !important;
+  }
+
+  .dashboard-sidebar {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
+
+  .dashboard-sidebar-toggle {
+    margin-bottom: 0.875rem;
+  }
+
+  .dashboard-sidebar-nav {
+    gap: 0.25rem;
+  }
+
+  .dashboard-sidebar-nav svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  .dashboard-sidebar-link {
+    padding-top: 0.625rem;
+    padding-bottom: 0.625rem;
+    font-size: 0.875rem;
+  }
+
+  .dashboard-sidebar-account {
+    margin-top: 0.75rem;
+    padding-top: 0.625rem;
+  }
+
+  .dashboard-sidebar-user {
+    margin-bottom: 0.5rem;
   }
 }
 

@@ -114,7 +114,7 @@ export default async function RecordsPage({ searchParams }: PageProps) {
           <div>
             <label className="block text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Empleado</label>
             <select name="userId" defaultValue={userId}
-              className="rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="max-w-full rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
               style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
             >
               <option value="">Todos</option>

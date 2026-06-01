@@ -224,6 +224,22 @@ export function NavbarClient({ user }: { user?: CurrentUserProfile | null }) {
     document.documentElement.style.setProperty('--sidebar-width', isCollapsed ? '5.25rem' : '14.5rem');
   }, [isCollapsed]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsOpen(false);
+    };
+
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', closeOnEscape);
+
+    return () => {
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [isOpen]);
+
   return (
     <>
       <header
@@ -234,6 +250,8 @@ export function NavbarClient({ user }: { user?: CurrentUserProfile | null }) {
           onClick={() => setIsOpen(!isOpen)}
           className="rounded-lg border border-white/10 p-2 text-slate-200 transition-colors hover:bg-white/10"
           aria-label={isOpen ? 'Cerrar menú' : 'Abrir menú'}
+          aria-controls="mobile-navigation"
+          aria-expanded={isOpen}
         >
           {isOpen ? <CloseIcon /> : <MenuIcon />}
         </button>
@@ -249,7 +267,7 @@ export function NavbarClient({ user }: { user?: CurrentUserProfile | null }) {
       </header>
 
       <aside
-        className="fixed inset-y-0 left-0 z-40 hidden flex-col border-r px-4 py-5 text-white transition-[width] duration-200 ease-out lg:flex"
+        className="dashboard-sidebar fixed inset-y-0 left-0 z-40 hidden flex-col border-r px-4 py-5 text-white transition-[width] duration-200 ease-out lg:flex"
         style={{
           width: 'var(--sidebar-width, 14.5rem)',
           background: 'linear-gradient(180deg, rgba(5,16,10,0.88), rgba(4,18,11,0.84) 52%, rgba(6,9,10,0.9))',
@@ -261,14 +279,14 @@ export function NavbarClient({ user }: { user?: CurrentUserProfile | null }) {
         <button
           type="button"
           onClick={() => setIsCollapsed((value) => !value)}
-          className="mb-7 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl outline-none transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-emerald-400/70"
+          className="dashboard-sidebar-toggle mb-7 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl outline-none transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-emerald-400/70"
           aria-label={isCollapsed ? 'Expandir menú' : 'Contraer menú'}
           title={isCollapsed ? 'Expandir menú' : 'Contraer menú'}
         >
           <SidebarLogo />
         </button>
 
-        <nav className="flex flex-1 flex-col gap-1.5">
+        <nav className="dashboard-sidebar-nav flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto overscroll-contain">
           {navigationItems.map((item) => (
             <SidebarLink
               key={item.href}
@@ -279,8 +297,8 @@ export function NavbarClient({ user }: { user?: CurrentUserProfile | null }) {
           ))}
         </nav>
 
-        <div className={`mt-4 border-t border-white/10 pt-3 ${isCollapsed ? 'relative' : ''}`}>
-          <div className={`mb-3 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between gap-2 rounded-2xl border border-white/10 bg-white/[0.03] p-2'}`}>
+        <div className={`dashboard-sidebar-account mt-4 shrink-0 border-t border-white/10 pt-3 ${isCollapsed ? 'relative' : ''}`}>
+          <div className={`dashboard-sidebar-user mb-3 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between gap-2 rounded-2xl border border-white/10 bg-white/[0.03] p-2'}`}>
             <div className={`flex min-w-0 items-center ${isCollapsed ? 'justify-center' : 'gap-3'}`}>
               <button
                 type="button"
@@ -319,36 +337,46 @@ export function NavbarClient({ user }: { user?: CurrentUserProfile | null }) {
       </aside>
 
       {isOpen && (
-        <div
-          className="fixed inset-x-0 top-16 z-50 border-b p-4 lg:hidden"
-          style={{ background: 'rgba(2,11,5,0.96)', borderColor: 'rgba(31,199,119,0.18)', backdropFilter: 'blur(18px)' }}
-        >
-          <nav className="flex flex-col gap-1.5">
-            {navigationItems.map((item) => (
-              <SidebarLink
-                key={item.href}
-                item={item}
-                active={isActivePath(pathname, item.href)}
-                onClick={() => setIsOpen(false)}
-              />
-            ))}
-          </nav>
-          <div className="mt-4 border-t border-white/10 pt-4">
-            <div className="mb-3 flex items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-emerald-300/25 bg-emerald-400/10 text-sm font-semibold text-emerald-100">
-                {initials}
+        <>
+          <button
+            type="button"
+            className="fixed inset-x-0 bottom-0 top-16 z-40 bg-black/45 lg:hidden"
+            onClick={() => setIsOpen(false)}
+            aria-label="Cerrar menú"
+          />
+          <aside
+            id="mobile-navigation"
+            className="fixed bottom-0 left-0 top-16 z-50 flex w-[min(20rem,calc(100vw-2rem))] flex-col border-r p-3 text-white shadow-2xl lg:hidden"
+            style={{ background: 'rgba(2,11,5,0.98)', borderColor: 'rgba(31,199,119,0.18)', backdropFilter: 'blur(18px)' }}
+            aria-label="Navegación principal"
+          >
+            <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto overscroll-contain pr-1">
+              {navigationItems.map((item) => (
+                <SidebarLink
+                  key={item.href}
+                  item={item}
+                  active={isActivePath(pathname, item.href)}
+                  onClick={() => setIsOpen(false)}
+                />
+              ))}
+            </nav>
+            <div className="mt-3 shrink-0 border-t border-white/10 pt-3">
+              <div className="mb-2 flex items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-emerald-300/25 bg-emerald-400/10 text-sm font-semibold text-emerald-100">
+                  {initials}
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-slate-100">{displayName}</p>
+                  {user?.username && <p className="truncate text-xs text-slate-400">@{user.username}</p>}
+                  <p className="truncate text-xs text-emerald-300/70">
+                    {roleLabel}{activeCompanyName ? ` · ${activeCompanyName}` : ''}
+                  </p>
+                </div>
               </div>
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-slate-100">{displayName}</p>
-                {user?.username && <p className="truncate text-xs text-slate-400">@{user.username}</p>}
-                <p className="truncate text-xs text-emerald-300/70">
-                  {roleLabel}{activeCompanyName ? ` · ${activeCompanyName}` : ''}
-                </p>
-              </div>
+              <ProfileLinks onNavigate={() => setIsOpen(false)} />
             </div>
-            <ProfileLinks onNavigate={() => setIsOpen(false)} />
-          </div>
-        </div>
+          </aside>
+        </>
       )}
     </>
   );
@@ -371,7 +399,7 @@ function SidebarLink({
       aria-current={active ? 'page' : undefined}
       onClick={onClick}
       title={collapsed ? item.label : undefined}
-      className={`group flex items-center rounded-2xl border text-[15px] font-medium transition-colors ${collapsed ? 'justify-center px-0 py-3' : 'gap-3.5 px-3.5 py-3'} ${
+      className={`dashboard-sidebar-link group flex shrink-0 items-center rounded-2xl border text-[15px] font-medium transition-colors ${collapsed ? 'justify-center px-0 py-3' : 'gap-3.5 px-3.5 py-3'} ${
         active
           ? 'border-emerald-300/30 bg-emerald-400/14 text-emerald-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_0_18px_rgba(31,199,119,0.10)]'
           : 'border-transparent text-slate-300 hover:border-emerald-300/18 hover:bg-white/8 hover:text-white'

@@ -102,7 +102,7 @@ export function ReportFilters({
           <select
             name="employeeId"
             defaultValue={employeeId}
-            className="min-w-56 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="max-w-full min-w-56 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
             style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
           >
             <option value="">Todos</option>
@@ -137,7 +137,7 @@ export function ReportFilters({
               <select
                 name="deviceId"
                 defaultValue={deviceId}
-                className="min-w-48 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="max-w-full min-w-48 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
               >
                 <option value="">Todos</option>
@@ -156,7 +156,7 @@ export function ReportFilters({
               <select
                 name="departmentId"
                 defaultValue={departmentId}
-                className="min-w-48 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="max-w-full min-w-48 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
               >
                 <option value="">Todos</option>
@@ -175,7 +175,7 @@ export function ReportFilters({
               <select
                 name="positionId"
                 defaultValue={positionId}
-                className="min-w-48 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="max-w-full min-w-48 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
               >
                 <option value="">Todos</option>
@@ -194,7 +194,7 @@ export function ReportFilters({
               <select
                 name="justification"
                 defaultValue={justification || 'all'}
-                className="min-w-48 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="max-w-full min-w-48 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
               >
                 <option value="all">Todas</option>

@@ -518,8 +518,8 @@ export function EmployeesManagerContent({
           </div>
         </div>
 
-        <div style={{ borderTop: '1px solid var(--border)' }}>
-          <table className="w-full table-fixed text-sm">
+        <div className="overflow-x-auto" style={{ borderTop: '1px solid var(--border)' }}>
+          <table className="w-full min-w-[760px] table-fixed text-sm">
             <thead>
               <tr className="table-header-row text-xs uppercase">
                 <th className="w-[28%] px-6 py-5 text-left font-semibold">Empleado</th>
@@ -632,7 +632,7 @@ export function EmployeesManagerContent({
                   value={syncDeviceId}
                   onChange={(event) => setSyncDeviceId(event.target.value)}
                   disabled={isPending || devices.length === 0}
-                  className="min-w-[220px] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-60"
+                  className="w-full min-w-0 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-60 sm:min-w-[220px]"
                   style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text-primary)' }}
                 >
                   {devices.length === 0 ? (
@@ -671,8 +671,8 @@ export function EmployeesManagerContent({
               {isReconciliationLoading && <span>Cargando...</span>}
             </div>
 
-            <div className="mt-5 rounded-lg" style={{ border: '1px solid var(--border)' }}>
-              <table className="w-full table-fixed text-sm">
+            <div className="mt-5 overflow-x-auto rounded-lg" style={{ border: '1px solid var(--border)' }}>
+              <table className="w-full min-w-[680px] table-fixed text-sm">
                 <thead>
                   <tr className="table-header-row text-xs uppercase">
                     <th className="w-[18%] px-4 py-4 text-left font-semibold">N° de usuario</th>
