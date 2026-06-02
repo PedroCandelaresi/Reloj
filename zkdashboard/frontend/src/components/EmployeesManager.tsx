@@ -624,7 +624,7 @@ export function EmployeesManagerContent({
               <div className="min-w-0">
                 <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Comparar con usuarios del reloj</p>
                 <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                  Sirve para revisar quién está cargado en el reloj. No importa biometría ni crea empleados automáticamente.
+                  Revisá quién está cargado en el reloj. Esta consulta no modifica huellas ni crea empleados automáticamente.
                 </p>
               </div>
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center">

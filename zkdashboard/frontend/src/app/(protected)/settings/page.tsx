@@ -23,12 +23,12 @@ export default async function SettingsPage() {
         <div className="mb-6">
           <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Configuración</h1>
           <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
-            Los horarios se configuran mediante perfiles. Asigná un perfil a cada empleado para que el sistema pueda calcular tardanzas, ausencias, horas trabajadas y cierre mensual.
+            Organizá los horarios, sectores, puestos y feriados de tu empresa.
           </p>
         </div>
 
         <div className="mb-6 rounded-lg border px-4 py-3 text-sm" style={{ background: 'rgba(59,130,246,0.07)', borderColor: 'rgba(59,130,246,0.25)', color: 'var(--text-secondary)' }}>
-          Después de crear o modificar un perfil, recalculá el período en <strong>Reportes → Resúmenes diarios</strong> para que los cambios se reflejen en tardanzas, ausencias y cierre mensual.
+          Si cambiás un horario, recalculá el período desde <strong>Reportes → Resúmenes diarios</strong> para actualizar los resultados.
         </div>
 
         <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -38,7 +38,7 @@ export default async function SettingsPage() {
           >
             <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Estructura de empresa</h2>
             <p className="mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>
-              Administrá sectores/departamentos y puestos/cargos para organizar empleados y filtrar reportes.
+              Administrá sectores y puestos para organizar empleados y filtrar reportes.
             </p>
           </Link>
           <Link

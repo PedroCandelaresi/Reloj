@@ -496,10 +496,10 @@ export function AttendanceRequestsManager({
         </div>
       </section>
 
-      <section className="card rounded-xl">
-        <div className="px-6 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
-          <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Auditoría reciente</h2>
-        </div>
+      <details className="card rounded-xl">
+        <summary className="cursor-pointer px-6 py-4 font-semibold" style={{ color: 'var(--text-primary)', borderBottom: '1px solid var(--border)' }}>
+          Ver historial reciente
+        </summary>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -524,7 +524,7 @@ export function AttendanceRequestsManager({
             </tbody>
           </table>
         </div>
-      </section>
+      </details>
     </div>
   );
 }

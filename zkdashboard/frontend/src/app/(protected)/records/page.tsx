@@ -74,7 +74,7 @@ export default async function RecordsPage({ searchParams }: PageProps) {
           <div>
             <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Asistencia</h1>
             <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
-              Revisá las marcaciones recibidas desde el reloj por huella o rostro. La carga manual queda para casos excepcionales.
+              Revisá las fichadas recibidas desde el reloj. Usá los filtros para encontrar una persona o un período.
             </p>
             <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>{result.total} fichadas encontradas</p>
           </div>
@@ -105,7 +105,7 @@ export default async function RecordsPage({ searchParams }: PageProps) {
         </div>
 
         <div className="mb-6 rounded-lg border px-4 py-3 text-sm" style={{ background: 'var(--blue-soft)', borderColor: 'rgba(59,130,246,0.25)', color: 'var(--blue-text)' }}>
-          Usá esta vista para controlar marcaciones crudas. Para ausencias, tardanzas y horas trabajadas, abrí los reportes calculados.
+          Esta pantalla muestra las fichadas tal como llegaron del reloj. Para revisar ausencias, llegadas tarde u horas trabajadas, abrí Reportes.
         </div>
 
         {/* Filtros */}
@@ -146,7 +146,7 @@ export default async function RecordsPage({ searchParams }: PageProps) {
 
         <details className="mb-6">
           <summary className="cursor-pointer text-sm font-medium" style={{ color: 'var(--brand-text)' }}>
-            Sincronización y estado del reloj
+            Actualizar fichadas desde el reloj
           </summary>
           <div className="mt-4">
             <RecordsSyncControls
@@ -168,8 +168,8 @@ export default async function RecordsPage({ searchParams }: PageProps) {
                 <tr className="table-header-row text-xs uppercase">
                   <th className="px-6 py-4 text-left font-semibold">Usuario</th>
                   <th className="px-6 py-4 text-left font-semibold">Fecha y Hora</th>
-                  <th className="px-6 py-4 text-left font-semibold">Tipo de marcación del reloj</th>
-                  <th className="px-6 py-4 text-left font-semibold">Método de marcación</th>
+                  <th className="px-6 py-4 text-left font-semibold">Tipo de fichada</th>
+                  <th className="px-6 py-4 text-left font-semibold">Identificación</th>
                   <th className="px-6 py-4 text-left font-semibold">Reloj</th>
                   {canCreateRequests && <th className="px-6 py-4 text-left font-semibold">Acción</th>}
                 </tr>

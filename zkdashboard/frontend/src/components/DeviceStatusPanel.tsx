@@ -58,8 +58,8 @@ export function DeviceStatusPanel({
         </div>
       )}
 
-      <div style={{ borderTop: '1px solid var(--border)' }}>
-        <table className="w-full table-fixed text-sm">
+      <div className="overflow-x-auto" style={{ borderTop: '1px solid var(--border)' }}>
+        <table className="w-full min-w-[860px] table-fixed text-sm">
           <thead>
             <tr className="table-header-row text-xs uppercase">
               <th className="w-[18%] px-4 py-5 text-left font-semibold">Reloj</th>

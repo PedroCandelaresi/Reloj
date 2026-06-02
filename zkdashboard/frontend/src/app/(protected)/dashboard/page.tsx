@@ -34,6 +34,38 @@ function formatOptionalDate(iso?: string | null) {
   return formatLastSeen(iso);
 }
 
+function formatDashboardNews(news: string) {
+  const offline = news.match(/^(\d+) dispositivo\(s\) sin heartbeat reciente\.$/);
+  if (offline) {
+    return Number(offline[1]) === 1
+      ? '1 reloj sin comunicación reciente.'
+      : `${offline[1]} relojes sin comunicación reciente.`;
+  }
+
+  const pending = news.match(/^(\d+) comando\(s\) pendientes de retirar por relojes\.$/);
+  if (pending) {
+    return Number(pending[1]) === 1
+      ? '1 tarea pendiente en los relojes.'
+      : `${pending[1]} tareas pendientes en los relojes.`;
+  }
+
+  const failed = news.match(/^(\d+) comando\(s\) fallidos en las últimas 24 horas\.$/);
+  if (failed) {
+    return Number(failed[1]) === 1
+      ? '1 tarea con error en las últimas 24 horas.'
+      : `${failed[1]} tareas con error en las últimas 24 horas.`;
+  }
+
+  const communicationErrors = news.match(/^(\d+) request\(s\) ADMS recientes con error\.$/);
+  if (communicationErrors) {
+    return Number(communicationErrors[1]) === 1
+      ? '1 comunicación reciente con error.'
+      : `${communicationErrors[1]} comunicaciones recientes con error.`;
+  }
+
+  return news;
+}
+
 export default async function DashboardPage() {
   const user = await requireCurrentSession();
   if (user.isSuperAdmin) {
@@ -55,9 +87,9 @@ export default async function DashboardPage() {
     <>
       <main className="max-w-7xl mx-auto px-4 py-8 pt-32">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold dark:text-white text-gray-900 drop-shadow-sm">Panel de la empresa</h1>
+          <h1 className="text-2xl font-bold dark:text-white text-gray-900 drop-shadow-sm">Inicio</h1>
           <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
-            Control diario de asistencia de {activeCompanyName}.
+            Resumen diario de asistencia de {activeCompanyName}.
           </p>
         </div>
 
@@ -78,7 +110,7 @@ export default async function DashboardPage() {
             label="Requiere revisión"
             value={attentionCount}
             color={attentionCount > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}
-            hint="Suma relojes sin conexión, comandos pendientes y errores recientes."
+            hint="Suma relojes sin conexión, tareas pendientes y errores recientes."
           />
           <InfoCard label="Última sincronización" value={formatOptionalDate(summary.lastSyncAt)} />
         </section>
@@ -96,10 +128,10 @@ export default async function DashboardPage() {
 
         {summary.technicalNews.length > 0 && (
           <section className="mb-8 rounded-lg border px-4 py-3 text-sm" style={{ background: 'var(--amber-soft)', borderColor: 'rgba(251,191,36,0.3)', color: 'var(--amber-text)' }}>
-            <p className="font-semibold">Hay avisos técnicos para revisar.</p>
+            <p className="font-semibold">Hay avisos del sistema para revisar.</p>
             <ul className="mt-2 space-y-1">
               {summary.technicalNews.map((news) => (
-                <li key={news}>{news}</li>
+                <li key={news}>{formatDashboardNews(news)}</li>
               ))}
             </ul>
           </section>
@@ -107,7 +139,7 @@ export default async function DashboardPage() {
 
         <details className="mb-8">
           <summary className="cursor-pointer text-sm font-medium" style={{ color: 'var(--brand-text)' }}>
-            Estado de relojes y configuración
+            Ver estado de relojes y configuración
           </summary>
           <div className="mt-4 grid grid-cols-1 gap-5">
             <div className="card rounded-xl p-6">
@@ -163,8 +195,8 @@ export default async function DashboardPage() {
                 <tr className="table-header-row text-xs uppercase">
                   <th className="px-6 py-4 text-left font-semibold">Usuario</th>
                   <th className="px-6 py-4 text-left font-semibold">Fecha y Hora</th>
-                  <th className="px-6 py-4 text-left font-semibold">Tipo de marcación del reloj</th>
-                  <th className="px-6 py-4 text-left font-semibold">Método de marcación</th>
+                  <th className="px-6 py-4 text-left font-semibold">Tipo de fichada</th>
+                  <th className="px-6 py-4 text-left font-semibold">Identificación</th>
                   <th className="px-6 py-4 text-left font-semibold">Reloj</th>
                 </tr>
               </thead>

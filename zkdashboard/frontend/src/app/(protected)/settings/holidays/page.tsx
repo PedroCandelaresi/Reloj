@@ -27,6 +27,9 @@ export default async function HolidaysPage({ searchParams }: PageProps) {
   const backHref = user.companyRole === 'company_admin' && !user.isSuperAdmin
     ? '/settings'
     : `/reports${companyId ? `?companyId=${companyId}` : ''}`;
+  const backLabel = user.companyRole === 'company_admin' && !user.isSuperAdmin
+    ? 'Configuración'
+    : 'Reportes';
 
   return (
     <>
@@ -34,11 +37,11 @@ export default async function HolidaysPage({ searchParams }: PageProps) {
         <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
           <div>
             <Link href={backHref} className="mb-2 block text-sm font-medium" style={{ color: 'var(--brand-text)' }}>
-              ← Volver
+              ← {backLabel}
             </Link>
-            <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Feriados</h1>
+            <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Calendario laboral</h1>
             <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
-              Carga manual de feriados para el cálculo diario de asistencia.
+              Revisá y cargá los feriados que afectan el control de asistencia.
             </p>
           </div>
           <form action="/settings/holidays" className="flex flex-wrap items-end gap-3">

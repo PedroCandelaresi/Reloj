@@ -87,8 +87,8 @@ export function RecordsSyncControls({
         </div>
 
         <div className="flex flex-col gap-3 md:flex-row md:items-end">
-          <div className="min-w-[260px]">
-            <label className="block text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Dispositivo</label>
+          <div className="w-full min-w-0 sm:min-w-[260px]">
+            <label className="block text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Reloj</label>
             <select
               value={selectedDevice ? String(selectedDevice.id) : ''}
               onChange={(event) => setSelectedDeviceId(event.target.value)}

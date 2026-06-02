@@ -30,7 +30,7 @@ export default async function OrgStructurePage({ searchParams }: PageProps) {
           </Link>
           <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Estructura de la empresa</h1>
           <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
-            Configurá sectores/departamentos y puestos/cargos para organizar empleados y filtrar reportes.
+            Configurá sectores y puestos para organizar empleados y filtrar reportes.
           </p>
         </div>
       </div>
