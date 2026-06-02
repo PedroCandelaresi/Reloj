@@ -427,7 +427,9 @@ function ProfileMenu({
   collapsed?: boolean;
 }) {
   return (
-    <div className={`rounded-2xl border border-white/10 bg-black/25 p-3 shadow-xl ${collapsed ? 'absolute bottom-14 left-full ml-3 w-60' : ''}`}>
+    <div
+      className={`relative z-50 isolate rounded-2xl border border-emerald-300/15 bg-[#07110c] p-3 opacity-100 shadow-[0_18px_36px_rgba(0,0,0,0.46)] ${collapsed ? 'absolute bottom-14 left-full ml-3 w-60' : ''}`}
+    >
       <div className="mb-2 px-1">
         <p className="text-sm font-semibold text-slate-100">{displayName}</p>
         {user?.username && <p className="mt-1 truncate text-xs text-slate-400">@{user.username}</p>}
