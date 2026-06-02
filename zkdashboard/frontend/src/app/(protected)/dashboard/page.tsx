@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 const TZ = 'America/Argentina/Buenos_Aires';
+const NORMAL_DASHBOARD_NEWS = 'Sin novedades técnicas relevantes.';
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleString('es-AR', {
@@ -66,6 +67,14 @@ function formatDashboardNews(news: string) {
   return news;
 }
 
+function isPositiveDashboardNews(news: string) {
+  return (
+    news === NORMAL_DASHBOARD_NEWS ||
+    news === 'Sin errores recientes.' ||
+    news === 'Todos los relojes están conectados.'
+  );
+}
+
 export default async function DashboardPage() {
   const user = await requireCurrentSession();
   if (user.isSuperAdmin) {
@@ -82,6 +91,16 @@ export default async function DashboardPage() {
   const activeCompanyName =
     activeCompany?.nombreFantasia || activeCompany?.razonSocial || 'Tu empresa';
   const canReviewRequests = user.companyRole === 'company_admin';
+  const dashboardNews = summary.technicalNews
+    .filter((news) => news !== NORMAL_DASHBOARD_NEWS)
+    .map((news) => ({
+      label: formatDashboardNews(news),
+      tone: isPositiveDashboardNews(news) ? 'positive' : 'warning',
+    }));
+  const hasDashboardWarnings = dashboardNews.some((news) => news.tone === 'warning');
+  const visibleDashboardNews = hasDashboardWarnings
+    ? dashboardNews.filter((news) => news.tone === 'warning')
+    : dashboardNews;
 
   return (
     <>
@@ -126,12 +145,19 @@ export default async function DashboardPage() {
           />
         </section>
 
-        {summary.technicalNews.length > 0 && (
-          <section className="mb-8 rounded-lg border px-4 py-3 text-sm" style={{ background: 'var(--amber-soft)', borderColor: 'rgba(251,191,36,0.3)', color: 'var(--amber-text)' }}>
-            <p className="font-semibold">Hay avisos del sistema para revisar.</p>
+        {visibleDashboardNews.length > 0 && (
+          <section
+            className="mb-8 rounded-lg border px-4 py-3 text-sm"
+            style={hasDashboardWarnings
+              ? { background: 'var(--amber-soft)', borderColor: 'rgba(251,191,36,0.3)', color: 'var(--amber-text)' }
+              : { background: 'var(--brand-soft)', borderColor: 'rgba(31,199,119,0.3)', color: 'var(--brand-text)' }}
+          >
+            <p className="font-semibold">
+              {hasDashboardWarnings ? 'Hay avisos del sistema para revisar.' : 'Estado del sistema actualizado.'}
+            </p>
             <ul className="mt-2 space-y-1">
-              {summary.technicalNews.map((news) => (
-                <li key={news}>{formatDashboardNews(news)}</li>
+              {visibleDashboardNews.map((news) => (
+                <li key={news.label}>{news.label}</li>
               ))}
             </ul>
           </section>
