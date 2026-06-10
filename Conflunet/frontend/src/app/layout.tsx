@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Manrope, Space_Grotesk } from 'next/font/google';
+import { GoogleTagManager } from '@/components/analytics/GoogleTagManager';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import './globals.css';
 
@@ -37,6 +38,7 @@ export default function RootLayout({
         />
       </head>
       <body className={`${bodyFont.variable} ${displayFont.variable}`}>
+        <GoogleTagManager />
         <ThemeProvider>
           {children}
         </ThemeProvider>

@@ -1,5 +1,6 @@
 'use client';
 
+import { trackWhatsAppClick } from '@/lib/analytics';
 import { buildMarketingWhatsAppUrl } from '@/lib/marketing';
 import { useIntro } from './IntroProvider';
 
@@ -22,6 +23,13 @@ export function WhatsAppFloatButton() {
       target="_blank"
       rel="noreferrer"
       aria-label="Abrir WhatsApp para soporte rápido"
+      onClick={() =>
+        trackWhatsAppClick({
+          source: 'marketing',
+          placement: 'floating_button',
+          service: 'Servicio técnico',
+        })
+      }
       className={`fixed bottom-5 right-5 z-50 inline-flex items-center gap-3 rounded-full border border-emerald-300/40 bg-[#0f1515]/90 px-4 py-3 text-sm font-semibold text-white shadow-[0_18px_45px_rgba(0,0,0,0.45)] backdrop-blur-xl transition-all duration-800 ease-out hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-[#141c1c] ${
         isIntroComplete
           ? 'opacity-100 translate-y-0'

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { trackEmailClick, trackWhatsAppClick } from '@/lib/analytics';
 import { buildMarketingWhatsAppUrl, marketingConfig } from '@/lib/marketing';
 import { useIntro } from './IntroProvider';
 
@@ -24,7 +25,13 @@ export function MarketingFooter() {
               Soporte técnico, diseño web comercial, instalaciones y sistema de asistencia para resolver lo técnico de forma práctica.
             </p>
             <p className="mt-3 text-sm text-slate-300">
-              Neuquén, Argentina. <a href={`mailto:${marketingConfig.contactEmail}`} className="text-emerald-200 hover:text-emerald-100">{marketingConfig.contactEmail}</a>
+              Neuquén, Argentina. <a
+                href={`mailto:${marketingConfig.contactEmail}`}
+                onClick={() => trackEmailClick({ source: 'marketing', placement: 'footer' })}
+                className="text-emerald-200 hover:text-emerald-100"
+              >
+                {marketingConfig.contactEmail}
+              </a>
             </p>
           </div>
 
@@ -33,6 +40,13 @@ export function MarketingFooter() {
               href={buildMarketingWhatsAppUrl()}
               target="_blank"
               rel="noreferrer"
+              onClick={() =>
+                trackWhatsAppClick({
+                  source: 'marketing',
+                  placement: 'footer',
+                  service: 'Servicio técnico',
+                })
+              }
               className="inline-flex items-center justify-center rounded-full bg-emerald-400 px-5 py-2 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300"
             >
               Soporte rápido por WhatsApp

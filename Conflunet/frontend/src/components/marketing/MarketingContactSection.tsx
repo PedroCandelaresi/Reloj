@@ -1,6 +1,7 @@
 'use client';
 
 import { MarketingContactForm } from '@/components/marketing/MarketingContactForm';
+import { trackEmailClick, trackWhatsAppClick } from '@/lib/analytics';
 import { buildMarketingWhatsAppUrl, marketingConfig } from '@/lib/marketing';
 
 export function MarketingContactSection() {
@@ -32,6 +33,7 @@ export function MarketingContactSection() {
                   <p className="font-semibold text-white">Canal directo por correo</p>
                   <a
                     href={`mailto:${marketingConfig.contactEmail}`}
+                    onClick={() => trackEmailClick({ source: 'marketing', placement: 'contact_section' })}
                     className="mt-1 inline-block text-emerald-200 hover:text-emerald-100"
                   >
                     {marketingConfig.contactEmail}
@@ -39,7 +41,19 @@ export function MarketingContactSection() {
                 </div>
                 <div className="rounded-2xl border border-white/15 bg-white/5 p-4">
                   <p className="font-semibold text-white">Contacto por WhatsApp</p>
-                  <a href={buildMarketingWhatsAppUrl()} target="_blank" rel="noreferrer" className="mt-1 inline-block text-emerald-200 hover:text-emerald-100">
+                  <a
+                    href={buildMarketingWhatsAppUrl()}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={() =>
+                      trackWhatsAppClick({
+                        source: 'marketing',
+                        placement: 'contact_section',
+                        service: 'Servicio técnico',
+                      })
+                    }
+                    className="mt-1 inline-block text-emerald-200 hover:text-emerald-100"
+                  >
                     {marketingConfig.whatsappDisplay}
                   </a>
                 </div>

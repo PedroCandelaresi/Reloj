@@ -7,6 +7,7 @@ import { MarketingCarousel } from '@/components/marketing/MarketingCarousel';
 import { MarketingContactSection } from '@/components/marketing/MarketingContactSection';
 import { MarketingIntroAnimation } from '@/components/marketing/MarketingIntroAnimation';
 import { decodeJwtPayload, getDefaultAppPath } from '@/lib/auth-token';
+import { trackWhatsAppClick } from '@/lib/analytics';
 import { buildMarketingWhatsAppUrl } from '@/lib/marketing';
 
 // Force dynamic rendering to avoid SSR issues
@@ -125,6 +126,13 @@ export default function MarketingHomePage() {
                   href={buildMarketingWhatsAppUrl()}
                   target="_blank"
                   rel="noreferrer"
+                  onClick={() =>
+                    trackWhatsAppClick({
+                      source: 'marketing',
+                      placement: 'hero',
+                      service: 'Servicio técnico',
+                    })
+                  }
                   className="inline-flex min-h-12 items-center justify-center rounded-full bg-emerald-400 px-6 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300"
                 >
                   Consultar por WhatsApp
@@ -240,6 +248,13 @@ export default function MarketingHomePage() {
                 href={buildMarketingWhatsAppUrl({ service: 'Diseño web comercial' })}
                 target="_blank"
                 rel="noreferrer"
+                onClick={() =>
+                  trackWhatsAppClick({
+                    source: 'marketing',
+                    placement: 'web_section',
+                    service: 'Diseño web comercial',
+                  })
+                }
                 className="inline-flex min-h-12 items-center justify-center rounded-full bg-emerald-400 px-6 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300"
               >
                 Consultar por una web

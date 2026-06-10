@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { trackContactFormPrepared, trackWhatsAppClick } from '@/lib/analytics';
 import {
   buildMarketingWhatsAppUrl,
   contactServiceOptions,
@@ -14,6 +15,7 @@ type SubmitState =
       type: 'success' | 'error';
       message: string;
       whatsappUrl: string;
+      service?: ContactService;
     }
   | null;
 
@@ -68,6 +70,7 @@ export function MarketingContactForm() {
         type: 'error',
         message: validation.message,
         whatsappUrl,
+        service: values.service,
       });
       return;
     }
@@ -100,6 +103,12 @@ export function MarketingContactForm() {
         type: 'success',
         message: data.message,
         whatsappUrl: data.whatsappUrl,
+        service: validation.data.service,
+      });
+      trackContactFormPrepared({
+        source: 'marketing',
+        placement: 'contact_form',
+        service: validation.data.service,
       });
       setValues(defaultForm);
     } catch (error) {
@@ -110,6 +119,7 @@ export function MarketingContactForm() {
             ? error.message
             : 'No se pudo enviar tu consulta en este momento.',
         whatsappUrl,
+        service: values.service,
       });
     } finally {
       setIsSubmitting(false);
@@ -252,6 +262,13 @@ export function MarketingContactForm() {
           href={submitState?.whatsappUrl ?? whatsappUrl}
           target="_blank"
           rel="noreferrer"
+          onClick={() =>
+            trackWhatsAppClick({
+              source: 'marketing',
+              placement: 'contact_form',
+              service: submitState?.service ?? values.service,
+            })
+          }
           className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/15 bg-white/5 px-6 text-sm font-semibold text-white transition hover:bg-white/10"
         >
           Contactar por WhatsApp
