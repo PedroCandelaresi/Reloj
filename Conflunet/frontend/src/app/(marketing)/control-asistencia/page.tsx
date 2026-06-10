@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { TrackedWhatsAppLink } from '@/components/marketing/TrackedWhatsAppLink';
 import { buildMarketingWhatsAppUrl } from '@/lib/marketing';
 
 export const metadata: Metadata = {
@@ -130,29 +131,39 @@ function SectionIntro({
   );
 }
 
-function PrimaryCta({ className = '' }: { className?: string }) {
+function PrimaryCta({
+  className = '',
+  placement = 'control_asistencia_primary',
+}: {
+  className?: string;
+  placement?: string;
+}) {
   return (
-    <a
+    <TrackedWhatsAppLink
       href={meetingUrl}
-      target="_blank"
-      rel="noreferrer"
+      placement={placement}
       className={`inline-flex min-h-12 items-center justify-center rounded-full bg-emerald-400 px-6 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300 ${className}`}
     >
       Coordinar reunión
-    </a>
+    </TrackedWhatsAppLink>
   );
 }
 
-function SecondaryCta({ className = '' }: { className?: string }) {
+function SecondaryCta({
+  className = '',
+  placement = 'control_asistencia_compatibility',
+}: {
+  className?: string;
+  placement?: string;
+}) {
   return (
-    <a
+    <TrackedWhatsAppLink
       href={compatibilityUrl}
-      target="_blank"
-      rel="noreferrer"
+      placement={placement}
       className={`inline-flex min-h-12 items-center justify-center rounded-full border border-white/15 bg-white/5 px-6 text-sm font-semibold text-white transition hover:bg-white/10 ${className}`}
     >
       Consultar compatibilidad
-    </a>
+    </TrackedWhatsAppLink>
   );
 }
 
@@ -182,8 +193,8 @@ export default function ControlAsistenciaPage() {
               ))}
             </div>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <PrimaryCta />
-              <SecondaryCta />
+              <PrimaryCta placement="control_asistencia_hero_primary" />
+              <SecondaryCta placement="control_asistencia_hero_secondary" />
             </div>
             <p className="mt-4 text-sm leading-7 text-emerald-100/80">
               Coordinamos una reunión breve para relevar relojes, empleados y alcance de implementación.
@@ -353,7 +364,7 @@ export default function ControlAsistenciaPage() {
               description="Cada instalación se revisa antes de avanzar. Evaluamos el equipo instalado, su forma de conexión y el acceso a registros, sin prometer compatibilidad universal."
             />
             <div className="mt-7">
-              <SecondaryCta />
+              <SecondaryCta placement="control_asistencia_compatibility_section" />
             </div>
           </div>
           <div className="rounded-[2rem] border border-emerald-300/30 bg-emerald-300/10 p-6 sm:p-8">
@@ -420,7 +431,7 @@ export default function ControlAsistenciaPage() {
               Revisamos relojes, empleados, sedes y proceso actual para preparar una propuesta mensual acorde al caso.
             </p>
             <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-              <PrimaryCta />
+              <PrimaryCta placement="control_asistencia_final_primary" />
               <Link
                 href="/login"
                 className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/15 bg-white/5 px-6 text-sm font-semibold text-white transition hover:bg-white/10"
