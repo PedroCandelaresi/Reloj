@@ -33,6 +33,9 @@ export type MarketingContactPayload = {
 };
 
 export type ContactFieldErrors = Partial<Record<keyof MarketingContactPayload, string>>;
+type MarketingWhatsAppPayload = Partial<MarketingContactPayload> & {
+  intro?: string;
+};
 
 const PHONE_REGEX = /^[0-9+()\-\s]{8,24}$/;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -114,14 +117,14 @@ export function validateMarketingContactPayload(
   };
 }
 
-export function buildMarketingWhatsAppUrl(payload?: Partial<MarketingContactPayload>) {
+export function buildMarketingWhatsAppUrl(payload?: MarketingWhatsAppPayload) {
   const service =
     payload?.service && contactServiceOptions.includes(payload.service)
       ? payload.service
       : contactServiceOptions[0];
 
   const lines = [
-    `Hola ${marketingConfig.brandName}, quiero consultar por ${service}.`,
+    payload?.intro ?? `Hola ${marketingConfig.brandName}, quiero consultar por ${service}.`,
     payload?.name ? `Nombre: ${payload.name}` : null,
     payload?.phone ? `Teléfono: ${payload.phone}` : null,
     payload?.email ? `Email: ${payload.email}` : null,
