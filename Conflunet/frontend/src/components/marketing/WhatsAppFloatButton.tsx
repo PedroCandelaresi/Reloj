@@ -30,7 +30,7 @@ export function WhatsAppFloatButton() {
           service: 'Servicio técnico',
         })
       }
-      className={`fixed bottom-5 right-5 z-50 inline-flex items-center gap-3 rounded-full border border-emerald-300/40 bg-[#0f1515]/90 px-4 py-3 text-sm font-semibold text-white shadow-[0_18px_45px_rgba(0,0,0,0.45)] backdrop-blur-xl transition-all duration-800 ease-out hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-[#141c1c] ${
+      className={`fixed bottom-4 right-4 z-50 inline-flex h-12 w-12 items-center justify-center rounded-full border border-emerald-300/45 bg-emerald-400 text-slate-950 shadow-[0_14px_34px_rgba(0,0,0,0.35)] transition-all duration-800 ease-out hover:-translate-y-0.5 hover:bg-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-200 focus:ring-offset-2 focus:ring-offset-slate-950 sm:bottom-5 sm:right-5 sm:h-14 sm:w-14 ${
         isIntroComplete
           ? 'opacity-100 translate-y-0'
           : 'opacity-0 translate-y-4 pointer-events-none'
@@ -39,15 +39,7 @@ export function WhatsAppFloatButton() {
         transitionDelay: isIntroComplete ? '1.2s' : '0s'
       }}
     >
-      <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-emerald-400 text-white">
-        <WhatsAppIcon />
-      </span>
-      <span className="leading-none">
-        <span className="block text-sm font-semibold">WhatsApp</span>
-        <span className="mt-1 hidden text-[11px] uppercase tracking-[0.16em] text-emerald-200/80 sm:block">
-          Soporte rápido
-        </span>
-      </span>
+      <WhatsAppIcon />
     </a>
   );
 }

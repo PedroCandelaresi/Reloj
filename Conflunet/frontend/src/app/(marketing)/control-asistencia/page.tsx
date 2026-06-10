@@ -159,8 +159,8 @@ function SecondaryCta({ className = '' }: { className?: string }) {
 export default function ControlAsistenciaPage() {
   return (
     <>
-      <section className="py-14 md:py-20">
-        <div className="mx-auto grid w-full max-w-6xl gap-10 px-4 sm:px-6 lg:grid-cols-[1.02fr_0.98fr] lg:items-center">
+      <section className="pt-12 pb-14 md:pt-8 md:pb-16 lg:pt-4 lg:pb-14">
+        <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 sm:px-6 lg:grid-cols-[1.02fr_0.98fr] lg:items-center">
           <div>
             <p className="inline-flex rounded-full border border-emerald-300/40 bg-emerald-300/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-200">
               Conflunet Asistencia
@@ -190,14 +190,14 @@ export default function ControlAsistenciaPage() {
             </p>
           </div>
 
-          <div className="relative overflow-hidden rounded-[2rem] border border-white/15 bg-[#0b1111]/75 p-5 backdrop-blur-xl sm:p-6">
+          <div className="relative overflow-hidden rounded-[2rem] border border-white/15 bg-[#0b1111]/75 p-5 backdrop-blur-xl sm:p-6 lg:p-5">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(52,211,153,0.2),transparent_34%),linear-gradient(145deg,rgba(255,255,255,0.08),transparent_42%)]" />
             <div className="relative">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-200/85">
                 Flujo simple
               </p>
-              <div className="mt-5 space-y-4">
-                <div className="rounded-[1.5rem] border border-white/12 bg-white/[0.06] p-5">
+              <div className="mt-5 space-y-3">
+                <div className="rounded-[1.5rem] border border-white/12 bg-white/[0.06] p-4">
                   <div className="flex items-center gap-4">
                     <div className="flex h-20 w-16 shrink-0 flex-col items-center rounded-2xl border border-emerald-200/30 bg-slate-950/70 p-2 shadow-2xl shadow-emerald-950/30">
                       <span className="h-3 w-8 rounded-full bg-emerald-300/80" />
@@ -216,12 +216,12 @@ export default function ControlAsistenciaPage() {
                 </div>
 
                 <div className="flex justify-center">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full border border-emerald-200/30 bg-emerald-300/15 text-lg font-bold text-emerald-200" aria-hidden="true">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full border border-emerald-200/30 bg-emerald-300/15 text-base font-bold text-emerald-200" aria-hidden="true">
                     ↓
                   </span>
                 </div>
 
-                <div className="rounded-[1.5rem] border border-emerald-300/35 bg-emerald-300/12 p-5">
+                <div className="rounded-[1.5rem] border border-emerald-300/35 bg-emerald-300/12 p-4">
                   <div className="flex items-center gap-4">
                     <img
                       src="/brand/conflunet-isotipo.svg"
@@ -237,12 +237,12 @@ export default function ControlAsistenciaPage() {
                 </div>
 
                 <div className="flex justify-center">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full border border-emerald-200/30 bg-emerald-300/15 text-lg font-bold text-emerald-200" aria-hidden="true">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full border border-emerald-200/30 bg-emerald-300/15 text-base font-bold text-emerald-200" aria-hidden="true">
                     ↓
                   </span>
                 </div>
 
-                <div className="rounded-[1.5rem] border border-white/12 bg-white/[0.06] p-5">
+                <div className="rounded-[1.5rem] border border-white/12 bg-white/[0.06] p-4">
                   <div className="flex items-center gap-4">
                     <div className="flex h-16 w-20 shrink-0 items-end justify-center rounded-2xl border border-white/15 bg-slate-950/70 px-2 pb-2">
                       <span className="h-9 w-12 rounded-t-xl border border-emerald-200/40 bg-emerald-300/15" />
