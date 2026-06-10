@@ -12,7 +12,6 @@ export const metadata: Metadata = {
     'fichadas',
     'relojes biométricos',
     'sistema de asistencia para empresas',
-    'ZKTeco MB360',
     'RRHH',
   ],
 };
@@ -29,6 +28,13 @@ const compatibilityUrl = buildMarketingWhatsAppUrl({
   intro: 'Hola Conflunet, quiero consultar si mi reloj biométrico es compatible con el sistema de control de asistencia.',
   service: 'Sistema de RRHH y fichadas',
 });
+
+const heroHighlights = [
+  'Compatible con múltiples relojes',
+  'Información centralizada',
+  'Acceso web',
+  'Menos tareas manuales',
+] as const;
 
 const problems = [
   'Descargas manuales desde el reloj y archivos que se pierden entre planillas.',
@@ -76,7 +82,7 @@ const faqs = [
   {
     question: '¿Funciona con cualquier reloj biométrico?',
     answer:
-      'No prometemos compatibilidad universal. Primero revisamos si el reloj permite integración o envío de registros. Podemos evaluar equipos compatibles, como ZKTeco MB360, según el caso.',
+      'No prometemos compatibilidad universal. Primero revisamos si el reloj permite integración o envío de registros y evaluamos el caso antes de avanzar.',
   },
   {
     question: '¿Tengo que cambiar mis relojes actuales?',
@@ -160,11 +166,21 @@ export default function ControlAsistenciaPage() {
               Conflunet Asistencia
             </p>
             <h1 className="mt-5 text-4xl font-semibold leading-tight text-white sm:text-5xl lg:text-6xl">
-              Control de asistencia conectado a sus relojes biométricos
+              Control de asistencia conectado a relojes biométricos
             </h1>
-            <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-300">
-              Centralizá fichadas, ingresos y egresos en una plataforma web para dejar atrás la descarga manual de registros y ordenar el control horario de tu empresa.
+            <p className="mt-5 max-w-xl text-lg leading-8 text-slate-300">
+              Centralizá fichadas en una plataforma web y reducí descargas manuales para RRHH.
             </p>
+            <div className="mt-6 grid max-w-2xl gap-3 sm:grid-cols-2">
+              {heroHighlights.map((highlight) => (
+                <div key={highlight} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-slate-100">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-400 text-xs font-black text-slate-950">
+                    ✓
+                  </span>
+                  <span>{highlight}</span>
+                </div>
+              ))}
+            </div>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <PrimaryCta />
               <SecondaryCta />
@@ -174,47 +190,69 @@ export default function ControlAsistenciaPage() {
             </p>
           </div>
 
-          <div className="rounded-[2rem] border border-white/15 bg-[#0b1111]/75 p-5 backdrop-blur-xl sm:p-6">
-            <div className="rounded-[1.5rem] border border-white/10 bg-[#0f1717]/85 p-5">
-              <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-4">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.18em] text-emerald-200/85">Panel web</p>
-                  <p className="mt-1 text-lg font-semibold text-white">Fichadas del día</p>
+          <div className="relative overflow-hidden rounded-[2rem] border border-white/15 bg-[#0b1111]/75 p-5 backdrop-blur-xl sm:p-6">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(52,211,153,0.2),transparent_34%),linear-gradient(145deg,rgba(255,255,255,0.08),transparent_42%)]" />
+            <div className="relative">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-200/85">
+                Flujo simple
+              </p>
+              <div className="mt-5 space-y-4">
+                <div className="rounded-[1.5rem] border border-white/12 bg-white/[0.06] p-5">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-20 w-16 shrink-0 flex-col items-center rounded-2xl border border-emerald-200/30 bg-slate-950/70 p-2 shadow-2xl shadow-emerald-950/30">
+                      <span className="h-3 w-8 rounded-full bg-emerald-300/80" />
+                      <span className="mt-3 h-8 w-8 rounded-full border border-emerald-200/50 bg-emerald-300/10" />
+                      <span className="mt-2 grid grid-cols-3 gap-1">
+                        <span className="h-1 w-1 rounded-full bg-slate-400" />
+                        <span className="h-1 w-1 rounded-full bg-slate-400" />
+                        <span className="h-1 w-1 rounded-full bg-slate-400" />
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-lg font-semibold text-white">Reloj biométrico genérico</p>
+                      <p className="mt-1 text-sm leading-6 text-slate-300">El personal registra ingresos y egresos en equipos compatibles.</p>
+                    </div>
+                  </div>
                 </div>
-                <img
-                  src="/brand/conflunet-isotipo.svg"
-                  alt=""
-                  aria-hidden="true"
-                  className="h-10 w-10 object-contain"
-                />
-              </div>
-              <div className="mt-5 grid gap-3">
-                {[
-                  ['07:58', 'Ingreso registrado', 'Operación'],
-                  ['12:02', 'Egreso parcial', 'Administración'],
-                  ['13:04', 'Ingreso parcial', 'Producción'],
-                  ['17:31', 'Egreso registrado', 'Oficina'],
-                ].map(([time, label, area]) => (
-                  <div key={`${time}-${label}`} className="grid grid-cols-[4.2rem_1fr_auto] items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-                    <span className="text-sm font-semibold text-emerald-200">{time}</span>
-                    <span className="text-sm text-slate-100">{label}</span>
-                    <span className="hidden rounded-full border border-white/10 px-3 py-1 text-xs text-slate-300 sm:inline-flex">
-                      {area}
-                    </span>
+
+                <div className="flex justify-center">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full border border-emerald-200/30 bg-emerald-300/15 text-lg font-bold text-emerald-200" aria-hidden="true">
+                    ↓
+                  </span>
+                </div>
+
+                <div className="rounded-[1.5rem] border border-emerald-300/35 bg-emerald-300/12 p-5">
+                  <div className="flex items-center gap-4">
+                    <img
+                      src="/brand/conflunet-isotipo.svg"
+                      alt=""
+                      aria-hidden="true"
+                      className="h-12 w-12 shrink-0 object-contain"
+                    />
+                    <div>
+                      <p className="text-lg font-semibold text-white">Conflunet</p>
+                      <p className="mt-1 text-sm leading-6 text-emerald-50/80">Integra, ordena y centraliza los registros disponibles.</p>
+                    </div>
                   </div>
-                ))}
-              </div>
-              <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                {[
-                  ['Web', 'Consulta remota'],
-                  ['Relojes', 'Integración'],
-                  ['RRHH', 'Control diario'],
-                ].map(([title, text]) => (
-                  <div key={title} className="rounded-2xl border border-white/10 bg-emerald-300/10 p-4">
-                    <p className="text-sm font-semibold text-white">{title}</p>
-                    <p className="mt-1 text-xs leading-5 text-slate-300">{text}</p>
+                </div>
+
+                <div className="flex justify-center">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full border border-emerald-200/30 bg-emerald-300/15 text-lg font-bold text-emerald-200" aria-hidden="true">
+                    ↓
+                  </span>
+                </div>
+
+                <div className="rounded-[1.5rem] border border-white/12 bg-white/[0.06] p-5">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-16 w-20 shrink-0 items-end justify-center rounded-2xl border border-white/15 bg-slate-950/70 px-2 pb-2">
+                      <span className="h-9 w-12 rounded-t-xl border border-emerald-200/40 bg-emerald-300/15" />
+                    </div>
+                    <div>
+                      <p className="text-lg font-semibold text-white">Acceso web para RRHH</p>
+                      <p className="mt-1 text-sm leading-6 text-slate-300">La empresa consulta asistencia desde una plataforma web centralizada.</p>
+                    </div>
                   </div>
-                ))}
+                </div>
               </div>
             </div>
           </div>
@@ -312,7 +350,7 @@ export default function ControlAsistenciaPage() {
             <SectionIntro
               eyebrow="Compatibilidad"
               title="Compatible con relojes que permitan integración o envío de registros"
-              description="Cada instalación se revisa antes de avanzar. Podemos evaluar equipos compatibles, incluyendo escenarios con relojes como ZKTeco MB360, sin prometer compatibilidad universal."
+              description="Cada instalación se revisa antes de avanzar. Evaluamos el equipo instalado, su forma de conexión y el acceso a registros, sin prometer compatibilidad universal."
             />
             <div className="mt-7">
               <SecondaryCta />
