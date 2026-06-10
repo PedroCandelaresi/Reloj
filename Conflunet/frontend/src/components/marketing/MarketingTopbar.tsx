@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { marketingNavItems, marketingConfig } from '@/lib/marketing';
 
 function MenuIcon() {
@@ -23,8 +24,16 @@ function CloseIcon() {
 export function MarketingTopbar() {
   const [open, setOpen] = useState(false);
   const [activeHref, setActiveHref] = useState('#inicio');
+  const pathname = usePathname();
 
-  const validHashes = useMemo(() => new Set(marketingNavItems.map((item) => item.href)), []);
+  const validHashes = useMemo<Set<string>>(
+    () => new Set(marketingNavItems.map((item) => item.href).filter((href) => href.startsWith('#'))),
+    [],
+  );
+  const routeHrefs = useMemo<Set<string>>(
+    () => new Set(marketingNavItems.map((item) => item.href).filter((href) => href.startsWith('/'))),
+    [],
+  );
   const legacyAnchorMap = useMemo(
     () =>
       ({
@@ -37,6 +46,11 @@ export function MarketingTopbar() {
 
   useEffect(() => {
     const updateActive = () => {
+      if (routeHrefs.has(pathname)) {
+        setActiveHref(pathname);
+        return;
+      }
+
       const currentHash = window.location.hash || '#inicio';
       const hash = legacyAnchorMap[currentHash as keyof typeof legacyAnchorMap] ?? currentHash;
       setActiveHref(validHashes.has(hash) ? hash : '#inicio');
@@ -45,7 +59,15 @@ export function MarketingTopbar() {
     updateActive();
     window.addEventListener('hashchange', updateActive);
     return () => window.removeEventListener('hashchange', updateActive);
-  }, [legacyAnchorMap, validHashes]);
+  }, [legacyAnchorMap, pathname, routeHrefs, validHashes]);
+
+  function resolveNavHref(href: string) {
+    if (href.startsWith('#') && pathname !== '/') {
+      return `/${href}`;
+    }
+
+    return href;
+  }
 
   return (
     <header className="fixed inset-x-0 top-0 z-40 px-4 pt-4 sm:px-6">
@@ -68,7 +90,7 @@ export function MarketingTopbar() {
                   {marketingNavItems.map((item) => (
                     <a
                       key={item.href}
-                      href={item.href}
+                      href={resolveNavHref(item.href)}
                       className={`rounded-full px-3 py-2 text-sm whitespace-nowrap transition ${
                         activeHref === item.href
                           ? 'bg-white/12 text-white'
@@ -123,7 +145,7 @@ export function MarketingTopbar() {
               {marketingNavItems.map((item) => (
                 <a
                   key={item.href}
-                  href={item.href}
+                  href={resolveNavHref(item.href)}
                   onClick={() => {
                     setOpen(false);
                     setActiveHref(item.href);

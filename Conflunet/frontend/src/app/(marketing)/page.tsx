@@ -211,10 +211,10 @@ export default function MarketingHomePage() {
 
             <div className="mt-7">
               <Link
-                href="/login"
+                href="/control-asistencia"
                 className="inline-flex min-h-12 items-center justify-center rounded-full bg-emerald-400 px-6 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300"
               >
-                Acceder al sistema
+                Conocer el sistema
               </Link>
             </div>
           </div>
